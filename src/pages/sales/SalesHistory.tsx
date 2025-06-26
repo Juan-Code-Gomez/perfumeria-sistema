@@ -1,81 +1,81 @@
-import { useSelector } from 'react-redux'
-import type { RootState } from '../../store'
-import { Table, Typography, Tag, Button } from 'antd'
-import dayjs from 'dayjs'
-import jsPDF from 'jspdf'
-import autoTable from 'jspdf-autotable'
+// src/pages/sales/SalesHistory.tsx
+
+import { useEffect } from 'react';
+import { Table, Tag, Button } from 'antd';
+import type { ColumnsType } from 'antd/es/table';
+import { useAppDispatch, useAppSelector } from '../../store/index';
+import { fetchSales } from '../../features/sales/salesSlice';
+import { format } from 'date-fns';
+import { EyeOutlined } from '@ant-design/icons';
 
 const SalesHistory = () => {
-  const sales = useSelector((state: RootState) => state.sales.items)
+  const dispatch = useAppDispatch();
+  const { salesList, loading } = useAppSelector((state: any) => state.sales);
 
-  const downloadInvoice = (sale: any) => {
-    const doc = new jsPDF()
+  useEffect(() => {
+    dispatch(fetchSales());
+  }, [dispatch]);
 
-    doc.text('Factura de Venta', 14, 20)
-    doc.setFontSize(11)
-    doc.text(`Cliente: ${sale.clientName || 'No registrado'}`, 14, 30)
-    doc.text(`Fecha: ${dayjs(sale.date).format('YYYY-MM-DD HH:mm')}`, 14, 36)
-    doc.text(`Método de pago: ${sale.paymentMethod}`, 14, 42)
-    doc.text(`Total: $${sale.total}`, 14, 48)
-
-    autoTable(doc, {
-      startY: 55,
-      head: [['Producto', 'Cantidad', 'Precio Unitario', 'Total']],
-      body: sale.details.map((d: any) => [
-        `Producto ${d.productId}`,
-        d.quantity,
-        `$${d.unitPrice}`,
-        `$${(d.unitPrice * d.quantity).toFixed(2)}`
-      ]),
-    })
-
-    doc.save(`factura_${sale.id}.pdf`)
-  }
-
-  const columns = [
+  const columns: ColumnsType<any> = [
     {
       title: 'ID',
       dataIndex: 'id',
     },
     {
       title: 'Cliente',
-      dataIndex: 'clientName',
-      render: (text: string) => text || <i>No registrado</i>,
-    },
-    {
-      title: 'Método de pago',
-      dataIndex: 'paymentMethod',
-      render: (method: string) => <Tag color="blue">{method}</Tag>,
-    },
-    {
-      title: 'Total',
-      dataIndex: 'total',
-      render: (total: number) => `$${total.toFixed(2)}`,
+      dataIndex: 'customerName',
+      render: (text) => text || 'N/A',
     },
     {
       title: 'Fecha',
       dataIndex: 'date',
-      render: (date: string) => dayjs(date).format('YYYY-MM-DD HH:mm'),
+      render: (date) => format(new Date(date), 'dd/MM/yyyy HH:mm'),
+    },
+    {
+      title: 'Total',
+      dataIndex: 'totalAmount',
+      render: (value) => `$${value.toFixed(2)}`,
+    },
+    {
+      title: 'Estado',
+      dataIndex: 'isPaid',
+      render: (paid: boolean) => (
+        <Tag color={paid ? 'green' : 'orange'}>
+          {paid ? 'Pagado' : 'Pendiente'}
+        </Tag>
+      ),
     },
     {
       title: 'Acciones',
-      render: (_: any, sale: any) => (
-        <Button onClick={() => downloadInvoice(sale)}>Descargar factura</Button>
+      render: (_, record) => (
+        <Button
+          icon={<EyeOutlined />}
+          type="primary"
+          onClick={() => handleViewInvoice(record.id)}
+        >
+          Ver factura
+        </Button>
       ),
     },
-  ]
+  ];
+
+  const handleViewInvoice = (saleId: number) => {
+    // Aquí navegarás a la vista de factura o abrirás un modal.
+    console.log('Ver factura de venta:', saleId);
+  };
 
   return (
-    <div className="p-8">
-      <Typography.Title level={3}>Historial de Ventas</Typography.Title>
+    <div className="p-4">
+      <h2 className="text-xl font-bold mb-4">Historial de Ventas</h2>
       <Table
-        dataSource={sales}
         columns={columns}
+        dataSource={salesList}
+        loading={loading}
         rowKey="id"
-        pagination={{ pageSize: 8 }}
+        pagination={{ pageSize: 10 }}
       />
     </div>
-  )
-}
+  );
+};
 
-export default SalesHistory
+export default SalesHistory;

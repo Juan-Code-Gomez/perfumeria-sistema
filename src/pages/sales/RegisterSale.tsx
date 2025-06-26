@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Card, Form, Input, InputNumber, Button, Select, Divider, Typography, Table, message } from 'antd'
 import { useSelector, useDispatch } from 'react-redux'
 import type { RootState } from '../../store'
-import { registerSale } from '../../features/sales/salesSlice'
+// import { registerSale } from '../../features/sales/salesSlice'
 
 const RegisterSale = () => {
   const [form] = Form.useForm()
@@ -53,7 +53,7 @@ const RegisterSale = () => {
       })),
     }
 
-    dispatch(registerSale(sale))
+    // dispatch(registerSale(sale))
     message.success('Venta registrada con éxito')
     setSelectedProducts([])
     form.resetFields()

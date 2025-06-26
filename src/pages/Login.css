@@ -7,7 +7,7 @@
   
   .login-left {
     flex: 1;
-    background: linear-gradient(135deg, #0f172a, #1e293b);
+    background: linear-gradient(135deg, #000000, #000102);
     color: white;
     display: flex;
     flex-direction: column;
@@ -45,3 +45,33 @@
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
   }
   
+  .login-illustration {
+  width: 100%;
+  height: auto;
+  max-width: 300px; /* Opcional: limita el tamaño máximo */
+  display: block;
+  margin: 0 auto;
+}
+
+@media (max-width: 768px) {
+  .login-container {
+    flex-direction: column;
+    height: auto;
+  }
+  .login-left,
+  .login-right {
+    flex: none;
+    width: 100%;
+    min-height: unset;
+    padding: 1.5rem 1rem;
+  }
+  .login-left {
+    padding-bottom: 0;
+  }
+  .login-card {
+    max-width: 100%;
+    box-shadow: none;
+    border-radius: 0;
+    padding: 1.5rem 1rem;
+  }
+}
