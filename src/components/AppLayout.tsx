@@ -24,13 +24,49 @@ const AppLayout: React.FC = () => {
     navigate('/login');
   };
 
-  const userMenu = (
-    <Menu>
-      <Menu.Item key="logout" icon={<LogoutOutlined />} onClick={handleLogout}>
-        Cerrar sesión
-      </Menu.Item>
-    </Menu>
-  );
+  // Definir items para el menú del usuario
+  const userMenuItems = [
+    {
+      key: 'logout',
+      icon: <LogoutOutlined />,
+      label: 'Cerrar sesión',
+      onClick: handleLogout,
+    },
+  ];
+
+  // Definir items para el menú principal
+  const menuItems = [
+    {
+      key: '/',
+      icon: <DashboardOutlined />,
+      label: 'Dashboard',
+      onClick: () => navigate('/'),
+    },
+    {
+      key: '/ventas',
+      icon: <ShoppingCartOutlined />,
+      label: 'Ventas',
+      onClick: () => navigate('/ventas'),
+    },
+    {
+      key: '/compras',
+      icon: <GiftOutlined />,
+      label: 'Compras',
+      onClick: () => navigate('/compras'),
+    },
+    {
+      key: '/products',
+      icon: <GiftOutlined />,
+      label: 'Productos',
+      onClick: () => navigate('/products'),
+    },
+    {
+      key: '/usuarios',
+      icon: <UserOutlined />,
+      label: 'Usuarios',
+      onClick: () => navigate('/usuarios'),
+    },
+  ];
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
@@ -38,27 +74,19 @@ const AppLayout: React.FC = () => {
         <div className="logo text-white text-center py-4">
           <h2 style={{ color: '#fff', margin: 0 }}>Milán</h2>
         </div>
-        <Menu theme="dark" mode="inline" defaultSelectedKeys={['/']}>
-          <Menu.Item key="/" icon={<DashboardOutlined />} onClick={() => navigate('/')}>
-            Dashboard
-          </Menu.Item>
-          <Menu.Item key="/ventas" icon={<ShoppingCartOutlined />} onClick={() => navigate('/ventas')}>
-            Ventas
-          </Menu.Item>
-          <Menu.Item key="/compras" icon={<GiftOutlined />} onClick={() => navigate('/compras')}>
-            Compras
-          </Menu.Item>
-          <Menu.Item key="/productos" icon={<GiftOutlined />} onClick={() => navigate('/products')}>
-            Productos
-          </Menu.Item>
-          <Menu.Item key="/usuarios" icon={<UserOutlined />} onClick={() => navigate('/usuarios')}>
-            Usuarios
-          </Menu.Item>
-        </Menu>
+        <Menu
+          theme="dark"
+          mode="inline"
+          defaultSelectedKeys={['/']}
+          items={menuItems}
+        />
       </Sider>
       <Layout>
         <Header style={{ background: '#fff', padding: 0, textAlign: 'right', paddingRight: 24 }}>
-          <Dropdown overlay={userMenu} placement="bottomRight">
+          <Dropdown
+            menu={{ items: userMenuItems }}
+            placement="bottomRight"
+          >
             <span style={{ cursor: 'pointer' }}>
               <Avatar style={{ backgroundColor: '#87d068', marginRight: 8 }} icon={<UserOutlined />} />
               {user?.name}

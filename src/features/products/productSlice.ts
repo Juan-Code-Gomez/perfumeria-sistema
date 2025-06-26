@@ -1,43 +1,70 @@
-import { createSlice } from '@reduxjs/toolkit'
-import type { PayloadAction } from '@reduxjs/toolkit'
-import type { Product } from './types'
+// src/features/products/productSlice.ts
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import type { PayloadAction } from "@reduxjs/toolkit";
+import type { Product } from "./types";
+import * as productService from "../../services/productService";
 
-const initialState: Product[] = [
-  {
-    id: 1,
-    name: 'Esencia de vainilla',
-    description: 'Fragancia suave y dulce',
-    unit: 'ml',
-    stock: 250,
-    purchasePrice: 500,
-    salePrice: 1500,
-  },
-  {
-    id: 2,
-    name: 'Loción 1.1 para hombre',
-    unit: 'unit',
-    stock: 20,
-    purchasePrice: 15000,
-    salePrice: 30000,
-  },
-]
+export interface ProductFilters {
+  name?: string;
+  categoryId?: number;
+  stockMin?: number;
+}
 
-export const productSlice = createSlice({
-  name: 'products',
+export interface ProductsState {
+  items: Product[];
+  loading: boolean;
+  error: string | null;
+  filters: ProductFilters;
+}
+
+const initialState: ProductsState = {
+  items: [],
+  loading: false,
+  error: null,
+  filters: {},
+};
+
+// Thunk para traer productos con filtros
+export const fetchProducts = createAsyncThunk<
+  Product[],
+  ProductFilters | undefined,
+  { rejectValue: string }
+>("products/fetch", async (filters, thunkAPI) => {
+  try {
+    const data = await productService.getProducts(filters);
+    return data;
+  } catch (err: any) {
+    return thunkAPI.rejectWithValue(err.message || "Error al cargar productos");
+  }
+});
+
+const productSlice = createSlice({
+  name: "products",
   initialState,
   reducers: {
-    addProduct: (state, action: PayloadAction<Product>) => {
-      state.push(action.payload)
+    setFilters(state, action: PayloadAction<ProductFilters>) {
+      state.filters = action.payload;
     },
-    updateProduct: (state, action: PayloadAction<Product>) => {
-      const index = state.findIndex(p => p.id === action.payload.id)
-      if (index !== -1) state[index] = action.payload
-    },
-    deleteProduct: (state, action: PayloadAction<number>) => {
-      return state.filter(p => p.id !== action.payload)
+    clearFilters(state) {
+      state.filters = {};
     },
   },
-})
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchProducts.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchProducts.fulfilled, (state, action) => {
+        state.items = action.payload;
+        state.loading = false;
+      })
+      .addCase(fetchProducts.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload ?? "Error desconocido";
+      });
+  },
+});
 
-export const { addProduct, updateProduct, deleteProduct } = productSlice.actions
-export default productSlice.reducer
+export const { setFilters, clearFilters } = productSlice.actions;
+export default productSlice.reducer;

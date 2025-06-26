@@ -4,7 +4,7 @@ import type { RootState } from '../../store'
 import { useState } from 'react'
 import type { Purchase, PurchaseDetail } from '../../features/purchases/types'
 import { registerPurchase } from '../../features/purchases/purchaseSlice'
-import { updateProduct } from '../../features/products/productSlice'
+// import { updateProduct } from '../../features/products/productSlice'
 
 const RegisterPurchase = () => {
   const dispatch = useDispatch()
@@ -48,25 +48,25 @@ const RegisterPurchase = () => {
     dispatch(registerPurchase(newPurchase))
 
     // Aumentar stock de cada producto
-    details.forEach(d => {
-      const product = products.find(p => p.id === d.productId)
-      if (product) {
-        dispatch(updateProduct({
-          ...product,
-          stock: product.stock + d.quantity
-        }))
-      }
-    })
+    // details.forEach(d => {
+    //   const product = products.find(p => p.id === d.productId)
+    //   if (product) {
+    //     dispatch(updateProduct({
+    //       ...product,
+    //       stock: product.stock + d.quantity
+    //     }))
+    //   }
+    // })
 
     form.resetFields()
     setDetails([])
     message.success('Compra registrada con éxito')
   }
 
-  const productOptions = products.map(p => ({
-    label: `${p.name} (${p.unit})`,
-    value: p.id,
-  }))
+  // const productOptions = products.map(p => ({
+  //   label: `${p.name} (${p.unit})`,
+  //   value: p.id,
+  // }))
 
   return (
     <div className="p-8">
@@ -83,7 +83,7 @@ const RegisterPurchase = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <Form.Item label="Producto" name="productId" rules={[{ required: true }]}>
-              <Select options={productOptions} placeholder="Selecciona producto" />
+              {/* <Select options={productOptions} placeholder="Selecciona producto" /> */}
             </Form.Item>
             <Form.Item label="Cantidad" name="quantity" rules={[{ required: true }]}>
               <InputNumber className="w-full" min={1} />
@@ -108,7 +108,7 @@ const RegisterPurchase = () => {
             Agregar producto a la compra
           </Button>
 
-          <Table
+          {/* <Table
             dataSource={details.map(d => {
               const product = products.find(p => p.id === d.productId)
               return {
@@ -135,7 +135,7 @@ const RegisterPurchase = () => {
                 )
               }
             ]}
-          />
+          /> */}
 
           <div className="text-right mt-4 font-semibold text-lg">
             Total: ${calculateTotal()}

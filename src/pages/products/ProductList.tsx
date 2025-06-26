@@ -1,179 +1,220 @@
+// src/pages/products/ProductList.tsx
+import React, { useEffect } from "react";
 import {
   Button,
-  Form,
   Input,
   InputNumber,
   Modal,
-  Select,
+  Popconfirm,
+  Row,
+  Col,
   Table,
   Tag,
-  Popconfirm,
+  Form,
+  Select,
   message,
+  Card,
 } from "antd";
-import { useDispatch, useSelector } from "react-redux";
-import { useState } from "react";
-import type { RootState } from "../../store";
-import type { Product } from "../../features/products/types";
+import { useAppDispatch, useAppSelector } from "../../store/index";
 import {
-  addProduct,
-  updateProduct,
-  deleteProduct,
+  fetchProducts,
+  setFilters,
+  clearFilters,
 } from "../../features/products/productSlice";
+// import {
+//   deleteProduct,
+//   updateProduct,
+//   addProduct,
+// } from "@/features/products/productSlice";
+import type { Product } from "../../features/products/types";
+import type { RootState } from "../../store";
+import ProductForm from "../../components/products/ProductForm"; // extrae el formulario a su propio componente
 
-const ProductList = () => {
-  const products = useSelector((state: RootState) => state.products);
-  const dispatch = useDispatch();
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [form] = Form.useForm();
+const { Option } = Select;
 
-  const showCreateModal = () => {
-    setEditingProduct(null);
-    form.resetFields();
-    setIsModalOpen(true);
+const ProductList: React.FC = () => {
+  const dispatch = useAppDispatch();
+  const { items, loading, error, filters } = useAppSelector(
+    (state: RootState) => state.products
+  );
+  // const { categories } = useAppSelector((state: RootState) => state.categories);
+
+  const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const [editingProduct, setEditingProduct] = React.useState<Product | null>(
+    null
+  );
+
+  // Carga inicial y cuando cambian los filtros
+  useEffect(() => {
+    dispatch(fetchProducts(filters));
+  }, [dispatch, filters]);
+
+  // Control de filtros
+  const onFinishFilters = (values: any) => {
+    dispatch(setFilters(values));
+  };
+  const onClearFilters = () => {
+    dispatch(clearFilters());
   };
 
-  const showEditModal = (product: Product) => {
-    setEditingProduct(product);
-    form.setFieldsValue(product);
-    setIsModalOpen(true);
-  };
-
+  // CRUD local + llamada a thunks (puedes reemplazar add/update/delete por sus thunks)
   const handleDelete = (id: number) => {
-    dispatch(deleteProduct(id));
+    // dispatch(deleteProduct(id));
     message.success("Producto eliminado");
   };
 
-  const handleCancel = () => {
+  const handleShowModal = (product?: Product) => {
+    setEditingProduct(product ?? null);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setEditingProduct(null);
     setIsModalOpen(false);
-    form.resetFields();
   };
 
-  const onFinish = (values: any) => {
-    if (editingProduct) {
-      dispatch(updateProduct({ ...editingProduct, ...values }));
-    } else {
-      dispatch(addProduct({ ...values, id: Date.now() }));
-    }
-    handleCancel();
-  };
-
+  // columnas de la tabla
   const columns = [
-    {
-      title: "Nombre",
-      dataIndex: "name",
-      key: "name",
-    },
+    { title: "Nombre", dataIndex: "name", key: "name" },
     {
       title: "Unidad",
       dataIndex: "unit",
       key: "unit",
-      render: (unit: string) => <Tag>{unit}</Tag>,
+      render: (u: string) => <Tag>{u}</Tag>,
     },
     {
       title: "Stock",
       dataIndex: "stock",
       key: "stock",
-      render: (stock: number) =>
-        stock < 10 ? <Tag color="red">{stock} ⚠</Tag> : stock,
+      render: (s: number) =>
+        s < 10 ? (
+          <Tag color="red">
+            {s} <span role="img">⚠️</span>
+          </Tag>
+        ) : (
+          s
+        ),
     },
     {
-      title: "Precio Compra",
+      title: "P. Compra",
       dataIndex: "purchasePrice",
       key: "purchasePrice",
-      render: (value: number) => `$${value.toLocaleString()}`,
+      render: (v: number) => `$${v.toLocaleString()}`,
     },
     {
-      title: "Precio Venta",
+      title: "P. Venta",
       dataIndex: "salePrice",
       key: "salePrice",
-      render: (value: number) => `$${value.toLocaleString()}`,
+      render: (v: number) => `$${v.toLocaleString()}`,
     },
     {
       title: "Acciones",
       key: "actions",
       render: (_: any, record: Product) => (
-        <div className="flex gap-2">
-          <Button type="link" onClick={() => showEditModal(record)}>
+        <>
+          <Button type="link" onClick={() => handleShowModal(record)}>
             Editar
           </Button>
           <Popconfirm
-            title="¿Estás seguro de eliminar este producto?"
+            title="Eliminar producto?"
+            onConfirm={() => handleDelete(record.id)}
             okText="Sí"
             cancelText="No"
-            onConfirm={() => handleDelete(record.id)}
           >
             <Button danger type="link">
               Eliminar
             </Button>
           </Popconfirm>
-        </div>
+        </>
       ),
     },
   ];
 
   return (
+    <div className="p-4">
+      <Row justify="space-between" align="middle" className="mb-4">
+        <Col>
+          <h1 className="text-2xl font-semibold">Gestión de Productos</h1>
+          <p className="text-gray-600">
+            Administra tu inventario de perfumes y fragancias
+          </p>
+        </Col>
+        <Col>
+          <Button type="primary" onClick={() => handleShowModal()} size="small">
+            Agregar Producto
+          </Button>
+        </Col>
+      </Row>
 
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-semibold">Gestión de Productos</h1>
-        <Button type="primary" onClick={showCreateModal}>
-          Agregar Producto
-        </Button>
-      </div>
-
-      <Table dataSource={products} columns={columns} rowKey="id" />
-
-      <Modal
-        title={editingProduct ? "Editar Producto" : "Agregar Producto"}
-        open={isModalOpen}
-        onCancel={handleCancel}
-        footer={null}
-      >
-        <Form form={form} layout="vertical" onFinish={onFinish}>
-          <Form.Item label="Nombre" name="name" rules={[{ required: true }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item label="Descripción" name="description">
-            <Input.TextArea />
-          </Form.Item>
-          <Form.Item label="Unidad" name="unit" rules={[{ required: true }]}>
-            <Select
-              options={[
-                { label: "Mililitros (ml)", value: "ml" },
-                { label: "Gramos (gr)", value: "gr" },
-                { label: "Unidad", value: "unit" },
-              ]}
+      {/* Formulario de filtros */}
+      <Card className="mb-12 mt-1.5 shadow-sm">
+        <Form
+          layout="inline"
+          initialValues={filters}
+          onFinish={onFinishFilters}
+          className="mb-4 mt-2.5"
+        >
+          <Form.Item name="name">
+            <Input
+              placeholder="Filtrar por nombre"
+              allowClear
+              size="small"
+              style={{ width: 200 }}
             />
           </Form.Item>
-          <Form.Item
-            label="Stock inicial"
-            name="stock"
-            rules={[{ required: true }]}
-          >
-            <InputNumber min={0} className="w-full" />
-          </Form.Item>
-          <Form.Item
-            label="Precio de compra"
-            name="purchasePrice"
-            rules={[{ required: true }]}
-          >
-            <InputNumber min={0} className="w-full" />
-          </Form.Item>
-          <Form.Item
-            label="Precio de venta"
-            name="salePrice"
-            rules={[{ required: true }]}
-          >
-            <InputNumber min={0} className="w-full" />
+          <Form.Item name="stockMin">
+            <Input
+              placeholder="Stock"
+              size="small"
+              style={{ width: 200 }}
+              onKeyDown={(e) => {
+                // Solo permite números, backspace, delete, tab, escape, enter y teclas de navegación
+                if (
+                  !/[0-9]/.test(e.key) && 
+                  !['Backspace', 'Delete', 'Tab', 'Escape', 'Enter', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)
+                ) {
+                  e.preventDefault();
+                }
+              }}
+            />
           </Form.Item>
           <Form.Item>
-            <Button type="primary" htmlType="submit" block>
-              Guardar producto
+            <Button htmlType="submit" type="primary" size="small">
+              Aplicar
             </Button>
           </Form.Item>
+          <Form.Item>
+            <Button onClick={onClearFilters} size="small">Limpiar</Button>
+          </Form.Item>
         </Form>
+      </Card>
+
+      {/* Tabla de productos */}
+      <Table
+        dataSource={items}
+        columns={columns}
+        rowKey="id"
+        loading={loading}
+        scroll={{ x: true }}
+      />
+
+      {/* Modal genérico con el form */}
+      <Modal
+        title={editingProduct ? "Editar Producto" : "Nuevo Producto"}
+        open={isModalOpen}
+        onCancel={handleCloseModal}
+        footer={null}
+      >
+        <ProductForm
+          product={editingProduct}
+          onSaved={() => {
+            handleCloseModal();
+            dispatch(fetchProducts(filters));
+          }}
+        />
       </Modal>
+
+      {error && <div className="text-red-500 mt-2">{error}</div>}
     </div>
   );
 };
