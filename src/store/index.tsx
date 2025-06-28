@@ -8,6 +8,7 @@ import purchaseReducer from '../features/purchases/purchaseSlice'
 import expenseReducer from '../features/expenses/expenseSlice'
 import salesReducer from '../features/sales/salesSlice'
 import categoriesReducer from '../features/categories/categoriesSlice'
+import unitsReducer from '../features/units/unitsSlice'
 
 export const store = configureStore({
   reducer: {
@@ -18,6 +19,7 @@ export const store = configureStore({
     expenses: expenseReducer,
     sales: salesReducer,
     categories: categoriesReducer,
+    units: unitsReducer,
   },
 })
 

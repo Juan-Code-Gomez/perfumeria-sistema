@@ -67,10 +67,16 @@ const AppLayout: React.FC = () => {
       onClick: () => navigate('/usuarios'),
     },
     {
-      key: '/categorys',
+      key: '/categories',
       icon: <GiftOutlined />,
       label: 'Categorías',
-      onClick: () => navigate('/categorys'),
+      onClick: () => navigate('/categories'),
+    },
+        {
+      key: '/units',
+      icon: <GiftOutlined />,
+      label: 'Unidades',
+      onClick: () => navigate('/units'),
     },
   ];
 

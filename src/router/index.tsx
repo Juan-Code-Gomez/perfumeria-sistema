@@ -18,6 +18,7 @@ import SalesControl from "../pages/sales/SalesControl";
 import Unauthorized from "../pages/Unauthorized";
 import AppLayout from "../components/AppLayout";
 import CategoriesList from "../pages/categories/CategoriesList";
+import UnitList from "../pages/units/UnitsList";
 
 export const router = createBrowserRouter([
   {
@@ -76,6 +77,7 @@ export const router = createBrowserRouter([
         element: <SalesControl />,
       },
       { path: "/categories", element: <CategoriesList /> },
+      { path: "/units", element: <UnitList /> },
       { path: "/unauthorized", element: <Unauthorized /> },
     ],
   },
