@@ -14,46 +14,85 @@ import {
   Select,
   message,
   Card,
+  Checkbox,
 } from "antd";
 import { useAppDispatch, useAppSelector } from "../../store/index";
 import {
   fetchProducts,
   setFilters,
   clearFilters,
+  setPage
 } from "../../features/products/productSlice";
 // import {
 //   deleteProduct,
 //   updateProduct,
 //   addProduct,
 // } from "@/features/products/productSlice";
-import type { Product } from "../../features/products/types";
+import type { Category, Product, Unit } from "../../features/products/types";
 import type { RootState } from "../../store";
 import ProductForm from "../../components/products/ProductForm"; // extrae el formulario a su propio componente
+import { getCategories } from "../../features/categories/categoriesSlice";
+import { getUnits } from "../../features/units/unitsSlice";
 
 const { Option } = Select;
 
 const ProductList: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { items, loading, error, filters } = useAppSelector(
-    (state: RootState) => state.products
+  const { items, loading, error, filters, page, pageSize, total } =
+    useAppSelector((state: RootState) => state.products);
+  const { listCategories } = useAppSelector(
+    (state: RootState) => state.categories
   );
-  // const { categories } = useAppSelector((state: RootState) => state.categories);
-
+  const { listUnits } = useAppSelector((state: RootState) => state.units);
+  const FILTER_WIDTH = 160;
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [editingProduct, setEditingProduct] = React.useState<Product | null>(
     null
   );
 
+  const [form] = Form.useForm();
+
   // Carga inicial y cuando cambian los filtros
   useEffect(() => {
-    dispatch(fetchProducts(filters));
-  }, [dispatch, filters]);
+    dispatch(fetchProducts({ ...filters, page, pageSize }));
+  }, [dispatch, filters, page, pageSize]);
+
+  useEffect(() => {
+    if (!listCategories?.length) dispatch(getCategories());
+    if (!listUnits?.length) dispatch(getUnits());
+  }, [dispatch, listCategories, listUnits]);
+
+  useEffect(() => {
+    form.setFieldsValue(filters);
+  }, [filters, form]);
 
   // Control de filtros
   const onFinishFilters = (values: any) => {
-    dispatch(setFilters(values));
+    // Limpia valores vacíos para evitar mandar undefined/null innecesarios
+    const cleanValues = { ...values };
+
+    // Convierte precios y IDs a número (los selects devuelven string a veces)
+    if (cleanValues.categoryId)
+      cleanValues.categoryId = Number(cleanValues.categoryId);
+    if (cleanValues.unitId) cleanValues.unitId = Number(cleanValues.unitId);
+    if (cleanValues.salePriceMin)
+      cleanValues.salePriceMin = Number(cleanValues.salePriceMin);
+    if (cleanValues.salePriceMax)
+      cleanValues.salePriceMax = Number(cleanValues.salePriceMax);
+
+    // Solo manda filtros relevantes (opcional)
+    Object.keys(cleanValues).forEach((key) => {
+      if (cleanValues[key] === "" || cleanValues[key] === undefined) {
+        delete cleanValues[key];
+      }
+    });
+
+    // Actualiza filtros en el slice y dispara fetch
+    dispatch(setFilters(cleanValues));
+    // ¡No llames fetchProducts aquí! Ya lo tienes en el useEffect que depende de filters
   };
   const onClearFilters = () => {
+    form.resetFields();
     dispatch(clearFilters());
   };
 
@@ -75,12 +114,38 @@ const ProductList: React.FC = () => {
 
   // columnas de la tabla
   const columns = [
+    {
+      title: "Imagen",
+      dataIndex: "imageUrl",
+      key: "imageUrl",
+      render: (url: string) =>
+        url ? (
+          <img
+            src={url}
+            alt="Imagen"
+            style={{
+              width: 40,
+              height: 40,
+              objectFit: "cover",
+              borderRadius: 4,
+            }}
+          />
+        ) : (
+          <Tag color="default">Sin imagen</Tag>
+        ),
+    },
     { title: "Nombre", dataIndex: "name", key: "name" },
     {
       title: "Unidad",
       dataIndex: "unit",
       key: "unit",
-      render: (u: string) => <Tag>{u}</Tag>,
+      render: (u: Unit) => <Tag>{u.name}</Tag>,
+    },
+    {
+      title: "Categoría",
+      dataIndex: "category",
+      key: "category",
+      render: (c: Category) => <Tag>{c?.name}</Tag>,
     },
     {
       title: "Stock",
@@ -106,6 +171,22 @@ const ProductList: React.FC = () => {
       dataIndex: "salePrice",
       key: "salePrice",
       render: (v: number) => `$${v.toLocaleString()}`,
+    },
+    {
+      title: "Utilidad",
+      dataIndex: "utilidad",
+      key: "utilidad",
+      render: (v: number) => (v !== undefined ? `$${v.toLocaleString()}` : "-"),
+    },
+    {
+      title: "Margen",
+      dataIndex: "margen",
+      key: "margen",
+      render: (v: number) => (
+        <Tag color={v >= 50 ? "green" : v >= 20 ? "orange" : "red"}>
+          {v ? `${v.toFixed(1)}%` : "-"}
+        </Tag>
+      ),
     },
     {
       title: "Acciones",
@@ -148,45 +229,86 @@ const ProductList: React.FC = () => {
 
       {/* Formulario de filtros */}
       <Card className="mb-12 mt-1.5 shadow-sm">
-        <Form
-          layout="inline"
-          initialValues={filters}
-          onFinish={onFinishFilters}
-          className="mb-4 mt-2.5"
-        >
-          <Form.Item name="name">
-            <Input
-              placeholder="Filtrar por nombre"
-              allowClear
-              size="small"
-              style={{ width: 200 }}
-            />
-          </Form.Item>
-          <Form.Item name="stockMin">
-            <Input
-              placeholder="Stock"
-              size="small"
-              style={{ width: 200 }}
-              onKeyDown={(e) => {
-                // Solo permite números, backspace, delete, tab, escape, enter y teclas de navegación
-                if (
-                  !/[0-9]/.test(e.key) && 
-                  !['Backspace', 'Delete', 'Tab', 'Escape', 'Enter', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)
-                ) {
-                  e.preventDefault();
-                }
-              }}
-            />
-          </Form.Item>
-          <Form.Item>
-            <Button htmlType="submit" type="primary" size="small">
-              Aplicar
-            </Button>
-          </Form.Item>
-          <Form.Item>
-            <Button onClick={onClearFilters} size="small">Limpiar</Button>
-          </Form.Item>
-        </Form>
+        <Card className="mb-12 mt-1.5 shadow-sm">
+          <Form
+            layout="inline"
+            initialValues={form}
+            onFinish={onFinishFilters}
+            className="mb-4 mt-2.5"
+          >
+            <Form.Item name="name">
+              <Input
+                placeholder="Buscar producto..."
+                allowClear
+                size="small"
+                style={{ width: FILTER_WIDTH }}
+              />
+            </Form.Item>
+            <Form.Item name="categoryId">
+              <Select
+                placeholder="Categoría"
+                allowClear
+                size="small"
+                style={{ width: FILTER_WIDTH }}
+              >
+                {listCategories?.map((cat) => (
+                  <Option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </Option>
+                ))}
+              </Select>
+            </Form.Item>
+            <Form.Item name="unitId">
+              <Select
+                placeholder="Unidad"
+                allowClear
+                size="small"
+                style={{ width: FILTER_WIDTH }}
+              >
+                {listUnits?.map((unit) => (
+                  <Option key={unit.id} value={unit.id}>
+                    {unit.name}
+                  </Option>
+                ))}
+              </Select>
+            </Form.Item>
+            <Form.Item name="onlyLowStock" valuePropName="checked">
+              <Checkbox>Stock bajo</Checkbox>
+            </Form.Item>
+            <Form.Item name="salePriceMin">
+              <Input
+                placeholder="Precio mín."
+                type="number"
+                min={0}
+                size="small"
+                style={{ width: FILTER_WIDTH }}
+                inputMode="numeric"
+                pattern="[0-9]*"
+              />
+            </Form.Item>
+            <Form.Item name="salePriceMax">
+              <Input
+                placeholder="Precio máx."
+                type="number"
+                min={0}
+                size="small"
+                style={{ width: FILTER_WIDTH }}
+                inputMode="numeric"
+                pattern="[0-9]*"
+              />
+            </Form.Item>
+            <Form.Item>
+              <Button htmlType="submit" type="primary" size="small">
+                Aplicar
+              </Button>
+            </Form.Item>
+            <Form.Item>
+              <Button onClick={onClearFilters} size="small">
+                Limpiar
+              </Button>
+            </Form.Item>
+          </Form>
+        </Card>
       </Card>
 
       {/* Tabla de productos */}
@@ -196,6 +318,20 @@ const ProductList: React.FC = () => {
         rowKey="id"
         loading={loading}
         scroll={{ x: true }}
+        rowClassName={(record) =>
+          record.stock <= (record.minStock ?? 0) ? "bg-red-50" : ""
+        }
+        pagination={{
+          current: page,
+          pageSize,
+          total,
+          showSizeChanger: true,
+          pageSizeOptions: ["5", "10", "20", "50"],
+          size: "small",
+          onChange: (newPage, newPageSize) => {
+            dispatch(setPage({ page: newPage, pageSize: newPageSize || 10 }));
+          },
+        }}
       />
 
       {/* Modal genérico con el form */}
@@ -209,7 +345,7 @@ const ProductList: React.FC = () => {
           product={editingProduct}
           onSaved={() => {
             handleCloseModal();
-            dispatch(fetchProducts(filters));
+            // dispatch(fetchProducts(filters));
           }}
         />
       </Modal>
