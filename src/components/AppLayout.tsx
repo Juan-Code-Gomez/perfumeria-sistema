@@ -52,7 +52,7 @@ const AppLayout: React.FC = () => {
       key: '/compras',
       icon: <GiftOutlined />,
       label: 'Compras',
-      onClick: () => navigate('/compras'),
+      onClick: () => navigate('/purchases'),
     },
     {
       key: '/products',
