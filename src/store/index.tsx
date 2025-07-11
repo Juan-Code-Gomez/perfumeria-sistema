@@ -10,6 +10,7 @@ import salesReducer from '../features/sales/salesSlice'
 import categoriesReducer from '../features/categories/categoriesSlice'
 import unitsReducer from '../features/units/unitsSlice'
 import suppliersReducer from '../features/suppliers/supplierSlice'
+import usersReducer from '../features/users/userSlice'
 
 export const store = configureStore({
   reducer: {
@@ -22,6 +23,7 @@ export const store = configureStore({
     categories: categoriesReducer,
     units: unitsReducer,
     suppliers: suppliersReducer,
+    users: usersReducer,
   },
 })
 

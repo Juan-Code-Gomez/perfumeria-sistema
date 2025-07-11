@@ -15,6 +15,7 @@ import CategoriesList from "../pages/categories/CategoriesList";
 import UnitList from "../pages/units/UnitsList";
 import PurchaseList from "../pages/purchases/PurchaseList";
 import SaleList from "../pages/sales/SaleList";
+import UserList from "../pages/users/UserList";
 
 export const router = createBrowserRouter([
   {
@@ -25,40 +26,47 @@ export const router = createBrowserRouter([
         children: [
           { path: "/", element: <DashboardHome /> },
           { path: "/ventas", element: <SaleList /> },
+          {
+            path: "/products",
+            element: <ProductList />,
+          },
+          {
+            path: "/purchases",
+            element: <PurchaseList />,
+          },
+          {
+            path: "/providers",
+            element: <ProviderList />,
+          },
+          {
+            path: "/expenses/new",
+            element: <ExpenseForm />,
+          },
+          {
+            path: "/expenses/history",
+            element: <ExpenseHistory />,
+          },
+          {
+            path: "/reports/profit-summary",
+            element: <ProfitSummary />,
+          },
+          { path: "/categories", element: <CategoriesList /> },
+          { path: "/units", element: <UnitList /> },
         ],
       },
 
       {
-        path: "/products",
-        element: <ProductList />,
+        element: <PrivateRoute allowedRoles={["ADMIN"]} />, // SOLO ADMIN
+        children: [
+          { path: "/users", element: <UserList /> },
+          // Si tienes otras rutas solo admin, aquí
+        ],
       },
-            {
-        path: "/purchases",
-        element: <PurchaseList />,
-      },
-      {
-        path: "/providers",
-        element: <ProviderList />,
-      },
-      {
-        path: "/expenses/new",
-        element: <ExpenseForm />,
-      },
-      {
-        path: "/expenses/history",
-        element: <ExpenseHistory />,
-      },
-      {
-        path: "/reports/profit-summary",
-        element: <ProfitSummary />,
-      },
-      { path: "/categories", element: <CategoriesList /> },
-      { path: "/units", element: <UnitList /> },
-      { path: "/unauthorized", element: <Unauthorized /> },
     ],
   },
   {
     path: "/login",
     element: <Login />,
   },
+  { path: "/unauthorized", element: <Unauthorized /> },
 ]);
