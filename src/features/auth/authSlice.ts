@@ -26,9 +26,13 @@ export interface AuthState {
 //
 // 2. Creamos nuestro initialState tipado
 //
+
+const userInStorage = localStorage.getItem("user");
+const tokenInStorage = localStorage.getItem("token");
+
 const initialState: AuthState = {
-  user: null,
-  token: null,
+  user: userInStorage ? JSON.parse(userInStorage) : null,
+  token: tokenInStorage,
   loading: false,
   error: null,
 };
@@ -43,20 +47,17 @@ export const login = createAsyncThunk<
   { username: string; password: string },
   // 3) Tipo de rejectWithValue
   { rejectValue: string }
->(
-  "auth/login",
-  async (credentials, thunkAPI) => {
-    try {
-      const data = await loginService(credentials);
-      // suponemos que data tiene la forma: { user: User; token: string }
-      return data;
-    } catch (error: any) {
-      return thunkAPI.rejectWithValue(
-        error.response?.data?.message || "Error al iniciar sesión"
-      );
-    }
+>("auth/login", async (credentials, thunkAPI) => {
+  try {
+    const data = await loginService(credentials);
+    // suponemos que data tiene la forma: { user: User; token: string }
+    return data;
+  } catch (error: any) {
+    return thunkAPI.rejectWithValue(
+      error.response?.data?.message || "Error al iniciar sesión"
+    );
   }
-);
+});
 
 //
 // 4. Slice propiamente dicho, tipado con AuthState
@@ -69,6 +70,7 @@ const authSlice = createSlice({
       state.user = null;
       state.token = null;
       localStorage.removeItem("token");
+      localStorage.removeItem("user");
     },
   },
   extraReducers: (builder) => {
@@ -77,15 +79,20 @@ const authSlice = createSlice({
         state.loading = true;
         state.error = null;
       })
-      .addCase(login.fulfilled, (state, action: PayloadAction<{ user: User; token: string }>) => {
-        state.loading = false;
-        state.user = action.payload.user;
-        state.token = action.payload.token;
-        localStorage.setItem("token", action.payload.token);
-      })
+      .addCase(
+        login.fulfilled,
+        (state, action: PayloadAction<{ user: User; token: string }>) => {
+          state.loading = false;
+          state.user = action.payload.user;
+          state.token = action.payload.token;
+          localStorage.setItem("token", action.payload.token);
+          localStorage.setItem("user", JSON.stringify(action.payload.user));
+        }
+      )
       .addCase(login.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload ?? action.error.message ?? "Error desconocido";
+        state.error =
+          action.payload ?? action.error.message ?? "Error desconocido";
       });
   },
 });

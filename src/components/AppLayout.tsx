@@ -84,7 +84,7 @@ const AppLayout: React.FC = () => {
     <Layout style={{ minHeight: '100vh' }}>
       <Sider breakpoint="lg" collapsedWidth="0">
         <div className="logo text-white text-center py-4">
-          <h2 style={{ color: '#fff', margin: 0 }}>Milán</h2>
+          <h2 style={{ color: '#fff', margin: 0 }}>Milán Fragancias</h2>
         </div>
         <Menu
           theme="dark"

@@ -1,20 +1,39 @@
 // src/pages/Login.tsx
-import { Button, Form, Input, Typography } from "antd";
-import { useNavigate } from "react-router-dom";
-import { useAppDispatch } from "../store";
+import { Button, Form, Input, Typography, message } from "antd";
+import { Navigate, useNavigate } from "react-router-dom";
+import { useAppDispatch, useAppSelector } from "../store";
 import { login } from "../features/auth/authSlice";
 import "./Login.css"; // archivo de estilos personalizado
+import { useState } from "react";
 
 const Login = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const token = useAppSelector((state) => state.auth.token) || localStorage.getItem("token");
+  
+  
+  if (token) {
+    // Ya logueado, redirecciona
+    return <Navigate to="/" replace />;
+  }
 
   const onFinish = async (values: any) => {
+    setLoading(true);
     try {
       await dispatch(login(values)).unwrap();
       navigate("/");
-    } catch (error) {
-      console.error("Error al iniciar sesión:", error);
+    } catch (error: any) {
+      message.destroy();
+      if (error?.response?.data?.message) {
+        message.error(error.response.data.message);
+      } else if (typeof error === "string") {
+        message.error(error);
+      } else {
+        message.error("Credenciales incorrectas. Intenta nuevamente.");
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -49,7 +68,7 @@ const Login = () => {
             >
               <Input.Password placeholder="Ingresa tu contraseña" />
             </Form.Item>
-            <Button type="primary" htmlType="submit" block>
+            <Button type="primary" htmlType="submit" block loading={loading}>
               Iniciar sesión
             </Button>
           </Form>
