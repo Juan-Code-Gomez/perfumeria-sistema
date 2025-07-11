@@ -11,6 +11,7 @@ import categoriesReducer from '../features/categories/categoriesSlice'
 import unitsReducer from '../features/units/unitsSlice'
 import suppliersReducer from '../features/suppliers/supplierSlice'
 import usersReducer from '../features/users/userSlice'
+import rolesReducer from '../features/roles/rolesSlice'
 
 export const store = configureStore({
   reducer: {
@@ -24,6 +25,7 @@ export const store = configureStore({
     units: unitsReducer,
     suppliers: suppliersReducer,
     users: usersReducer,
+    roles: rolesReducer,
   },
 })
 

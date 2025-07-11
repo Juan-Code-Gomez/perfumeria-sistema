@@ -6,4 +6,18 @@ export const getUsers = async () => {
   return res.data;
 };
 
-// (Más adelante: createUser, updateUser, deleteUser, etc.)
+export const createUser = async (user: any) => {
+  const response = await api.post('/users', user);
+  return response.data;
+};
+
+export const updateUser = async (id: number, data: any) => {
+  const response = await api.patch(`/users/${id}`, data);
+  return response.data;
+};
+
+export const deleteUser = async (id: number) => {
+  const response = await api.delete(`/users/${id}`);
+  return response.data;
+};
+
