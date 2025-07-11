@@ -1,15 +1,19 @@
-export interface SaleProductDetail {
-    productId: number
-    quantity: number
-    unitPrice: number
-  }
-  
-  export interface Sale {
-    id: number
-    date: string
-    clientName?: string
-    paymentMethod: 'efectivo' | 'transferencia' | 'otro'
-    userId: number
-    total: number
-    details: SaleProductDetail[]
-  }
+export interface SaleDetail {
+  id: number;
+  saleId: number;
+  productId: number;
+  product: { id: number; name: string };
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+}
+
+export interface Sale {
+  id: number;
+  date: string;
+  customerName?: string;
+  totalAmount: number;
+  paidAmount: number;
+  isPaid: boolean;
+  details: SaleDetail[];
+}
