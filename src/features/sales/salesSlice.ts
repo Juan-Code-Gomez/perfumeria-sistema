@@ -6,19 +6,21 @@ interface SalesState {
   items: Sale[];
   loading: boolean;
   error: string | null;
+  filters: { dateFrom?: string; dateTo?: string };
 }
 
 const initialState: SalesState = {
   items: [],
   loading: false,
   error: null,
+  filters: {},
 };
 
-export const fetchSales = createAsyncThunk<Sale[]>(
+export const fetchSales = createAsyncThunk<Sale[], { dateFrom?: string; dateTo?: string } | undefined>(
   "sales/fetchSales",
-  async (_, thunkAPI) => {
+  async (params, thunkAPI) => {
     try {
-      return await salesService.getSales();
+      return await salesService.getSales(params);
     } catch (err: any) {
       return thunkAPI.rejectWithValue(err.message || "Error al cargar ventas");
     }
@@ -39,7 +41,11 @@ export const createSale = createAsyncThunk<Sale, Sale>(
 const saleSlice = createSlice({
   name: "sales",
   initialState,
-  reducers: {},
+  reducers: {
+        setFilters(state, action) {
+      state.filters = action.payload;
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(fetchSales.pending, (state) => {
@@ -65,4 +71,5 @@ const saleSlice = createSlice({
   },
 });
 
+export const { setFilters } = saleSlice.actions;
 export default saleSlice.reducer;

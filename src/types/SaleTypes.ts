@@ -14,5 +14,6 @@ export interface Sale {
   totalAmount: number;
   paidAmount: number;
   isPaid: boolean;
+  paymentMethod?: string;
   details: SaleDetail[];
 }

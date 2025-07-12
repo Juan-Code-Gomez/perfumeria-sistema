@@ -2,7 +2,9 @@ export interface SaleDetail {
   id: number;
   saleId: number;
   productId: number;
-  product: { id: number; name: string };
+  product: {
+    purchasePrice: number; id: number; name: string 
+};
   quantity: number;
   unitPrice: number;
   totalPrice: number;

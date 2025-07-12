@@ -3,8 +3,8 @@ import type { Sale } from "../types/SaleTypes";
 
 const API_URL = `${import.meta.env.VITE_API_URL}/sales`;
 
-export const getSales = async () => {
-  const res = await axios.get(API_URL);
+export async function getSales (params?: { dateFrom?: string; dateTo?: string }){
+  const res = await axios.get(API_URL, { params });
   return res.data;
 };
 

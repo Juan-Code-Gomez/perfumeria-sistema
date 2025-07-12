@@ -1,6 +1,17 @@
 import React, { useEffect, useState } from "react";
 import {
-  Modal, Form, Input, Select, DatePicker, Button, InputNumber, Table, Row, Col, message, Checkbox,
+  Modal,
+  Form,
+  Input,
+  Select,
+  DatePicker,
+  Button,
+  InputNumber,
+  Table,
+  Row,
+  Col,
+  message,
+  Checkbox,
 } from "antd";
 import dayjs from "dayjs";
 import { useAppDispatch, useAppSelector } from "../../store";
@@ -59,7 +70,9 @@ const SaleForm: React.FC<Props> = ({ open, onClose, onSaved }) => {
       return;
     }
     if (rows.some((r) => !r.productId || r.quantity <= 0 || r.unitPrice < 0)) {
-      message.warning("Verifica que todos los productos, cantidades y precios sean válidos");
+      message.warning(
+        "Verifica que todos los productos, cantidades y precios sean válidos"
+      );
       return;
     }
 
@@ -79,6 +92,7 @@ const SaleForm: React.FC<Props> = ({ open, onClose, onSaved }) => {
           totalAmount: totalVenta,
           paidAmount: Number(values.paidAmount || 0),
           isPaid: !!values.isPaid,
+          paymentMethod: values.paymentMethod,
           details,
         })
       ).unwrap();
@@ -245,6 +259,22 @@ const SaleForm: React.FC<Props> = ({ open, onClose, onSaved }) => {
                 ${totalVenta.toLocaleString()}
               </span>
             </div>
+          </Col>
+          <Col xs={24} sm={8}>
+            <Form.Item
+              label="Método de pago"
+              name="paymentMethod"
+              rules={[
+                { required: true, message: "Selecciona el método de pago" },
+              ]}
+            >
+              <Select placeholder="Selecciona método de pago">
+                <Option value="Efectivo">Efectivo</Option>
+                <Option value="Transferencia">Transferencia</Option>
+                <Option value="Tarjeta">Tarjeta</Option>
+                <Option value="Otro">Otro</Option>
+              </Select>
+            </Form.Item>
           </Col>
         </Row>
         <Row>

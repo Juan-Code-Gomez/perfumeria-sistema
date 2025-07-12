@@ -1,32 +1,29 @@
 import React, { useEffect, useState } from "react";
-import {
-  Button,
-  Table,
-  Tag,
-  Modal,
-  Row,
-  Col,
-  message,
-  Popconfirm,
-  Card,
-} from "antd";
+import { Button, Table, Tag, Row, Col, message, Popconfirm, Card, DatePicker } from "antd";
 import { useAppDispatch, useAppSelector } from "../../store";
-import { fetchSales } from "../../features/sales/salesSlice";
+import { fetchSales, setFilters } from "../../features/sales/salesSlice";
 import type { RootState } from "../../store";
 import SaleForm from "../../components/sales/SaleForm";
 import dayjs from "dayjs";
 import SaleDetailModal from "../../components/sales/SaleDetailModal";
+const { RangePicker } = DatePicker;
+
 
 const SaleList: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { items, loading, error } = useAppSelector((s: RootState) => s.sales);
+  const { items, loading, error, filters  } = useAppSelector((s: RootState) => s.sales);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedSale, setSelectedSale] = useState<any>(null);
+  const [range, setRange] = useState<[dayjs.Dayjs, dayjs.Dayjs] | null>(null);
 
   useEffect(() => {
-    dispatch(fetchSales());
+    if (!filters.dateFrom || !filters.dateTo) {
+      const today = dayjs().format("YYYY-MM-DD");
+      dispatch(fetchSales({ dateFrom: today, dateTo: today }));
+      dispatch(setFilters({ dateFrom: today, dateTo: today }));
+    }
   }, [dispatch]);
 
   const handleViewDetail = (sale: any) => {
@@ -46,6 +43,17 @@ const SaleList: React.FC = () => {
     handleCloseModal();
   };
 
+    const handleDateChange = (dates: any, dateStrings: [string, string]) => {
+    if (dates && dateStrings[0] && dateStrings[1]) {
+      dispatch(fetchSales({ dateFrom: dateStrings[0], dateTo: dateStrings[1] }));
+      dispatch(setFilters({ dateFrom: dateStrings[0], dateTo: dateStrings[1] }));
+    }
+  };
+
+    const totalVentas = items.reduce((sum, v) => sum + (v.totalAmount || 0), 0);
+  const totalPagado = items.reduce((sum, v) => sum + (v.paidAmount || 0), 0);
+  const totalPendiente = totalVentas - totalPagado;
+
   const handleDelete = async (id: number) => {
     try {
       //   await dispatch(deleteSale(id)).unwrap();
@@ -53,6 +61,16 @@ const SaleList: React.FC = () => {
       dispatch(fetchSales());
     } catch (err: any) {
       message.error(err.message || "Error al eliminar venta");
+    }
+  };
+
+  const handleRangeChange = (dates: any) => {
+    setRange(dates);
+    if (dates) {
+      dispatch(fetchSales());
+    } else {
+      // Si borra filtro, vuelve a cargar HOY
+      dispatch(fetchSales());
     }
   };
 
@@ -88,6 +106,12 @@ const SaleList: React.FC = () => {
             <span>${v.toLocaleString()}</span>
           </>
         ),
+    },
+    {
+      title: "Método de pago",
+      dataIndex: "paymentMethod",
+      key: "paymentMethod",
+      render: (v: string) => v || <Tag color="default">No registrado</Tag>,
     },
     {
       title: "Acciones",
@@ -130,6 +154,22 @@ const SaleList: React.FC = () => {
           </Button>
         </Col>
       </Row>
+
+            <Card className="mb-4">
+        <RangePicker
+          allowClear={false}
+          value={[
+            filters.dateFrom ? dayjs(filters.dateFrom) : undefined,
+            filters.dateTo ? dayjs(filters.dateTo) : undefined,
+          ]}
+          onChange={handleDateChange}
+          format="YYYY-MM-DD"
+          style={{ marginRight: 16 }}
+        />
+        <b>Ventas totales:</b> ${totalVentas.toLocaleString()} &nbsp;&nbsp;
+        <b>Pagado:</b> ${totalPagado.toLocaleString()} &nbsp;&nbsp;
+        <b>Pendiente:</b> <span style={{ color: totalPendiente > 0 ? 'red' : 'green' }}>${totalPendiente.toLocaleString()}</span>
+      </Card>
 
       <Card className="shadow-sm">
         <Table
