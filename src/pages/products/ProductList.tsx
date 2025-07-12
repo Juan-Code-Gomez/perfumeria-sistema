@@ -1,9 +1,8 @@
 // src/pages/products/ProductList.tsx
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Button,
   Input,
-  InputNumber,
   Modal,
   Popconfirm,
   Row,
@@ -21,7 +20,7 @@ import {
   fetchProducts,
   setFilters,
   clearFilters,
-  setPage
+  setPage,
 } from "../../features/products/productSlice";
 // import {
 //   deleteProduct,
@@ -33,6 +32,7 @@ import type { RootState } from "../../store";
 import ProductForm from "../../components/products/ProductForm"; // extrae el formulario a su propio componente
 import { getCategories } from "../../features/categories/categoriesSlice";
 import { getUnits } from "../../features/units/unitsSlice";
+import BulkUploadProducts from "../../components/products/BulkUploadProducts";
 
 const { Option } = Select;
 
@@ -49,6 +49,7 @@ const ProductList: React.FC = () => {
   const [editingProduct, setEditingProduct] = React.useState<Product | null>(
     null
   );
+  const [openBulkModal, setOpenBulkModal] = useState(false);
 
   const [form] = Form.useForm();
 
@@ -58,9 +59,16 @@ const ProductList: React.FC = () => {
   }, [dispatch, filters, page, pageSize]);
 
   useEffect(() => {
-    if (!listCategories?.length) dispatch(getCategories());
-    if (!listUnits?.length) dispatch(getUnits());
-  }, [dispatch, listCategories, listUnits]);
+    // Solo cargar categorías si nunca se han cargado
+    if (!listCategories || listCategories.length === 0) {
+      dispatch(getCategories());
+    }
+    if (!listUnits || listUnits.length === 0) {
+      dispatch(getUnits());
+    }
+    // Solo se ejecuta una vez al inicio
+    // eslint-disable-next-line
+  }, [dispatch]);
 
   useEffect(() => {
     form.setFieldsValue(filters);
@@ -221,9 +229,32 @@ const ProductList: React.FC = () => {
           </p>
         </Col>
         <Col>
-          <Button type="primary" onClick={() => handleShowModal()} size="small">
+          <Button
+            href="/plantilla-carga-masiva-productos.xlsx"
+            target="_blank"
+            style={{ marginRight: 8 }}
+          >
+            Descargar plantilla
+          </Button>
+          <Button
+            onClick={() => setOpenBulkModal(true)}
+            style={{ marginRight: 8 }}
+          >
+            Carga masiva
+          </Button>
+          <Button
+            style={{ marginLeft: "6px" }}
+            type="primary"
+            onClick={() => handleShowModal()}
+            size="small"
+          >
             Agregar Producto
           </Button>
+          <BulkUploadProducts
+            open={openBulkModal}
+            onClose={() => setOpenBulkModal(false)}
+            onUploaded={() => dispatch(fetchProducts(filters))}
+          />
         </Col>
       </Row>
 
