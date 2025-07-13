@@ -5,8 +5,6 @@ import Login from "../pages/Login";
 import PrivateRoute from "../components/PrivateRoute";
 import ProductList from "../pages/products/ProductList";
 import ProviderList from "../pages/providers/ProviderList";
-import ExpenseForm from "../pages/expenses/ExpenseForm";
-import ExpenseHistory from "../pages/expenses/ExpenseHistory";
 import ProfitSummary from "../pages/reports/ProfitSummary";
 import DashboardHome from "../pages/DashboardHome";
 import Unauthorized from "../pages/Unauthorized";
@@ -16,6 +14,8 @@ import UnitList from "../pages/units/UnitsList";
 import PurchaseList from "../pages/purchases/PurchaseList";
 import SaleList from "../pages/sales/SaleList";
 import UserList from "../pages/users/UserList";
+import CashClosingPage from "../pages/cashClosing/CashClosingPage";
+import ExpenseList from "../pages/expenses/ExpenseList";
 
 export const router = createBrowserRouter([
   {
@@ -39,19 +39,13 @@ export const router = createBrowserRouter([
             element: <ProviderList />,
           },
           {
-            path: "/expenses/new",
-            element: <ExpenseForm />,
-          },
-          {
-            path: "/expenses/history",
-            element: <ExpenseHistory />,
-          },
-          {
             path: "/reports/profit-summary",
             element: <ProfitSummary />,
           },
           { path: "/categories", element: <CategoriesList /> },
           { path: "/units", element: <UnitList /> },
+          { path: "/expenses", element: <ExpenseList /> },
+          { path: "/cash-closings", element: <CashClosingPage /> },
         ],
       },
 

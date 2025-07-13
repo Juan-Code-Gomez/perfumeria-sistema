@@ -73,6 +73,36 @@ const AppLayout: React.FC = () => {
       label: "Unidades",
       onClick: () => navigate("/units"),
     },
+    {
+      key: "/providers",
+      icon: <GiftOutlined />,
+      label: "Proveedores",
+      onClick: () => navigate("/providers"),
+    },
+    {
+      key: "/cash-closings",
+      icon: <GiftOutlined />,
+      label: "Cierres de caja",
+      onClick: () => navigate("/cash-closings"),
+    },
+    {
+      key: "/reports/profit-summary",
+      icon: <GiftOutlined />,
+      label: "Resumen de ganancias",
+      onClick: () => navigate("/reports/profit-summary"),
+    },
+    {
+      key: 'expenses',
+      icon: <GiftOutlined />,
+      label: 'Gastos',
+      onClick: () => navigate('/expenses'),
+    },
+    {
+      key: 'cash-closings',
+      icon: <GiftOutlined />,
+      label: 'Cierres de caja',
+      onClick: () => navigate('/cash-closings'),
+    },
     ...(userRoles.includes("ADMIN")
       ? [
           {

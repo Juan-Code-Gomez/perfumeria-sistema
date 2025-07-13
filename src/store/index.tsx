@@ -12,6 +12,7 @@ import unitsReducer from '../features/units/unitsSlice'
 import suppliersReducer from '../features/suppliers/supplierSlice'
 import usersReducer from '../features/users/userSlice'
 import rolesReducer from '../features/roles/rolesSlice'
+import cashClosingReducer from '../features/cashClosing/cashClosingSlice'
 
 export const store = configureStore({
   reducer: {
@@ -26,6 +27,7 @@ export const store = configureStore({
     suppliers: suppliersReducer,
     users: usersReducer,
     roles: rolesReducer,
+    cashClosing: cashClosingReducer,
   },
 })
 
