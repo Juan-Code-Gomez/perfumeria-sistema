@@ -1,16 +1,10 @@
-// src/components/AppLayout.tsx
 import React from "react";
-import { Layout, Menu, Dropdown, Avatar } from "antd";
-import {
-  DashboardOutlined,
-  ShoppingCartOutlined,
-  GiftOutlined,
-  UserOutlined,
-  LogoutOutlined,
-} from "@ant-design/icons";
+import { Layout, Dropdown, Avatar } from "antd";
+import { UserOutlined } from "@ant-design/icons";
 import { Outlet, useNavigate } from "react-router-dom";
-import { useAppDispatch, useAppSelector } from "../store/index";
+import { useAppDispatch, useAppSelector } from "../store";
 import { logout } from "../features/auth/authSlice";
+import SidebarMenu from "./SidebarMenu";
 
 const { Header, Sider, Content } = Layout;
 
@@ -18,102 +12,11 @@ const AppLayout: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { user } = useAppSelector((state: any) => state.auth);
-  const userRoles = user?.roles?.map((ur: any) => ur.role.name) ?? [];
 
   const handleLogout = () => {
     dispatch(logout());
     navigate("/login");
   };
-
-  // Definir items para el menú del usuario
-  const userMenuItems = [
-    {
-      key: "logout",
-      icon: <LogoutOutlined />,
-      label: "Cerrar sesión",
-      onClick: handleLogout,
-    },
-  ];
-
-  // Definir items para el menú principal
-  const menuItems = [
-    {
-      key: "/",
-      icon: <DashboardOutlined />,
-      label: "Dashboard",
-      onClick: () => navigate("/"),
-    },
-    {
-      key: "/ventas",
-      icon: <ShoppingCartOutlined />,
-      label: "Ventas",
-      onClick: () => navigate("/ventas"),
-    },
-    {
-      key: "/compras",
-      icon: <GiftOutlined />,
-      label: "Compras",
-      onClick: () => navigate("/purchases"),
-    },
-    {
-      key: "/products",
-      icon: <GiftOutlined />,
-      label: "Productos",
-      onClick: () => navigate("/products"),
-    },
-    {
-      key: "/categories",
-      icon: <GiftOutlined />,
-      label: "Categorías",
-      onClick: () => navigate("/categories"),
-    },
-    {
-      key: "/units",
-      icon: <GiftOutlined />,
-      label: "Unidades",
-      onClick: () => navigate("/units"),
-    },
-    {
-      key: "/providers",
-      icon: <GiftOutlined />,
-      label: "Proveedores",
-      onClick: () => navigate("/providers"),
-    },
-    {
-      key: "/cash-closings",
-      icon: <GiftOutlined />,
-      label: "Cierres de caja",
-      onClick: () => navigate("/cash-closings"),
-    },
-    {
-      key: "/reports/profit-summary",
-      icon: <GiftOutlined />,
-      label: "Resumen de ganancias",
-      onClick: () => navigate("/reports/profit-summary"),
-    },
-    {
-      key: 'expenses',
-      icon: <GiftOutlined />,
-      label: 'Gastos',
-      onClick: () => navigate('/expenses'),
-    },
-    {
-      key: 'cash-closings',
-      icon: <GiftOutlined />,
-      label: 'Cierres de caja',
-      onClick: () => navigate('/cash-closings'),
-    },
-    ...(userRoles.includes("ADMIN")
-      ? [
-          {
-            key: "/users",
-            icon: <UserOutlined />,
-            label: "Usuarios",
-            onClick: () => navigate("/users"),
-          },
-        ]
-      : []),
-  ];
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
@@ -121,12 +24,7 @@ const AppLayout: React.FC = () => {
         <div className="logo text-white text-center py-4">
           <h2 style={{ color: "#fff", margin: 0 }}>Milán Fragancias</h2>
         </div>
-        <Menu
-          theme="dark"
-          mode="inline"
-          defaultSelectedKeys={["/"]}
-          items={menuItems}
-        />
+        <SidebarMenu onLogout={handleLogout} />
       </Sider>
       <Layout>
         <Header
@@ -135,9 +33,24 @@ const AppLayout: React.FC = () => {
             padding: 0,
             textAlign: "right",
             paddingRight: 24,
+            display: "flex",
+            justifyContent: "flex-end",
+            alignItems: "center",
           }}
         >
-          <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
+          <Dropdown
+            menu={{
+              items: [
+                {
+                  key: "logout",
+                  icon: <UserOutlined />,
+                  label: "Cerrar sesión",
+                  onClick: handleLogout,
+                },
+              ],
+            }}
+            placement="bottomRight"
+          >
             <span style={{ cursor: "pointer" }}>
               <Avatar
                 style={{ backgroundColor: "#87d068", marginRight: 8 }}

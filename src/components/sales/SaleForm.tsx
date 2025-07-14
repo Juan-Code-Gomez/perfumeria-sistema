@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   Modal,
   Form,
@@ -14,9 +14,11 @@ import {
   Checkbox,
 } from "antd";
 import dayjs from "dayjs";
-import { useAppDispatch, useAppSelector } from "../../store";
-import { fetchProducts } from "../../features/products/productSlice";
+import { useAppDispatch } from "../../store";
 import { createSale } from "../../features/sales/salesSlice";
+import * as productService from "../../services/productService";
+import type { Product } from "../../features/products/types";
+import debounce from "lodash.debounce";
 
 const { Option } = Select;
 
@@ -29,15 +31,40 @@ interface Props {
 const SaleForm: React.FC<Props> = ({ open, onClose, onSaved }) => {
   const [form] = Form.useForm();
   const dispatch = useAppDispatch();
-  const { items: productList } = useAppSelector((s) => s.products);
+
+  // Filas de la tabla de productos a vender
   const [rows, setRows] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    if (!productList.length) dispatch(fetchProducts({}));
-  }, [dispatch, productList]);
+  // Estado para productos sugeridos en el select asíncrono
+  const [suggestedProducts, setSuggestedProducts] = useState<Product[]>([]);
+  const [productLoading, setProductLoading] = useState(false);
 
-  // Añadir una fila de producto
+  // Guardar el último texto buscado por fila (para manejar varias búsquedas independientes)
+  const [productSearch, setProductSearch] = useState<{ [rowKey: string]: string }>({});
+
+  // Debounce para no buscar en cada tecla
+  // Se define fuera del render usando useCallback
+  const debouncedFetchProducts = useCallback(
+    debounce(async (searchText: string, cb: (products: Product[]) => void) => {
+      setProductLoading(true);
+      try {
+        const res = await productService.getProducts({
+          name: searchText,
+          page: 1,
+          pageSize: 10,
+        });
+        cb(res.items);
+      } catch {
+        cb([]);
+      } finally {
+        setProductLoading(false);
+      }
+    }, 350),
+    []
+  );
+
+  // Añadir fila de producto
   const handleAddRow = () => {
     setRows([
       ...rows,
@@ -45,7 +72,7 @@ const SaleForm: React.FC<Props> = ({ open, onClose, onSaved }) => {
     ]);
   };
 
-  // Cambiar un campo de una fila
+  // Cambiar campo de fila
   const handleRowChange = (key: any, field: string, value: any) => {
     setRows((prev) =>
       prev.map((row) => (row.key === key ? { ...row, [field]: value } : row))
@@ -55,9 +82,14 @@ const SaleForm: React.FC<Props> = ({ open, onClose, onSaved }) => {
   // Quitar fila
   const handleRemoveRow = (key: any) => {
     setRows(rows.filter((row) => row.key !== key));
+    setProductSearch((prev) => {
+      const copy = { ...prev };
+      delete copy[key];
+      return copy;
+    });
   };
 
-  // Calcular total de la venta
+  // Total de la venta
   const totalVenta = rows.reduce(
     (sum, row) => sum + (row.quantity * row.unitPrice || 0),
     0
@@ -108,6 +140,30 @@ const SaleForm: React.FC<Props> = ({ open, onClose, onSaved }) => {
     }
   };
 
+  // Cargar sugerencias cuando el usuario escribe en el select de productos (asíncrono)
+  const handleProductSearch = (rowKey: string, value: string) => {
+    setProductSearch((prev) => ({ ...prev, [rowKey]: value }));
+    debouncedFetchProducts(value, (products) => {
+      setSuggestedProducts(products);
+    });
+  };
+
+  // Al enfocar el select (sin texto), mostrar los primeros productos
+  const handleProductFocus = (rowKey: string) => {
+    debouncedFetchProducts("", (products) => {
+      setSuggestedProducts(products);
+    });
+  };
+
+  // Cuando seleccionas un producto, puedes llenar el precio unitario si lo deseas (auto)
+  const handleProductSelect = (rowKey: string, productId: number) => {
+    const selected = suggestedProducts.find((p) => p.id === productId);
+    handleRowChange(rowKey, "productId", productId);
+    if (selected) {
+      handleRowChange(rowKey, "unitPrice", selected.salePrice || 0);
+    }
+  };
+
   // Columnas de la tabla de productos
   const columns = [
     {
@@ -117,19 +173,19 @@ const SaleForm: React.FC<Props> = ({ open, onClose, onSaved }) => {
       render: (value: number, row: any) => (
         <Select
           showSearch
-          placeholder="Selecciona producto"
+          placeholder="Buscar producto"
           value={value}
-          style={{ minWidth: 180 }}
-          onChange={(val) => handleRowChange(row.key, "productId", val)}
-          filterOption={(input, option) =>
-            String(option?.children || "")
-              .toLowerCase()
-              .includes(input.toLowerCase())
-          }
+          style={{ minWidth: 230 }}
+          onSearch={(txt) => handleProductSearch(row.key, txt)}
+          onFocus={() => handleProductFocus(row.key)}
+          loading={productLoading}
+          filterOption={false}
+          onChange={(val) => handleProductSelect(row.key, val)}
+          notFoundContent={productLoading ? "Buscando..." : "No encontrado"}
         >
-          {productList.map((p) => (
+          {suggestedProducts.map((p) => (
             <Option key={p.id} value={p.id}>
-              {p.name}
+              {p.name} {p.stock !== undefined ? `| Stock: ${p.stock}` : ""}
             </Option>
           ))}
         </Select>
@@ -180,6 +236,16 @@ const SaleForm: React.FC<Props> = ({ open, onClose, onSaved }) => {
       ),
     },
   ];
+
+  // Reiniciar los productos sugeridos cada vez que abres el modal
+  useEffect(() => {
+    if (open) {
+      setSuggestedProducts([]);
+      setRows([]);
+      setProductSearch({});
+      form.resetFields();
+    }
+  }, [open, form]);
 
   return (
     <Modal

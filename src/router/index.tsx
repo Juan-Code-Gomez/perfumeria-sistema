@@ -6,7 +6,7 @@ import PrivateRoute from "../components/PrivateRoute";
 import ProductList from "../pages/products/ProductList";
 import ProviderList from "../pages/providers/ProviderList";
 import ProfitSummary from "../pages/reports/ProfitSummary";
-import DashboardHome from "../pages/DashboardHome";
+import DashboardHome from "../pages/Dashboard";
 import Unauthorized from "../pages/Unauthorized";
 import AppLayout from "../components/AppLayout";
 import CategoriesList from "../pages/categories/CategoriesList";
@@ -16,6 +16,7 @@ import SaleList from "../pages/sales/SaleList";
 import UserList from "../pages/users/UserList";
 import CashClosingPage from "../pages/cashClosing/CashClosingPage";
 import ExpenseList from "../pages/expenses/ExpenseList";
+import PendingSales from "../pages/sales/PendingSales";
 
 export const router = createBrowserRouter([
   {
@@ -46,6 +47,7 @@ export const router = createBrowserRouter([
           { path: "/units", element: <UnitList /> },
           { path: "/expenses", element: <ExpenseList /> },
           { path: "/cash-closings", element: <CashClosingPage /> },
+          { path: "/pending-sales", element: <PendingSales />}
         ],
       },
 

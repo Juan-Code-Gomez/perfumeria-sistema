@@ -30,7 +30,7 @@ const initialState: ProductsState = {
   error: null,
   filters: {},
   page: 1,
-  pageSize: 10,
+  pageSize: 7,
   total: 0,
 };
 
@@ -106,6 +106,20 @@ export const deleteProduct = createAsyncThunk<
   }
 });
 
+export const bulkUploadProducts = createAsyncThunk<
+  void,
+  File,
+  { rejectValue: string }
+>("products/bulkUpload", async (file, thunkAPI) => {
+  try {
+    await productService.bulkUploadProducts(file);
+  } catch (err: any) {
+    return thunkAPI.rejectWithValue(
+      err.message || "Error al subir productos masivamente"
+    );
+  }
+});
+
 const productSlice = createSlice({
   name: "products",
   initialState,
@@ -114,7 +128,7 @@ const productSlice = createSlice({
       // Permite sobreescribir page/pageSize si los incluye en los filtros
       state.filters = { ...state.filters, ...action.payload };
       // Reinicia a página 1 al cambiar filtros principales (excepto si es solo cambio de página)
-      if (!('page' in action.payload)) {
+      if (!("page" in action.payload)) {
         state.page = 1;
       }
     },
@@ -140,7 +154,7 @@ const productSlice = createSlice({
       })
       .addCase(fetchProducts.fulfilled, (state, action) => {
         console.log(action.payload, "fetchProducts fulfilled");
-        
+
         state.items = action.payload.items;
         state.total = action.payload.total;
         state.page = action.payload.page;

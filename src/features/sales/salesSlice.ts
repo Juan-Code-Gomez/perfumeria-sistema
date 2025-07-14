@@ -4,28 +4,35 @@ import type { Sale } from "../../types/SaleTypes";
 
 interface SalesState {
   items: Sale[];
+  pendingItems: any[];
   loading: boolean;
   error: string | null;
   filters: { dateFrom?: string; dateTo?: string };
+  payments: any[]; // historial de abonos de una venta seleccionada
+  paymentsLoading: boolean;
 }
 
 const initialState: SalesState = {
   items: [],
+  pendingItems: [],
   loading: false,
   error: null,
   filters: {},
+  payments: [],
+  paymentsLoading: false,
 };
 
-export const fetchSales = createAsyncThunk<Sale[], { dateFrom?: string; dateTo?: string } | undefined>(
-  "sales/fetchSales",
-  async (params, thunkAPI) => {
-    try {
-      return await salesService.getSales(params);
-    } catch (err: any) {
-      return thunkAPI.rejectWithValue(err.message || "Error al cargar ventas");
-    }
+// Thunks
+export const fetchSales = createAsyncThunk<
+  Sale[],
+  { dateFrom?: string; dateTo?: string } | undefined
+>("sales/fetchSales", async (params, thunkAPI) => {
+  try {
+    return await salesService.getSales(params);
+  } catch (err: any) {
+    return thunkAPI.rejectWithValue(err.message || "Error al cargar ventas");
   }
-);
+});
 
 export const createSale = createAsyncThunk<Sale, Sale>(
   "sales/createSale",
@@ -38,15 +45,62 @@ export const createSale = createAsyncThunk<Sale, Sale>(
   }
 );
 
+export const fetchPendingSales = createAsyncThunk(
+  "sales/fetchPendingSales",
+  async (_, thunkAPI) => {
+    try {
+      return await salesService.getPendingSales();
+    } catch (err: any) {
+      return thunkAPI.rejectWithValue(
+        err.message || "Error al cargar ventas pendientes"
+      );
+    }
+  }
+);
+
+// Obtener pagos/abonos de una venta
+export const fetchSalePayments = createAsyncThunk(
+  "sales/fetchSalePayments",
+  async (saleId: number, thunkAPI) => {
+    try {
+      return await salesService.getSalePayments(saleId);
+    } catch (err: any) {
+      return thunkAPI.rejectWithValue(err.message || "Error al cargar pagos");
+    }
+  }
+);
+
+// Registrar un nuevo abono/pago a una venta
+export const addSalePayment = createAsyncThunk(
+  "sales/addSalePayment",
+  async (
+    { saleId, amount, date, method, note }: { saleId: number; amount: number; date: string; method?: string; note?: string },
+    thunkAPI
+  ) => {
+    try {
+      return await salesService.createSalePayment(saleId, { amount, date, method, note });
+    } catch (err: any) {
+      return thunkAPI.rejectWithValue(
+        err.message || "Error al registrar abono"
+      );
+    }
+  }
+);
+
 const saleSlice = createSlice({
   name: "sales",
   initialState,
   reducers: {
-        setFilters(state, action) {
+    setFilters(state, action) {
       state.filters = action.payload;
     },
+    clearPayments(state) {
+      state.payments = [];
+      state.paymentsLoading = false;
+    }
   },
   extraReducers: (builder) => {
+    // Ventas normales
     builder
       .addCase(fetchSales.pending, (state) => {
         state.loading = true;
@@ -68,8 +122,53 @@ const saleSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
       });
+
+    // Ventas pendientes
+    builder
+      .addCase(fetchPendingSales.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchPendingSales.fulfilled, (state, action) => {
+        state.pendingItems = action.payload;
+        state.loading = false;
+      })
+      .addCase(fetchPendingSales.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      });
+
+    // Historial de abonos
+    builder
+      .addCase(fetchSalePayments.pending, (state) => {
+        state.paymentsLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchSalePayments.fulfilled, (state, action) => {
+        state.payments = action.payload;
+        state.paymentsLoading = false;
+      })
+      .addCase(fetchSalePayments.rejected, (state, action) => {
+        state.paymentsLoading = false;
+        state.error = action.payload as string;
+      });
+
+    // Nuevo abono
+    builder
+      .addCase(addSalePayment.pending, (state) => {
+        state.paymentsLoading = true;
+        state.error = null;
+      })
+      .addCase(addSalePayment.fulfilled, (state, action) => {
+        // Agrega el nuevo pago al historial (si es necesario), o puedes refrescar después
+        state.paymentsLoading = false;
+      })
+      .addCase(addSalePayment.rejected, (state, action) => {
+        state.paymentsLoading = false;
+        state.error = action.payload as string;
+      });
   },
 });
 
-export const { setFilters } = saleSlice.actions;
+export const { setFilters, clearPayments } = saleSlice.actions;
 export default saleSlice.reducer;

@@ -13,6 +13,7 @@ import suppliersReducer from '../features/suppliers/supplierSlice'
 import usersReducer from '../features/users/userSlice'
 import rolesReducer from '../features/roles/rolesSlice'
 import cashClosingReducer from '../features/cashClosing/cashClosingSlice'
+import dashboardReducer from '../features/dashboard/dashboardSlice'
 
 export const store = configureStore({
   reducer: {
@@ -28,6 +29,7 @@ export const store = configureStore({
     users: usersReducer,
     roles: rolesReducer,
     cashClosing: cashClosingReducer,
+    dashboard: dashboardReducer,
   },
 })
 

@@ -1,8 +1,9 @@
 import React, { useState } from "react";
-import { Modal, Upload, Table, Button, message, Alert } from "antd";
+import { Modal, Upload, Button, message, Alert } from "antd";
 import { FileExcelOutlined, UploadOutlined } from "@ant-design/icons";
-import * as XLSX from "xlsx";
 import type { RcFile } from "antd/es/upload";
+import { useAppDispatch } from "../../store";
+import { bulkUploadProducts } from "../../features/products/productSlice";
 
 interface BulkProductUploadModalProps {
   open: boolean;
@@ -15,9 +16,8 @@ const BulkProductUploadModal: React.FC<BulkProductUploadModalProps> = ({
   onClose,
   onUploaded,
 }) => {
+  const dispatch = useAppDispatch();
   const [file, setFile] = useState<RcFile | null>(null);
-  const [previewData, setPreviewData] = useState<any[] | null>(null);
-  const [columns, setColumns] = useState<any[]>([]);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,44 +34,6 @@ const BulkProductUploadModal: React.FC<BulkProductUploadModalProps> = ({
       return Upload.LIST_IGNORE;
     }
 
-    // Lee y previsualiza primeras filas
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const data = e.target?.result;
-      if (!data) return;
-      try {
-        const workbook = XLSX.read(data, { type: "array" });
-        const sheetName = workbook.SheetNames[0];
-        const sheet = workbook.Sheets[sheetName];
-        const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-        if (json.length === 0) {
-          setError("El archivo está vacío.");
-          setPreviewData(null);
-          setColumns([]);
-          return;
-        }
-        // Toma primeras 5 filas y primeras 10 columnas (ajusta si quieres)
-        const preview = json.slice(0, 5).map((row: any) => row.slice(0, 10));
-        setPreviewData(preview);
-        if (preview.length > 0) {
-          setColumns(
-            preview[0].map((col: string, idx: number) => ({
-              title: col || `Columna ${idx + 1}`,
-              dataIndex: `col${idx}`,
-              key: `col${idx}`,
-              render: (_: any, row: any) => row[`col${idx}`],
-            }))
-          );
-        }
-        setError(null);
-      } catch (err: any) {
-        setError("No se pudo leer el archivo. Verifica el formato.");
-        setPreviewData(null);
-        setColumns([]);
-      }
-    };
-    reader.readAsArrayBuffer(file);
-
     setFile(file);
     return false; // Cancela upload automático
   };
@@ -84,32 +46,14 @@ const BulkProductUploadModal: React.FC<BulkProductUploadModalProps> = ({
     setUploading(true);
     setError(null);
 
-    const formData = new FormData();
-    formData.append("file", file);
-
     try {
-      // Ajusta la URL a la de tu backend
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/products/bulk-upload`, {
-        method: "POST",
-        body: formData,
-        headers: {
-          // "Authorization": "Bearer ...", // Si tu backend requiere auth
-        },
-      });
-
-      const data = await res.json();
-      if (res.ok) {
-        message.success("Carga masiva exitosa");
-        setFile(null);
-        setPreviewData(null);
-        setColumns([]);
-        onUploaded();
-        onClose();
-      } else {
-        setError(data?.message || "Error al subir el archivo");
-      }
+      await dispatch(bulkUploadProducts(file)).unwrap();
+      message.success("Carga masiva exitosa");
+      setFile(null);
+      onUploaded();
+      onClose();
     } catch (err: any) {
-      setError("Error al conectar con el servidor.");
+      setError(err.message || "Error al subir el archivo");
     } finally {
       setUploading(false);
     }
@@ -135,7 +79,7 @@ const BulkProductUploadModal: React.FC<BulkProductUploadModalProps> = ({
           Subir
         </Button>,
       ]}
-      width={650}
+      width={450}
       destroyOnClose
     >
       <p>
@@ -157,11 +101,7 @@ const BulkProductUploadModal: React.FC<BulkProductUploadModalProps> = ({
               ]
             : []
         }
-        onRemove={() => {
-          setFile(null);
-          setPreviewData(null);
-          setColumns([]);
-        }}
+        onRemove={() => setFile(null)}
         showUploadList={{ showPreviewIcon: false }}
         disabled={uploading}
         style={{ marginBottom: 16 }}
@@ -177,27 +117,13 @@ const BulkProductUploadModal: React.FC<BulkProductUploadModalProps> = ({
         </p>
       </Upload.Dragger>
 
-      {/* Previsualización */}
-      {previewData && previewData.length > 1 && (
-        <div style={{ marginTop: 16 }}>
-          <b>Previsualización:</b>
-          <Table
-            size="small"
-            columns={columns}
-            dataSource={previewData.slice(1).map((row, idx) => {
-              const obj: any = {};
-              row.forEach((val: any, i: number) => {
-                obj[`col${i}`] = val;
-              });
-              obj.key = idx;
-              return obj;
-            })}
-            pagination={false}
-            bordered
-            style={{ marginTop: 8, maxWidth: "100%" }}
-          />
+      {/* Mostramos el nombre del archivo seleccionado */}
+      {file && (
+        <div style={{ marginTop: 10, color: "#666" }}>
+          <b>Archivo seleccionado:</b> {file.name}
         </div>
       )}
+
       {error && (
         <Alert
           type="error"

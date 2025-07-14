@@ -357,10 +357,10 @@ const ProductList: React.FC = () => {
           pageSize,
           total,
           showSizeChanger: true,
-          pageSizeOptions: ["5", "10", "20", "50"],
+          pageSizeOptions: ["7", "10", "20", "50"],
           size: "small",
           onChange: (newPage, newPageSize) => {
-            dispatch(setPage({ page: newPage, pageSize: newPageSize || 10 }));
+            dispatch(setPage({ page: newPage, pageSize: newPageSize || 7 }));
           },
         }}
       />
