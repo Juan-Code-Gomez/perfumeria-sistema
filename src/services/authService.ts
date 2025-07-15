@@ -5,6 +5,8 @@ export const loginService = async (credentials: {
   password: string;
 }) => {
   console.log("VITE_API_URL (PROD):", import.meta.env.VITE_API_URL);
+  console.log(api, "api instance in loginService");
+  
   const response = await api.post("/auth/login", credentials);
   return response.data;
 };

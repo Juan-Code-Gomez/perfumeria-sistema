@@ -6,6 +6,8 @@ const api = axios.create({
   timeout: 10000, // 10 segundos de timeout
 });
 
+console.log(api, "api instance created");
+
 // Interceptor para agregar el token automáticamente a cada solicitud
 api.interceptors.request.use(
   (config) => {
