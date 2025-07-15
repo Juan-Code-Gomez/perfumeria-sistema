@@ -3,7 +3,7 @@ import React, { useEffect } from "react";
 import { Card, Row, Col, Statistic, Spin, DatePicker, message } from "antd";
 import { useAppDispatch, useAppSelector } from "../store";
 import { fetchDashboard } from "../features/dashboard/dashboardSlice";
-import SalesExpensesChart from "../components/dashboard/SalesExpensesChart";
+
 import dayjs from "dayjs";
 
 const Dashboard: React.FC = () => {

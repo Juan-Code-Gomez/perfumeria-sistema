@@ -104,7 +104,7 @@ const unitsSlice = createSlice({
       .addCase(updateUnit.pending, (state) => {
         state.loading = true;
       })
-      .addCase(updateUnit.fulfilled, (state, action) => {
+      .addCase(updateUnit.fulfilled, (state, _action) => {
         state.loading = false;
       })
       .addCase(updateUnit.rejected, (state, action) => {
@@ -115,7 +115,7 @@ const unitsSlice = createSlice({
       .addCase(deleteUnit.pending, (state) => {
         state.loading = true;
       })
-      .addCase(deleteUnit.fulfilled, (state, action) => {
+      .addCase(deleteUnit.fulfilled, (state, _action) => {
         state.loading = false;
       })
       .addCase(deleteUnit.rejected, (state, action) => {

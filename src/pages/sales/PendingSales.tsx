@@ -24,7 +24,7 @@ const PendingSales: React.FC = () => {
   const [paymentsModal, setPaymentsModal] = useState<{ open: boolean, sale: any | null }>({ open: false, sale: null });
 
   // Corrección: extrae payments del state
-  const { pendingItems, loading, payments, paymentsLoading } = useAppSelector((s) => s.sales);
+  const { pendingItems,  payments, paymentsLoading } = useAppSelector((s) => s.sales);
 
   useEffect(() => {
     dispatch(fetchPendingSales());

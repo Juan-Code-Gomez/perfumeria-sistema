@@ -159,7 +159,7 @@ const saleSlice = createSlice({
         state.paymentsLoading = true;
         state.error = null;
       })
-      .addCase(addSalePayment.fulfilled, (state, action) => {
+      .addCase(addSalePayment.fulfilled, (state, _action) => {
         // Agrega el nuevo pago al historial (si es necesario), o puedes refrescar después
         state.paymentsLoading = false;
       })

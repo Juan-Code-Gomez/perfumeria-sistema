@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Table, Button, Tag, Popconfirm, message } from "antd";
 import { useAppDispatch, useAppSelector } from "../../store";
 import { fetchUsers, deleteUser } from "../../features/users/userSlice";

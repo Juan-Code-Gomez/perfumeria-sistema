@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { Table, Button, Tag, Modal, Row, Col, DatePicker, message, Card, Form, Input, InputNumber, Select } from "antd";
+import { Table, Button, Tag, Row, Col, DatePicker, Card, Form } from "antd";
 import { useAppDispatch, useAppSelector } from "../../store";
-import { fetchExpenses, createExpense, setFilters } from "../../features/expenses/expenseSlice";
+import { fetchExpenses,  setFilters } from "../../features/expenses/expenseSlice";
 import dayjs from "dayjs";
 import ExpenseForm from "../../components/expenses/ExpenseForm";
 
@@ -18,7 +18,7 @@ const ExpenseList: React.FC = () => {
   }, [dispatch, filters]);
 
   // Filtros por fecha
-  const handleDateFilter = (dates: any, dateStrings: [string, string]) => {
+  const handleDateFilter = (_dates: any, dateStrings: [string, string]) => {
     dispatch(setFilters({
       dateFrom: dateStrings[0] || undefined,
       dateTo: dateStrings[1] || undefined,

@@ -12,7 +12,7 @@ const ProfitSummary = () => {
 
   const sales = useSelector((state: RootState) => state.sales.items)
   const expenses = useSelector((state: RootState) => state.expenses.items)
-  const purchases = useSelector((state: RootState) => state.purchases)
+  const purchases = useSelector((state: RootState) => state.purchases.items);
 
   const months = [
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',

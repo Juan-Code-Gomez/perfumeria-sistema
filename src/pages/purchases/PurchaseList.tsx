@@ -4,8 +4,6 @@ import { Table, Button, Card, Tag } from "antd";
 import { useAppDispatch, useAppSelector } from "../../store";
 import {
   fetchPurchases,
-  setFilters,
-  clearFilters,
 } from "../../features/purchases/purchaseSlice";
 import PurchaseDetailModal from "../../components/purchases/PurchaseDetailModal";
 import type { RootState } from "../../store";

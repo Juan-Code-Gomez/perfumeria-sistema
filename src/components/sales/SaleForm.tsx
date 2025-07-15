@@ -41,6 +41,7 @@ const SaleForm: React.FC<Props> = ({ open, onClose, onSaved }) => {
   const [productLoading, setProductLoading] = useState(false);
 
   // Guardar el último texto buscado por fila (para manejar varias búsquedas independientes)
+  // @ts-ignore
   const [productSearch, setProductSearch] = useState<{ [rowKey: string]: string }>({});
 
   // Debounce para no buscar en cada tecla
@@ -126,6 +127,7 @@ const SaleForm: React.FC<Props> = ({ open, onClose, onSaved }) => {
           isPaid: !!values.isPaid,
           paymentMethod: values.paymentMethod,
           details,
+          total: totalVenta,
         })
       ).unwrap();
       message.success("Venta registrada correctamente");
@@ -149,7 +151,7 @@ const SaleForm: React.FC<Props> = ({ open, onClose, onSaved }) => {
   };
 
   // Al enfocar el select (sin texto), mostrar los primeros productos
-  const handleProductFocus = (rowKey: string) => {
+  const handleProductFocus = (_rowKey: string) => {
     debouncedFetchProducts("", (products) => {
       setSuggestedProducts(products);
     });

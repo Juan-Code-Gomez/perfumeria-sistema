@@ -105,7 +105,7 @@ const ProductList: React.FC = () => {
   };
 
   // CRUD local + llamada a thunks (puedes reemplazar add/update/delete por sus thunks)
-  const handleDelete = (id: number) => {
+  const handleDelete = (_id: number) => {
     // dispatch(deleteProduct(id));
     message.success("Producto eliminado");
   };

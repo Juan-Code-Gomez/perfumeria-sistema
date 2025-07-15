@@ -104,7 +104,7 @@ const categoriesSlice = createSlice({
       .addCase(updateCategory.pending, (state) => {
         state.loading = true;
       })
-      .addCase(updateCategory.fulfilled, (state, action) => {
+      .addCase(updateCategory.fulfilled, (state, _action) => {
         state.loading = false;
       })
       .addCase(updateCategory.rejected, (state, action) => {
@@ -115,7 +115,7 @@ const categoriesSlice = createSlice({
       .addCase(deleteCategory.pending, (state) => {
         state.loading = true;
       })
-      .addCase(deleteCategory.fulfilled, (state, action) => {
+      .addCase(deleteCategory.fulfilled, (state, _action) => {
         state.loading = false;
       })
       .addCase(deleteCategory.rejected, (state, action) => {

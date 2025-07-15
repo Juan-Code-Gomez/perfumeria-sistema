@@ -16,7 +16,8 @@ const SaleList: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedSale, setSelectedSale] = useState<any>(null);
-  const [range, setRange] = useState<[dayjs.Dayjs, dayjs.Dayjs] | null>(null);
+
+  // const [range, setRange] = useState<[dayjs.Dayjs, dayjs.Dayjs] | null>(null);
 
   useEffect(() => {
     if (!filters.dateFrom || !filters.dateTo) {
@@ -54,7 +55,7 @@ const SaleList: React.FC = () => {
   const totalPagado = items.reduce((sum, v) => sum + (v.paidAmount || 0), 0);
   const totalPendiente = totalVentas - totalPagado;
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (_id: number) => {
     try {
       //   await dispatch(deleteSale(id)).unwrap();
       message.success("Venta eliminada");
@@ -64,15 +65,15 @@ const SaleList: React.FC = () => {
     }
   };
 
-  const handleRangeChange = (dates: any) => {
-    setRange(dates);
-    if (dates) {
-      dispatch(fetchSales());
-    } else {
-      // Si borra filtro, vuelve a cargar HOY
-      dispatch(fetchSales());
-    }
-  };
+  // const handleRangeChange = (dates: any) => {
+  //   setRange(dates);
+  //   if (dates) {
+  //     dispatch(fetchSales());
+  //   } else {
+  //     // Si borra filtro, vuelve a cargar HOY
+  //     dispatch(fetchSales());
+  //   }
+  // };
 
   const columns = [
     {

@@ -5,7 +5,6 @@ import {
   DashboardOutlined,
   ShoppingCartOutlined,
   GiftOutlined,
-  UserOutlined,
   TeamOutlined,
   BarChartOutlined,
   FolderOpenOutlined,

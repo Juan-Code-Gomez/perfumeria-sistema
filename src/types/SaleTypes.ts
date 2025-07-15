@@ -16,4 +16,5 @@ export interface Sale {
   isPaid: boolean;
   paymentMethod?: string;
   details: SaleDetail[];
+  total: number;
 }
