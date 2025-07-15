@@ -1,12 +1,12 @@
 import axios from 'axios';
-console.log("VITE_API_URL (PROD):", import.meta.env.VITE_API_URL);
+
 // Crear instancia de Axios con configuración base
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
   timeout: 10000, // 10 segundos de timeout
 });
 
-console.log(api, "api instance created");
+console.log("api", api);
 
 // Interceptor para agregar el token automáticamente a cada solicitud
 api.interceptors.request.use(
