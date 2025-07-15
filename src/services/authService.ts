@@ -1,11 +1,9 @@
-import axios from "axios";
-
-const API_URL = `${import.meta.env.VITE_API_URL}/auth/login`;
+import api from "./api"; // Usa la instancia centralizada de Axios
 
 export const loginService = async (credentials: {
   username: string;
   password: string;
 }) => {
-  const response = await axios.post(API_URL, credentials);
+  const response = await api.post("/auth/login", credentials);
   return response.data;
 };
