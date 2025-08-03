@@ -9,3 +9,8 @@ export const createCashClosing = async (payload: any) => {
   const { data } = await api.post('/cash-closing', payload);
   return data;
 };
+
+export const getCashClosingSummary = async (date: string) => {
+  const { data } = await api.get('/cash-closing/summary', { params: { date } });
+  return data;
+};

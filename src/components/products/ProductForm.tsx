@@ -53,13 +53,22 @@ const ProductForm: React.FC<Props> = ({ product, onSaved }) => {
   const onFinish = async (values: any) => {
     setLoading(true);
     try {
+      // Procesar valores para convertir strings a números
+      const processedValues = {
+        ...values,
+        purchasePrice: parseFloat(values.purchasePrice) || 0,
+        salePrice: parseFloat(values.salePrice) || 0,
+        stock: parseInt(values.stock) || 0,
+        minStock: values.minStock ? parseInt(values.minStock) : 0, // Si está vacío, enviar 0
+      };
+
       if (product) {
         await dispatch(
-          updateProduct({ id: product.id, product: values })
+          updateProduct({ id: product.id, product: processedValues })
         ).unwrap();
         message.success("Producto actualizado exitosamente");
       } else {
-        await dispatch(createProduct(values)).unwrap();
+        await dispatch(createProduct(processedValues)).unwrap();
         message.success("Producto creado exitosamente");
       }
       dispatch(fetchProducts(filters));

@@ -42,7 +42,9 @@ const SaleForm: React.FC<Props> = ({ open, onClose, onSaved }) => {
 
   // Guardar el último texto buscado por fila (para manejar varias búsquedas independientes)
   // @ts-ignore
-  const [productSearch, setProductSearch] = useState<{ [rowKey: string]: string }>({});
+  const [productSearch, setProductSearch] = useState<{
+    [rowKey: string]: string;
+  }>({});
 
   // Debounce para no buscar en cada tecla
   // Se define fuera del render usando useCallback
@@ -124,7 +126,7 @@ const SaleForm: React.FC<Props> = ({ open, onClose, onSaved }) => {
           date: values.date.format("YYYY-MM-DD"),
           totalAmount: totalVenta,
           paidAmount: Number(values.paidAmount || 0),
-          isPaid: !!values.isPaid,
+          isPaid: true,
           paymentMethod: values.paymentMethod,
           details,
           total: totalVenta,
@@ -177,17 +179,93 @@ const SaleForm: React.FC<Props> = ({ open, onClose, onSaved }) => {
           showSearch
           placeholder="Buscar producto"
           value={value}
-          style={{ minWidth: 230 }}
+          style={{ minWidth: 320, maxWidth: 380 }}
           onSearch={(txt) => handleProductSearch(row.key, txt)}
           onFocus={() => handleProductFocus(row.key)}
           loading={productLoading}
           filterOption={false}
           onChange={(val) => handleProductSelect(row.key, val)}
           notFoundContent={productLoading ? "Buscando..." : "No encontrado"}
+          optionLabelProp="label"
+          dropdownStyle={{ zIndex: 99999 }} // para evitar bugs en modales grandes
         >
           {suggestedProducts.map((p) => (
-            <Option key={p.id} value={p.id}>
-              {p.name} {p.stock !== undefined ? `| Stock: ${p.stock}` : ""}
+            <Option
+              key={p.id}
+              value={p.id}
+              label={`${p.name} | ${p.category?.name || "-"} | ${
+                p.unit?.name || "-"
+              }`}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "nowrap",
+                  alignItems: "center",
+                  gap: 5,
+                  minWidth: 0,
+                  width: "100%",
+                }}
+              >
+                <span
+                  style={{
+                    fontWeight: 600,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    maxWidth: 100,
+                    display: "inline-block",
+                  }}
+                >
+                  {p.name}
+                </span>
+                <span
+                  style={{
+                    color:
+                      (p.category?.name?.toLowerCase() === "esencias" &&
+                        "#0079bd") ||
+                      (p.category?.name?.toLowerCase() === "perfumes" &&
+                        "#C97C5D") ||
+                      "#888",
+                    fontSize: 12,
+                    fontWeight: 500,
+                    marginLeft: 3,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    maxWidth: 65,
+                    display: "inline-block",
+                  }}
+                >
+                  {p.category?.name}
+                </span>
+                <span
+                  style={{
+                    color: "#888",
+                    fontSize: 12,
+                    fontWeight: 400,
+                    marginLeft: 3,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    maxWidth: 45,
+                    display: "inline-block",
+                  }}
+                >
+                  {p.unit?.name}
+                </span>
+                <span
+                  style={{
+                    color: "#4CAF50",
+                    fontSize: 12,
+                    fontWeight: 400,
+                    marginLeft: 4,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  Stock: {p.stock}
+                </span>
+              </div>
             </Option>
           ))}
         </Select>
@@ -197,14 +275,30 @@ const SaleForm: React.FC<Props> = ({ open, onClose, onSaved }) => {
       title: "Cantidad",
       dataIndex: "quantity",
       key: "quantity",
-      render: (value: number, row: any) => (
-        <InputNumber
-          min={1}
-          value={value}
-          onChange={(val) => handleRowChange(row.key, "quantity", val)}
-          style={{ width: 80 }}
-        />
-      ),
+      render: (value: number, row: any) => {
+        // Encuentra el producto seleccionado de esta fila
+        const selectedProduct = suggestedProducts.find(
+          (p) => p.id === row.productId
+        );
+        // Puedes ajustar el match a tu conveniencia, por ejemplo 'gramo', 'gr', etc
+        const isGramo = selectedProduct?.unit?.name
+          ?.toLowerCase()
+          .includes("gram");
+
+        return (
+          <InputNumber
+            min={isGramo ? 0.01 : 1}
+            max={selectedProduct?.stock}
+            step={isGramo ? 0.01 : 1}
+            value={value}
+            onChange={(val) => handleRowChange(row.key, "quantity", val)}
+            style={{ width: 90 }}
+            stringMode={!!isGramo}
+            placeholder={isGramo ? "Ej: 10.5" : "Ej: 1"}
+            disabled={!selectedProduct}
+          />
+        );
+      },
     },
     {
       title: "P. unitario",
@@ -299,27 +393,6 @@ const SaleForm: React.FC<Props> = ({ open, onClose, onSaved }) => {
           </Col>
         </Row>
         <Row gutter={16} className="mt-4">
-          <Col xs={24} sm={8}>
-            <Form.Item label="Monto pagado" name="paidAmount">
-              <InputNumber
-                min={0}
-                formatter={(v) =>
-                  `$ ${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
-                }
-                style={{ width: "100%" }}
-              />
-            </Form.Item>
-          </Col>
-          <Col xs={24} sm={8}>
-            <Form.Item
-              name="isPaid"
-              valuePropName="checked"
-              label="¿Venta pagada?"
-              className="mt-7"
-            >
-              <Checkbox>Pagada</Checkbox>
-            </Form.Item>
-          </Col>
           <Col xs={24} sm={8}>
             <div className="text-right mt-7">
               <b>Total venta: </b>

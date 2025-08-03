@@ -15,7 +15,11 @@ import {
   Input,
 } from "antd";
 import { useAppDispatch, useAppSelector } from "../../store";
-import { fetchSales, setFilters, addSalePayment } from "../../features/sales/salesSlice";
+import {
+  fetchSales,
+  setFilters,
+  addSalePayment,
+} from "../../features/sales/salesSlice";
 import type { RootState } from "../../store";
 import SaleForm from "../../components/sales/SaleForm";
 import dayjs from "dayjs";
@@ -27,14 +31,19 @@ const paymentMethods = ["Efectivo", "Transferencia", "Tarjeta", "Otro"];
 
 const SaleList: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { items, loading, error, filters } = useAppSelector((s: RootState) => s.sales);
+  const { items, loading, error, filters } = useAppSelector(
+    (s: RootState) => s.sales
+  );
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedSale, setSelectedSale] = useState<any>(null);
 
   // Estado para modal de abono
-  const [abonoModal, setAbonoModal] = useState<{ open: boolean; sale: any | null }>({ open: false, sale: null });
+  const [abonoModal, setAbonoModal] = useState<{
+    open: boolean;
+    sale: any | null;
+  }>({ open: false, sale: null });
   const [abono, setAbono] = useState<number>(0);
   const [method, setMethod] = useState<string>("Efectivo");
   const [note, setNote] = useState<string>("");
@@ -66,8 +75,12 @@ const SaleList: React.FC = () => {
 
   const handleDateChange = (dates: any, dateStrings: [string, string]) => {
     if (dates && dateStrings[0] && dateStrings[1]) {
-      dispatch(fetchSales({ dateFrom: dateStrings[0], dateTo: dateStrings[1] }));
-      dispatch(setFilters({ dateFrom: dateStrings[0], dateTo: dateStrings[1] }));
+      dispatch(
+        fetchSales({ dateFrom: dateStrings[0], dateTo: dateStrings[1] })
+      );
+      dispatch(
+        setFilters({ dateFrom: dateStrings[0], dateTo: dateStrings[1] })
+      );
     }
   };
 
@@ -133,16 +146,33 @@ const SaleList: React.FC = () => {
     },
     {
       title: "Pagado",
-      dataIndex: "paidAmount",
-      key: "paidAmount",
-      render: (v: number, r: any) =>
-        r.isPaid ? (
-          <Tag color="green">Pagada</Tag>
+      dataIndex: "isPaid",
+      key: "isPaid",
+      render: (isPaid: boolean) =>
+        isPaid ? (
+          <span
+            style={{
+              background: "#e6fffb",
+              color: "#13c2c2",
+              padding: "2px 10px",
+              borderRadius: 8,
+              fontWeight: 500,
+            }}
+          >
+            Pagado
+          </span>
         ) : (
-          <>
-            <Tag color="orange">Pendiente</Tag>
-            <span>${v.toLocaleString()}</span>
-          </>
+          <span
+            style={{
+              background: "#fffbe6",
+              color: "#faad14",
+              padding: "2px 10px",
+              borderRadius: 8,
+              fontWeight: 500,
+            }}
+          >
+            Pendiente
+          </span>
         ),
     },
     {
@@ -163,16 +193,6 @@ const SaleList: React.FC = () => {
           >
             Ver detalle
           </Button>
-          {!record.isPaid && (
-            <Button
-              type="link"
-              size="small"
-              onClick={() => setAbonoModal({ open: true, sale: record })}
-              style={{ color: "#1677ff" }}
-            >
-              Abonar
-            </Button>
-          )}
           <Popconfirm
             title="¿Eliminar venta?"
             onConfirm={() => handleDelete(record.id)}
@@ -259,11 +279,11 @@ const SaleList: React.FC = () => {
           <b>Cliente:</b> {abonoModal.sale?.customerName || "Sin nombre"}
         </p>
         <p>
-          <b>Pendiente:</b>{" "}
-          $
+          <b>Pendiente:</b> $
           {abonoModal.sale
-            ? ((abonoModal.sale.totalAmount || 0) -
-               (abonoModal.sale.paidAmount || 0)
+            ? (
+                (abonoModal.sale.totalAmount || 0) -
+                (abonoModal.sale.paidAmount || 0)
               ).toLocaleString()
             : "0"}
         </p>
