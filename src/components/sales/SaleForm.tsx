@@ -2,7 +2,6 @@ import React, { useEffect, useState, useCallback } from "react";
 import {
   Modal,
   Form,
-  Input,
   Select,
   DatePicker,
   Button,
@@ -11,7 +10,8 @@ import {
   Row,
   Col,
   message,
-  Checkbox,
+  Input,
+  Radio,
 } from "antd";
 import dayjs from "dayjs";
 import { useAppDispatch } from "../../store";
@@ -19,6 +19,7 @@ import { createSale } from "../../features/sales/salesSlice";
 import * as productService from "../../services/productService";
 import type { Product } from "../../features/products/types";
 import debounce from "lodash.debounce";
+import ClientSelector from "../clients/ClientSelector";
 
 const { Option } = Select;
 
@@ -35,6 +36,12 @@ const SaleForm: React.FC<Props> = ({ open, onClose, onSaved }) => {
   // Filas de la tabla de productos a vender
   const [rows, setRows] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
+  const [clientMode, setClientMode] = useState<"existing" | "casual">("casual");
+
+  const [selectedClient, setSelectedClient] = useState<{
+    id: number;
+    name: string;
+  } | null>(null);
 
   // Estado para productos sugeridos en el select asíncrono
   const [suggestedProducts, setSuggestedProducts] = useState<Product[]>([]);
@@ -120,22 +127,30 @@ const SaleForm: React.FC<Props> = ({ open, onClose, onSaved }) => {
 
     setSaving(true);
     try {
-      await dispatch(
-        createSale({
-          customerName: values.customerName,
-          date: values.date.format("YYYY-MM-DD"),
-          totalAmount: totalVenta,
-          paidAmount: Number(values.paidAmount || 0),
-          isPaid: true,
-          paymentMethod: values.paymentMethod,
-          details,
-          total: totalVenta,
-        })
-      ).unwrap();
+      const basePayload = {
+        date: values.date.format("YYYY-MM-DD"),
+        totalAmount: totalVenta,
+        paidAmount: Number(values.paidAmount || totalVenta),
+        isPaid: true,
+        paymentMethod: values.paymentMethod,
+        details,
+      };
+
+      console.log(selectedClient, "selectedClient");
+
+      const payload = selectedClient
+        ? { ...basePayload, clientId: selectedClient.id }
+        : { ...basePayload, customerName: values.freeTextName };
+
+      console.log("Payload final:", payload);
+
+      await dispatch(createSale(payload)).unwrap();
+
       message.success("Venta registrada correctamente");
       onSaved();
       form.resetFields();
       setRows([]);
+      setSelectedClient(null);
       onClose();
     } catch (err: any) {
       message.error(err.message || "Error al registrar venta");
@@ -284,7 +299,6 @@ const SaleForm: React.FC<Props> = ({ open, onClose, onSaved }) => {
         const isGramo = selectedProduct?.unit?.name
           ?.toLowerCase()
           .includes("gram");
-
         return (
           <InputNumber
             min={isGramo ? 0.01 : 1}
@@ -340,6 +354,8 @@ const SaleForm: React.FC<Props> = ({ open, onClose, onSaved }) => {
       setRows([]);
       setProductSearch({});
       form.resetFields();
+      setSelectedClient(null);
+      setClientMode('casual');
     }
   }, [open, form]);
 
@@ -359,13 +375,47 @@ const SaleForm: React.FC<Props> = ({ open, onClose, onSaved }) => {
           date: dayjs(),
           isPaid: false,
           paidAmount: 0,
+          clientId: undefined,
+          freeTextName: '',
         }}
       >
+        <Form.Item name="clientId" noStyle>
+          <Input type="hidden" />
+        </Form.Item>
         <Row gutter={16}>
-          <Col xs={24} sm={12}>
-            <Form.Item label="Cliente" name="customerName">
-              <Input placeholder="Nombre del cliente (opcional)" />
+          <Col span={24}>
+            <Form.Item label="Tipo de cliente">
+              <Radio.Group
+                onChange={(e) => {
+                  setClientMode(e.target.value);
+                  setSelectedClient(null);
+                }}
+                value={clientMode}
+              >
+                <Radio value="existing">Cliente registrado</Radio>
+                <Radio value="casual">Venta de mostrador</Radio>
+              </Radio.Group>
             </Form.Item>
+          </Col>
+          <Col xs={24} sm={12}>
+            {clientMode === "existing" ? (
+                <Form.Item label="Selecciona cliente">
+                  <ClientSelector
+                    onSelectClient={(client) => {
+                      setSelectedClient(client);
+                      form.setFieldsValue({ clientId: client.id });
+                    }}
+                  />
+                </Form.Item>
+            ) : (
+                <Form.Item
+                  label="Nombre (venta mostrador)"
+                  name="freeTextName"
+                  rules={[{ required: true, message: "Ingresa un nombre" }]}
+                >
+                  <Input placeholder="Ej: Cliente ocasional o ‘Mostrador’" />
+                </Form.Item>
+            )}
           </Col>
           <Col xs={24} sm={12}>
             <Form.Item

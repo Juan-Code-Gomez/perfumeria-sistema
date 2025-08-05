@@ -17,6 +17,7 @@ import UserList from "../pages/users/UserList";
 import CashClosingPage from "../pages/cashClosing/CashClosingPage";
 import ExpenseList from "../pages/expenses/ExpenseList";
 import PendingSales from "../pages/sales/PendingSales";
+import ClientList from "../pages/clients/ClientList";
 
 export const router = createBrowserRouter([
   {
@@ -47,7 +48,8 @@ export const router = createBrowserRouter([
           { path: "/units", element: <UnitList /> },
           { path: "/expenses", element: <ExpenseList /> },
           { path: "/cash-closings", element: <CashClosingPage /> },
-          { path: "/pending-sales", element: <PendingSales />}
+          { path: "/pending-sales", element: <PendingSales /> },
+          { path: "/clients", element: <ClientList /> },
         ],
       },
 

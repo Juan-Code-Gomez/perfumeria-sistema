@@ -1,6 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import * as salesService from "../../services/salesService";
-import type { Sale } from "../../types/SaleTypes";
+import type { Sale, CreateSalePayload } from "../../types/SaleTypes";
 
 interface SalesState {
   items: Sale[];
@@ -11,6 +11,7 @@ interface SalesState {
   payments: any[]; // historial de abonos de una venta seleccionada
   paymentsLoading: boolean;
 }
+
 
 const initialState: SalesState = {
   items: [],
@@ -34,7 +35,7 @@ export const fetchSales = createAsyncThunk<
   }
 });
 
-export const createSale = createAsyncThunk<Sale, Sale>(
+export const createSale = createAsyncThunk<Sale, CreateSalePayload>(
   "sales/createSale",
   async (saleData, thunkAPI) => {
     try {

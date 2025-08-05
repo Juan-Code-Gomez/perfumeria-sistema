@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { Sale } from "../types/SaleTypes";
+import type { Sale, CreateSalePayload } from "../types/SaleTypes";
 
 const API_URL = `${import.meta.env.VITE_API_URL}/sales`;
 
@@ -11,7 +11,7 @@ export async function getSales(params?: {
   return res.data;
 }
 
-export const createSale = async (data: Sale) => {
+export const createSale = async (data: CreateSalePayload) => {
   const res = await axios.post(API_URL, data);
   return res.data;
 };

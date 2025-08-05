@@ -99,6 +99,12 @@ const SidebarMenu: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
       icon: <FileDoneOutlined />,
       label: "Ventas pendientes",
       onClick: () => navigate("/pending-sales"),
+    },
+    {
+      key: "/clients",
+      icon: <TeamOutlined />,
+      label: "Clientes",
+      onClick: () => navigate("/clients"),
     }
   ];
 
