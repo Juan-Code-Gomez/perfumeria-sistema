@@ -1,5 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { Table, Button, Tag, Modal, InputNumber, message, Select, Input } from "antd";
+import {
+  Table,
+  Button,
+  Tag,
+  Modal,
+  InputNumber,
+  message,
+  Select,
+  Input,
+} from "antd";
 import { useAppDispatch, useAppSelector } from "../../store";
 import {
   fetchPendingSales,
@@ -8,6 +17,7 @@ import {
 } from "../../features/sales/salesSlice";
 import dayjs from "dayjs";
 import SalePaymentsModal from "../../components/sales/SalePaymentsModal";
+import CreditSaleModal from "../../components/sales/CreditSaleModal";
 
 const paymentMethods = ["Efectivo", "Transferencia", "Tarjeta", "Otro"];
 
@@ -20,11 +30,17 @@ const PendingSales: React.FC = () => {
   const [abono, setAbono] = useState<number>(0);
   const [method, setMethod] = useState<string>("Efectivo");
   const [note, setNote] = useState<string>("");
+  const [creditModalOpen, setCreditModalOpen] = useState(false);
 
-  const [paymentsModal, setPaymentsModal] = useState<{ open: boolean, sale: any | null }>({ open: false, sale: null });
+  const [paymentsModal, setPaymentsModal] = useState<{
+    open: boolean;
+    sale: any | null;
+  }>({ open: false, sale: null });
 
   // Corrección: extrae payments del state
-  const { pendingItems,  payments, paymentsLoading } = useAppSelector((s) => s.sales);
+  const { pendingItems, payments, paymentsLoading } = useAppSelector(
+    (s) => s.sales
+  );
 
   useEffect(() => {
     dispatch(fetchPendingSales());
@@ -61,33 +77,33 @@ const PendingSales: React.FC = () => {
     {
       title: "Acciones",
       render: (_: any, sale: any) => (
-      <>
-        <Button
-          type="primary"
-          size="small"
-          onClick={() => setAbonoModal({ open: true, sale })}
-          style={{ marginRight: 8 }}
-        >
-          Abonar
-        </Button>
-        <Button
-          type="default"
-          size="small"
-          onClick={() => {
-            dispatch(fetchSalePayments(sale.id));
-            setPaymentsModal({ open: true, sale });
-          }}
-        >
-          Historial
-        </Button>
-      </>
+        <>
+          <Button
+            type="primary"
+            size="small"
+            onClick={() => setAbonoModal({ open: true, sale })}
+            style={{ marginRight: 8 }}
+          >
+            Abonar
+          </Button>
+          <Button
+            type="default"
+            size="small"
+            onClick={() => {
+              dispatch(fetchSalePayments(sale.id));
+              setPaymentsModal({ open: true, sale });
+            }}
+          >
+            Historial
+          </Button>
+        </>
       ),
     },
   ];
 
   // Modal de abono
   const handleAbonar = async () => {
-    if (!abonoModal.sale || abono <= 0) {
+    if (!abonoModal.sale || abono <= 0 || abono > abonoModal.sale.pending) {
       message.warning("Ingresa un valor válido");
       return;
     }
@@ -114,6 +130,13 @@ const PendingSales: React.FC = () => {
 
   return (
     <div className="p-4">
+      <Button
+        type="primary"
+        style={{ marginBottom: 16 }}
+        onClick={() => setCreditModalOpen(true)}
+      >
+        Nueva venta a crédito
+      </Button>
       <h2 className="text-xl mb-3">Ventas pendientes de pago</h2>
       <Table
         dataSource={pendingItems}
@@ -121,6 +144,16 @@ const PendingSales: React.FC = () => {
         rowKey="id"
         loading={paymentsLoading}
       />
+
+      <CreditSaleModal
+        open={creditModalOpen}
+        onClose={() => setCreditModalOpen(false)}
+        onSaved={() => {
+          setCreditModalOpen(false);
+          dispatch(fetchPendingSales());
+        }}
+      />
+
       {/* Modal de abono */}
       <Modal
         open={abonoModal.open}
@@ -130,8 +163,12 @@ const PendingSales: React.FC = () => {
         okText="Registrar"
         destroyOnClose
       >
-        <p><b>Cliente:</b> {abonoModal.sale?.customerName || "Sin nombre"}</p>
-        <p><b>Pendiente:</b> ${abonoModal.sale?.pending?.toLocaleString()}</p>
+        <p>
+          <b>Cliente:</b> {abonoModal.sale?.customerName || "Sin nombre"}
+        </p>
+        <p>
+          <b>Pendiente:</b> ${abonoModal.sale?.pending?.toLocaleString()}
+        </p>
         <InputNumber
           min={1}
           max={abonoModal.sale?.pending || 1}
@@ -152,7 +189,7 @@ const PendingSales: React.FC = () => {
         <div style={{ marginTop: 8 }}>
           <Input
             value={note}
-            onChange={e => setNote(e.target.value)}
+            onChange={(e) => setNote(e.target.value)}
             placeholder="Observaciones (opcional)"
           />
         </div>
