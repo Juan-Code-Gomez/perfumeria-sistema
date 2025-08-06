@@ -12,7 +12,6 @@ interface SalesState {
   paymentsLoading: boolean;
 }
 
-
 const initialState: SalesState = {
   items: [],
   pendingItems: [],
@@ -75,14 +74,50 @@ export const fetchSalePayments = createAsyncThunk(
 export const addSalePayment = createAsyncThunk(
   "sales/addSalePayment",
   async (
-    { saleId, amount, date, method, note }: { saleId: number; amount: number; date: string; method?: string; note?: string },
+    {
+      saleId,
+      amount,
+      date,
+      method,
+      note,
+    }: {
+      saleId: number;
+      amount: number;
+      date: string;
+      method?: string;
+      note?: string;
+    },
     thunkAPI
   ) => {
     try {
-      return await salesService.createSalePayment(saleId, { amount, date, method, note });
+      return await salesService.createSalePayment(saleId, {
+        amount,
+        date,
+        method,
+        note,
+      });
     } catch (err: any) {
       return thunkAPI.rejectWithValue(
         err.message || "Error al registrar abono"
+      );
+    }
+  }
+);
+
+export const createCreditNote = createAsyncThunk(
+  "sales/createCreditNote",
+  async (
+    data: {
+      saleId: number;
+      details: { productId: number; quantity: number }[];
+    },
+    thunkAPI
+  ) => {
+    try {
+      return await salesService.createCreditNote(data);
+    } catch (err: any) {
+      return thunkAPI.rejectWithValue(
+        err.message || "Error al crear nota de crédito"
       );
     }
   }
@@ -98,7 +133,7 @@ const saleSlice = createSlice({
     clearPayments(state) {
       state.payments = [];
       state.paymentsLoading = false;
-    }
+    },
   },
   extraReducers: (builder) => {
     // Ventas normales
@@ -166,6 +201,21 @@ const saleSlice = createSlice({
       })
       .addCase(addSalePayment.rejected, (state, action) => {
         state.paymentsLoading = false;
+        state.error = action.payload as string;
+      });
+
+    // Nota de crédito
+    builder
+      .addCase(createCreditNote.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(createCreditNote.fulfilled, (state, action) => {
+        state.loading = false;
+        state.items.unshift(action.payload);
+      })
+      .addCase(createCreditNote.rejected, (state, action) => {
+        state.loading = false;
         state.error = action.payload as string;
       });
   },

@@ -35,3 +35,11 @@ export async function createSalePayment(
   const res = await axios.post(`${API_URL}/${saleId}/payments`, data);
   return res.data;
 }
+
+export async function createCreditNote(data: {
+  saleId: number;
+  details: { productId: number; quantity: number }[];
+}) {
+  const res = await axios.post(`${API_URL}/credit-notes`, data);
+  return res.data;
+}

@@ -19,6 +19,8 @@ import dayjs from "dayjs";
 import SalePaymentsModal from "../../components/sales/SalePaymentsModal";
 import CreditSaleModal from "../../components/sales/CreditSaleModal";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 const paymentMethods = ["Efectivo", "Transferencia", "Tarjeta", "Otro"];
 
 const PendingSales: React.FC = () => {
@@ -93,8 +95,17 @@ const PendingSales: React.FC = () => {
               dispatch(fetchSalePayments(sale.id));
               setPaymentsModal({ open: true, sale });
             }}
+            style={{ marginRight: 8 }}
           >
             Historial
+          </Button>
+          <Button
+            size="small"
+            onClick={() =>
+              window.open(`${API_URL}/sales/${sale.id}/pdf?due=30`, "_blank")
+            }
+          >
+            Imprimir PDF
           </Button>
         </>
       ),
