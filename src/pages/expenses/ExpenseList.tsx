@@ -1,89 +1,199 @@
+// src/pages/expenses/ExpenseList.tsx
+
 import React, { useEffect, useState } from "react";
-import { Table, Button, Tag, Row, Col, DatePicker, Card, Form } from "antd";
-import { useAppDispatch, useAppSelector } from "../../store";
-import { fetchExpenses,  setFilters } from "../../features/expenses/expenseSlice";
+import {
+  Table,
+  Button,
+  Row,
+  Col,
+  DatePicker,
+  Select,
+  Card,
+  Divider,
+  message,
+} from "antd";
 import dayjs from "dayjs";
+import type { ColumnsType } from "antd/lib/table";
+
+import { useAppDispatch, useAppSelector } from "../../store";
+import {
+  fetchExpenses,
+  fetchExpenseSummary,
+  createExpense,
+  editExpense,
+  removeExpense,
+  setFilters,
+} from "../../features/expenses/expenseSlice";
+
+import type { Expense } from "../../features/expenses/expenseSlice";
+
 import ExpenseForm from "../../components/expenses/ExpenseForm";
+import ExpenseSummaryChart from "../../components/expenses/ExpenseSummaryChart";
 
 const { RangePicker } = DatePicker;
+const { Option } = Select;
 
-const ExpenseList: React.FC = () => {
+export default function ExpenseList() {
   const dispatch = useAppDispatch();
-  const { items, loading, error, filters } = useAppSelector((s) => s.expenses);
+  const { items, total, loading, error, filters, summary } = useAppSelector(
+    (s) => s.expenses
+  );
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  // Estado modal
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing] = useState<Expense | null>(null);
 
+  // Carga inicial y al cambiar filtros
   useEffect(() => {
     dispatch(fetchExpenses(filters));
+    dispatch(fetchExpenseSummary(filters));
   }, [dispatch, filters]);
 
-  // Filtros por fecha
-  const handleDateFilter = (_dates: any, dateStrings: [string, string]) => {
-    dispatch(setFilters({
-      dateFrom: dateStrings[0] || undefined,
-      dateTo: dateStrings[1] || undefined,
-    }));
-  };
-
-  // Columnas de la tabla
-  const columns = [
-    { title: "Fecha", dataIndex: "date", key: "date", render: (v: string) => dayjs(v).format("YYYY-MM-DD") },
-    { title: "Concepto", dataIndex: "concept", key: "concept" },
-    { title: "Monto", dataIndex: "amount", key: "amount", render: (v: number) => <b>${v.toLocaleString()}</b> },
-    { title: "Forma de pago", dataIndex: "paymentMethod", key: "paymentMethod", render: (v: string) => <Tag>{v}</Tag> },
-    { title: "Notas", dataIndex: "notes", key: "notes" },
-    // Si quieres, aquí podrías agregar editar/eliminar
+  // Tabla
+  const columns: ColumnsType<Expense> = [
+    {
+      title: "Fecha",
+      dataIndex: "date",
+      render: (v) => dayjs(v).format("YYYY-MM-DD"),
+    },
+    { title: "Concepto", dataIndex: "description" },
+    { title: "Categoría", dataIndex: "category" },
+    {
+      title: "Monto",
+      dataIndex: "amount",
+      render: (v) => <b>${v.toLocaleString()}</b>,
+    },
+    { title: "Notas", dataIndex: "notes", ellipsis: true },
+    {
+      title: "Acciones",
+      render: (_: any, rec: Expense) => (
+        <>
+          <Button
+            size="small"
+            type="link"
+            onClick={() => {
+              setEditing(rec);
+              setModalOpen(true);
+            }}
+          >
+            ✏️
+          </Button>
+          <Button
+            size="small"
+            danger
+            type="link"
+            onClick={async () => {
+              await dispatch(removeExpense(rec.id!)).unwrap();
+              message.success("Gasto eliminado");
+              // refresca
+              dispatch(fetchExpenses(filters));
+              dispatch(fetchExpenseSummary(filters));
+            }}
+          >
+            🗑️
+          </Button>
+        </>
+      ),
+    },
   ];
 
   return (
     <div className="p-4">
       <Row justify="space-between" align="middle" className="mb-4">
         <Col>
-          <h1 className="text-2xl font-semibold">Egresos / Gastos</h1>
-          <p className="text-gray-600">Controla todos los gastos diarios</p>
+          <h2>Gastos</h2>
         </Col>
         <Col>
-          <Button type="primary" onClick={() => setIsModalOpen(true)} size="small">
+          <Button
+            type="primary"
+            onClick={() => {
+              setEditing(null);
+              setModalOpen(true);
+            }}
+          >
             Nuevo gasto
           </Button>
         </Col>
       </Row>
 
-      <Card className="shadow-sm mb-4">
-        <Form layout="inline">
-          <Form.Item label="Filtrar por fecha">
+      <Card className="mb-4">
+        <Row gutter={16}>
+          <Col>
+            Filtrar por fecha:{" "}
             <RangePicker
-              onChange={handleDateFilter}
               value={
                 filters.dateFrom && filters.dateTo
                   ? [dayjs(filters.dateFrom), dayjs(filters.dateTo)]
                   : undefined
               }
-              allowClear
+              onChange={(_, [from, to]) =>
+                dispatch(setFilters({ dateFrom: from, dateTo: to, page: 1 }))
+              }
               format="YYYY-MM-DD"
             />
-          </Form.Item>
-        </Form>
+          </Col>
+          <Col>
+            Categoría:{" "}
+            <Select
+              allowClear
+              style={{ width: 150 }}
+              value={filters.category}
+              onChange={(v) =>
+                dispatch(setFilters({ category: v, page: 1 }))
+              }
+            >
+              <Option value="SERVICIOS">Servicios</Option>
+              <Option value="SUMINISTROS">Suministros</Option>
+              <Option value="ALQUILER">Alquiler</Option>
+              <Option value="OTRO">Otro</Option>
+            </Select>
+          </Col>
+        </Row>
+        <Divider />
+        <Row gutter={16}>
+          <Col span={8}>
+            <Card title="Total periodo">
+              ${summary.total.toLocaleString()}
+            </Card>
+          </Col>
+          <Col span={16}>
+            <ExpenseSummaryChart data={summary.byCategory} />
+          </Col>
+        </Row>
       </Card>
 
-      <Card className="shadow-sm">
-        <Table
-          dataSource={items}
-          columns={columns}
-          rowKey="id"
-          loading={loading}
-          scroll={{ x: true }}
-          size="middle"
-        />
-        {error && <div className="text-red-500 mt-2">{error}</div>}
-      </Card>
+      <Table
+        columns={columns}
+        dataSource={items}
+        rowKey="id"
+        loading={loading}
+        pagination={{
+          current: filters.page,
+          pageSize: filters.pageSize,
+          total,
+          onChange: (p, ps) => dispatch(setFilters({ page: p, pageSize: ps })),
+        }}
+      />
+
+      {error && <div className="text-red-500 mt-2">{error}</div>}
 
       <ExpenseForm
-        open={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        expense={editing}
+        onSave={async (vals) => {
+          if (editing) {
+            await dispatch(editExpense({ id: editing.id!, payload: vals }))
+              .unwrap();
+            message.success("Gasto actualizado");
+          } else {
+            await dispatch(createExpense(vals)).unwrap();
+            message.success("Gasto creado");
+          }
+          dispatch(fetchExpenses(filters));
+          dispatch(fetchExpenseSummary(filters));
+        }}
       />
     </div>
   );
-};
-
-export default ExpenseList;
+}

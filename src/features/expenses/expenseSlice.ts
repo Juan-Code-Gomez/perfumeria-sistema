@@ -1,30 +1,51 @@
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+// src/features/expenses/expenseSlice.ts
+import { createAsyncThunk, createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import * as expensesService from "../../services/expenseService";
 
 export interface Expense {
   id: number;
   date: string;
-  concept: string;
+  description: string;
   amount: number;
   paymentMethod: string;
   notes?: string;
 }
 
+export interface ExpenseFilters {
+  dateFrom?: string;
+  dateTo?: string;
+  category?: string;
+  isRecurring?: boolean;
+  page?: number;
+  pageSize?: number;
+}
+
 interface ExpenseState {
   items: Expense[];
+  total: number;
   loading: boolean;
   error: string | null;
-  filters: { dateFrom?: string; dateTo?: string };
+  filters: ExpenseFilters;
+  summary: {
+    total: number;
+    byCategory: Record<string, number>;
+  };
 }
 
 const initialState: ExpenseState = {
   items: [],
+  total: 0,
   loading: false,
   error: null,
-  filters: {},
+  filters: { page: 1, pageSize: 20 },
+  summary: { total: 0, byCategory: {} },
 };
 
-export const fetchExpenses = createAsyncThunk<Expense[], { dateFrom?: string; dateTo?: string } | undefined>(
+// 1) Thunk para lista + total
+export const fetchExpenses = createAsyncThunk<
+  { items: Expense[]; total: number },
+  ExpenseFilters | undefined
+>(
   "expenses/fetchExpenses",
   async (params, thunkAPI) => {
     try {
@@ -35,7 +56,23 @@ export const fetchExpenses = createAsyncThunk<Expense[], { dateFrom?: string; da
   }
 );
 
-export const createExpense = createAsyncThunk<Expense, Expense>(
+// 2) Thunk para summary
+export const fetchExpenseSummary = createAsyncThunk<
+  { total: number; byCategory: Record<string, number> },
+  { dateFrom?: string; dateTo?: string } | undefined
+>(
+  "expenses/fetchExpenseSummary",
+  async (params, thunkAPI) => {
+    try {
+      return await expensesService.getExpenseSummary(params);
+    } catch (err: any) {
+      return thunkAPI.rejectWithValue(err.message || "Error al cargar resumen");
+    }
+  }
+);
+
+// 3) CRUD thunks (sin cambios)
+export const createExpense = createAsyncThunk<Expense, Omit<Expense, "id">>(
   "expenses/createExpense",
   async (expenseData, thunkAPI) => {
     try {
@@ -46,7 +83,10 @@ export const createExpense = createAsyncThunk<Expense, Expense>(
   }
 );
 
-export const editExpense = createAsyncThunk<Expense, { id: number; payload: Expense }>(
+export const editExpense = createAsyncThunk<
+  Expense,
+  { id: number; payload: Omit<Expense, "id"> }
+>(
   "expenses/editExpense",
   async ({ id, payload }, thunkAPI) => {
     try {
@@ -72,24 +112,39 @@ const expenseSlice = createSlice({
   name: "expenses",
   initialState,
   reducers: {
-    setFilters(state, action) {
-      state.filters = action.payload;
+    // Actualizar filtros (fecha, página, categoría…)
+    setFilters(state, action: PayloadAction<ExpenseFilters>) {
+      state.filters = { ...state.filters, ...action.payload };
     },
   },
   extraReducers: (builder) => {
+    // fetchExpenses
     builder
       .addCase(fetchExpenses.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(fetchExpenses.fulfilled, (state, action) => {
-        state.items = action.payload;
+        state.items = action.payload.items;
+        state.total = action.payload.total;
         state.loading = false;
       })
       .addCase(fetchExpenses.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
+      });
+
+    // fetchExpenseSummary
+    builder
+      .addCase(fetchExpenseSummary.fulfilled, (state, action) => {
+        state.summary = action.payload;
       })
+      .addCase(fetchExpenseSummary.rejected, (state, action) => {
+        // opcional: manejar error de summary
+      });
+
+    // createExpense
+    builder
       .addCase(createExpense.fulfilled, (state, action) => {
         state.items.unshift(action.payload);
         state.loading = false;
@@ -98,6 +153,18 @@ const expenseSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
       });
+
+    // editExpense
+    builder
+      .addCase(editExpense.fulfilled, (state, action) => {
+        const idx = state.items.findIndex((e) => e.id === action.payload.id);
+        if (idx !== -1) state.items[idx] = action.payload;
+      });
+
+    // removeExpense
+    builder.addCase(removeExpense.fulfilled, (state) => {
+      // tras borrar, recargará la lista en el componente
+    });
   },
 });
 

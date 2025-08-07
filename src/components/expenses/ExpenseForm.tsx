@@ -1,88 +1,110 @@
-import React from "react";
-import { Modal, Form, Input, InputNumber, DatePicker, Button, Select, message } from "antd";
-import { useAppDispatch } from "../../store";
-import { createExpense, fetchExpenses } from "../../features/expenses/expenseSlice";
+// src/components/expenses/ExpenseForm.tsx
+
+import React, { useEffect } from "react";
+import { Modal, Form, Input, InputNumber, DatePicker, Select, Button } from "antd";
 import dayjs from "dayjs";
 
 const { Option } = Select;
 
-interface ExpenseFormProps {
-  open: boolean;
-  onClose: () => void;
+export interface Expense {
+  id?: number;
+  date: string;
+  description: string;
+  amount: number;
+  paymentMethod: string;
+  notes?: string;
+  category?: string;
 }
 
-const ExpenseForm: React.FC<ExpenseFormProps> = ({ open, onClose }) => {
-  const [form] = Form.useForm();
-  const dispatch = useAppDispatch();
-  const [saving, setSaving] = React.useState(false);
+interface Props {
+  open: boolean;
+  onClose: () => void;
+  /** Si viene, estamos editando */
+  expense?: Expense | null;
+  /** Callback: crea o actualiza */
+  onSave: (values: Omit<Expense, "id">) => Promise<void>;
+}
 
-  const handleSubmit = async (values: any) => {
-    setSaving(true);
-    try {
-      await dispatch(
-        createExpense({
-          ...values,
-          date: values.date.format("YYYY-MM-DD"),
-        })
-      ).unwrap();
-      message.success("Gasto registrado correctamente");
+const ExpenseForm: React.FC<Props> = ({ open, onClose, expense, onSave }) => {
+  const [form] = Form.useForm();
+
+  // Si cambiamos el expense, precarga el formulario
+  useEffect(() => {
+    if (expense) {
+      form.setFieldsValue({
+        ...expense,
+        date: dayjs(expense.date),
+      });
+    } else {
       form.resetFields();
-      dispatch(fetchExpenses());
-      onClose();
-    } catch (err: any) {
-      message.error(err.message || "Error al registrar gasto");
-    } finally {
-      setSaving(false);
+      form.setFieldsValue({ paymentMethod: "Efectivo" });
     }
+  }, [expense, form]);
+
+  const handleFinish = async (vals: any) => {
+    await onSave({
+      ...vals,
+      date: vals.date.format("YYYY-MM-DD"),
+    });
+    form.resetFields();
+    onClose();
   };
 
   return (
     <Modal
       open={open}
+      title={expense ? "Editar gasto" : "Nuevo gasto"}
       onCancel={onClose}
       footer={null}
-      title="Nuevo gasto"
-      width={400}
       destroyOnClose
     >
       <Form
-        layout="vertical"
         form={form}
-        onFinish={handleSubmit}
-        initialValues={{
-          date: dayjs(),
-          paymentMethod: "Efectivo",
-        }}
+        layout="vertical"
+        onFinish={handleFinish}
+        initialValues={{ paymentMethod: "Efectivo" }}
       >
         <Form.Item
           label="Fecha"
           name="date"
-          rules={[{ required: true, message: "Selecciona la fecha" }]}
+          rules={[{ required: true }]}
         >
-          <DatePicker format="YYYY-MM-DD" style={{ width: "100%" }} />
+          <DatePicker style={{ width: "100%" }} format="YYYY-MM-DD" />
         </Form.Item>
         <Form.Item
           label="Concepto"
-          name="concept"
-          rules={[{ required: true, message: "Describe el gasto" }]}
+          name="description"
+          rules={[{ required: true }]}
         >
-          <Input placeholder="Ej: Pago de servicios" />
+          <Input />
+        </Form.Item>
+        <Form.Item
+          label="Categoría"
+          name="category"
+          rules={[{ required: true }]}
+        >
+          <Select>
+            <Option value="SERVICIOS">Servicios</Option>
+            <Option value="SUMINISTROS">Suministros</Option>
+            <Option value="ALQUILER">Alquiler</Option>
+            <Option value="OTRO">Otro</Option>
+          </Select>
         </Form.Item>
         <Form.Item
           label="Monto"
           name="amount"
-          rules={[{ required: true, message: "Ingresa el monto" }]}
+          rules={[{ required: true }]}
         >
           <InputNumber
-            min={0}
             style={{ width: "100%" }}
+            min={0}
             formatter={(v) => `$ ${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
           />
         </Form.Item>
         <Form.Item
           label="Forma de pago"
           name="paymentMethod"
-          rules={[{ required: true, message: "Selecciona forma de pago" }]}
+          rules={[{ required: true }]}
         >
           <Select>
             <Option value="Efectivo">Efectivo</Option>
@@ -92,11 +114,11 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ open, onClose }) => {
           </Select>
         </Form.Item>
         <Form.Item label="Notas" name="notes">
-          <Input.TextArea placeholder="Detalle adicional (opcional)" />
+          <Input.TextArea />
         </Form.Item>
         <Form.Item>
-          <Button type="primary" htmlType="submit" loading={saving} block>
-            Guardar gasto
+          <Button type="primary" htmlType="submit" block>
+            {expense ? "Actualizar" : "Guardar"}
           </Button>
         </Form.Item>
       </Form>
