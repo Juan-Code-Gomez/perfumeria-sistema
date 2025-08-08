@@ -28,11 +28,13 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
-    // Si recibimos 401, podríamos limpiar el token y redirigir al login
+    // Si recibimos 401, limpiar el token pero NO redirigir automáticamente
+    // para evitar bucles infinitos
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
-      // Opcional: dispatch logout action o redirigir
-      window.location.href = '/login';
+      localStorage.removeItem('user');
+      // Nota: El componente PrivateRoute se encargará de redirigir al login
+      // NO usar window.location.href para evitar bucles
     }
     return Promise.reject(error);
   }

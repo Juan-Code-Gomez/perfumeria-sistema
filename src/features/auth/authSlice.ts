@@ -49,10 +49,16 @@ export const login = createAsyncThunk<
   { rejectValue: string }
 >("auth/login", async (credentials, thunkAPI) => {
   try {
+    console.log("🔥 Login thunk iniciado con credenciales:", credentials);
     const data = await loginService(credentials);
+    console.log("🔥 Datos recibidos del loginService:", data);
+    console.log("🔥 data.user:", data.user);
+    console.log("🔥 data.token:", data.token);
+    
     // suponemos que data tiene la forma: { user: User; token: string }
     return data;
   } catch (error: any) {
+    console.error("🔥 Error en login thunk:", error);
     return thunkAPI.rejectWithValue(
       error.response?.data?.message || "Error al iniciar sesión"
     );
@@ -82,11 +88,24 @@ const authSlice = createSlice({
       .addCase(
         login.fulfilled,
         (state, action: PayloadAction<{ user: User; token: string }>) => {
+          console.log("🔥 Login fulfilled - action.payload:", action.payload);
+          console.log("🔥 action.payload.user:", action.payload.user);
+          console.log("🔥 action.payload.token:", action.payload.token);
+          
           state.loading = false;
           state.user = action.payload.user;
           state.token = action.payload.token;
+          
+          console.log("🔥 Guardando en localStorage:");
+          console.log("🔥 Token a guardar:", action.payload.token);
+          console.log("🔥 User a guardar:", JSON.stringify(action.payload.user));
+          
           localStorage.setItem("token", action.payload.token);
           localStorage.setItem("user", JSON.stringify(action.payload.user));
+          
+          console.log("🔥 Verificando localStorage después de guardar:");
+          console.log("🔥 Token en localStorage:", localStorage.getItem("token"));
+          console.log("🔥 User en localStorage:", localStorage.getItem("user"));
         }
       )
       .addCase(login.rejected, (state, action) => {

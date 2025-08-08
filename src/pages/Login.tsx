@@ -10,10 +10,10 @@ const Login = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const token = useAppSelector((state) => state.auth.token) || localStorage.getItem("token");
+  const { token, user } = useAppSelector((state) => state.auth);
   
-  
-  if (token) {
+  // Solo verificar el token del Redux, no ambos lugares
+  if (token && user) {
     // Ya logueado, redirecciona
     return <Navigate to="/" replace />;
   }
