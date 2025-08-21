@@ -54,8 +54,11 @@ export const fetchCashClosings = createAsyncThunk<
   { dateFrom?: string; dateTo?: string } | undefined
 >("cashClosing/fetchCashClosings", async (params, thunkAPI) => {
   try {
-    return await cashClosingService.getCashClosings(params);
+    const result = await cashClosingService.getCashClosings(params);
+    console.log('Fetch cash closings result:', result);
+    return result;
   } catch (err: any) {
+    console.error('Error fetching cash closings:', err);
     return thunkAPI.rejectWithValue(
       err.message || "Error al cargar cierres de caja"
     );
@@ -80,8 +83,12 @@ export const fetchCashClosingSummary = createAsyncThunk<
   string
 >("cashClosing/fetchCashClosingSummary", async (date, thunkAPI) => {
   try {
-    return await cashClosingService.getCashClosingSummary(date);
+    console.log('Fetching cash closing summary for date:', date);
+    const result = await cashClosingService.getCashClosingSummary(date);
+    console.log('Cash closing summary result:', result);
+    return result;
   } catch (err: any) {
+    console.error('Error fetching cash closing summary:', err);
     return thunkAPI.rejectWithValue(
       err.message || "Error al cargar resumen de cierre"
     );
@@ -99,16 +106,25 @@ const cashClosingSlice = createSlice({
         state.error = null;
       })
       .addCase(fetchCashClosings.fulfilled, (state, action) => {
-        state.items = action.payload;
+        // Asegurar que siempre sea un array
+        state.items = Array.isArray(action.payload) ? action.payload : [];
         state.loading = false;
+        state.error = null;
       })
       .addCase(fetchCashClosings.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
+        state.items = []; // Reset items en caso de error
       })
       .addCase(createCashClosing.fulfilled, (state, action) => {
-        state.items.unshift(action.payload);
+        // Asegurar que items sea un array antes de agregar
+        if (Array.isArray(state.items)) {
+          state.items.unshift(action.payload);
+        } else {
+          state.items = [action.payload];
+        }
         state.loading = false;
+        state.error = null;
       })
       .addCase(createCashClosing.rejected, (state, action) => {
         state.loading = false;
@@ -122,7 +138,7 @@ const cashClosingSlice = createSlice({
         state.summary = action.payload;
         state.loadingSummary = false;
       })
-      .addCase(fetchCashClosingSummary.rejected, (state, action) => {
+      .addCase(fetchCashClosingSummary.rejected, (state) => {
         state.loadingSummary = false;
         state.summary = undefined;
       });

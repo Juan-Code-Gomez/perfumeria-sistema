@@ -13,6 +13,8 @@ import {
   BankOutlined,
   FileDoneOutlined,
   LogoutOutlined,
+  CreditCardOutlined,
+  PieChartOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { useAppSelector } from "../store/index";
@@ -32,6 +34,12 @@ const SidebarMenu: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         theme="dark"
         mode="inline"
         items={[
+          {
+            key: "/pos",
+            icon: <CreditCardOutlined />,
+            label: "POS - Punto de Venta",
+            onClick: () => navigate("/pos"),
+          },
           {
             key: "/ventas",
             icon: <ShoppingCartOutlined />,
@@ -57,6 +65,18 @@ const SidebarMenu: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
       icon: <DashboardOutlined />,
       label: "Dashboard",
       onClick: () => navigate("/"),
+    },
+    {
+      key: "/executive-dashboard",
+      icon: <PieChartOutlined />,
+      label: "Dashboard Ejecutivo",
+      onClick: () => navigate("/executive-dashboard"),
+    },
+    {
+      key: "/pos",
+      icon: <CreditCardOutlined />,
+      label: "POS - Punto de Venta",
+      onClick: () => navigate("/pos"),
     },
     {
       key: "/ventas",

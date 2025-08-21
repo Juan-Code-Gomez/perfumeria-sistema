@@ -7,6 +7,7 @@ import ProductList from "../pages/products/ProductList";
 import ProviderList from "../pages/providers/ProviderList";
 import ProfitSummary from "../pages/reports/ProfitSummary";
 import DashboardHome from "../pages/Dashboard";
+import ExecutiveDashboard from "../pages/ExecutiveDashboard";
 import Unauthorized from "../pages/Unauthorized";
 import AppLayout from "../components/AppLayout";
 import CategoriesList from "../pages/categories/CategoriesList";
@@ -18,6 +19,7 @@ import CashClosingPage from "../pages/cashClosing/CashClosingPage";
 import ExpenseList from "../pages/expenses/ExpenseList";
 import PendingSales from "../pages/sales/PendingSales";
 import ClientList from "../pages/clients/ClientList";
+import POSPage from "../pages/sales/POSPage";
 
 export const router = createBrowserRouter([
   {
@@ -27,6 +29,8 @@ export const router = createBrowserRouter([
         element: <PrivateRoute />,
         children: [
           { path: "/", element: <DashboardHome /> },
+          { path: "/executive-dashboard", element: <ExecutiveDashboard /> },
+          { path: "/pos", element: <POSPage /> },
           { path: "/ventas", element: <SaleList /> },
           {
             path: "/products",

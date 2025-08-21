@@ -34,8 +34,8 @@ const ProductForm: React.FC<Props> = ({ product, onSaved }) => {
   const [categories, setCategories] = React.useState<Category[]>([]);
 
   useEffect(() => {
-    dispatch(getUnits()).unwrap().then(setUnits);
-    dispatch(getCategories()).unwrap().then(setCategories);
+    dispatch(getUnits({})).unwrap().then(setUnits);
+    dispatch(getCategories({})).unwrap().then(setCategories);
     if (product) {
       form.setFieldsValue({
         ...product,
@@ -63,17 +63,23 @@ const ProductForm: React.FC<Props> = ({ product, onSaved }) => {
       };
 
       if (product) {
-        await dispatch(
+        const result = await dispatch(
           updateProduct({ id: product.id, product: processedValues })
         ).unwrap();
+        console.log('Update result:', result);
         message.success("Producto actualizado exitosamente");
+        // Después de actualizar, recargar la lista
+        dispatch(fetchProducts(filters));
       } else {
-        await dispatch(createProduct(processedValues)).unwrap();
+        const result = await dispatch(createProduct(processedValues)).unwrap();
+        console.log('Create result:', result);
         message.success("Producto creado exitosamente");
+        // El producto ya se agrega automáticamente al estado por el Redux slice
       }
-      dispatch(fetchProducts(filters));
+      onSaved(); // Cerrar el modal
       onSaved();
     } catch (err: any) {
+      console.error('Error en onFinish:', err);
       message.error(err.message || "Error al guardar producto");
     } finally {
       setLoading(false);

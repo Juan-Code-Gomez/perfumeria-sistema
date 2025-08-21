@@ -2,19 +2,21 @@ export interface Unit {
   id: number;
   name: string;
   symbol?: string;
+  description?: string;
 }
 
 export interface Category {
   id: number;
   name: string;
+  description?: string;
 }
 
 export interface Product {
   id: number;
   name: string;
   description?: string;
-  unit: Unit;
-  category: Category;
+  categoryId: number;
+  unitId: number;
   stock: number;
   minStock?: number;
   purchasePrice: number;
@@ -22,4 +24,9 @@ export interface Product {
   imageUrl?: string;
   utilidad?: number;
   margen?: number;
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  unit?: Unit;
+  category?: Category;
 }

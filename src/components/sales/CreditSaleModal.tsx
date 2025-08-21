@@ -115,10 +115,10 @@ export default function CreditSaleModal({ open, onClose, onSaved }: Props) {
   };
 
   // cuando busques productos
-  const onSearchProd = (key:number, q:string) => {
+  const onSearchProd = (q:string) => {
     debouncedFetch(q, setSuggestedProducts);
   };
-  const onFocusProd = (key:number) => {
+  const onFocusProd = () => {
     debouncedFetch('', setSuggestedProducts);
   };
   const onSelectProd = (key:number, pid:number) => {
@@ -134,8 +134,8 @@ export default function CreditSaleModal({ open, onClose, onSaved }: Props) {
         <Select
           showSearch value={v}
           style={{width:320}}
-          onSearch={txt=>onSearchProd(row.key,txt)}
-          onFocus={()=>onFocusProd(row.key)}
+          onSearch={txt=>onSearchProd(txt)}
+          onFocus={()=>onFocusProd()}
           loading={productLoading}
           filterOption={false}
           onChange={val=>onSelectProd(row.key,val)}

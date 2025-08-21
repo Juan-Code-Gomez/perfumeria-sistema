@@ -14,7 +14,21 @@ import {
   message,
   Descriptions,
   Spin,
+  Typography,
+  Space,
+  Statistic,
+  Alert,
+  Tooltip,
 } from "antd";
+import {
+  DollarOutlined,
+  CalendarOutlined,
+  CloseCircleOutlined,
+  CheckCircleOutlined,
+  InfoCircleOutlined,
+  CalculatorOutlined,
+  ReloadOutlined,
+} from '@ant-design/icons';
 import { useAppDispatch, useAppSelector } from "../../store";
 import {
   fetchCashClosings,
@@ -24,6 +38,7 @@ import {
 import dayjs from "dayjs";
 
 const { RangePicker } = DatePicker;
+const { Title, Text } = Typography;
 
 const CashClosingList: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -31,6 +46,17 @@ const CashClosingList: React.FC = () => {
 
   // Filtros de fechas
   const [dateRange, setDateRange] = useState<[any, any]>();
+
+  // Debug: verificar el tipo de datos
+  console.log('Cash Closing Items:', items, 'Type:', typeof items, 'Is Array:', Array.isArray(items));
+
+  // Asegurarse de que items sea siempre un array
+  const safeItems = Array.isArray(items) ? items : [];
+
+  // Cargar datos iniciales
+  useEffect(() => {
+    dispatch(fetchCashClosings());
+  }, [dispatch]);
 
   useEffect(() => {
     const params =
@@ -44,37 +70,135 @@ const CashClosingList: React.FC = () => {
   }, [dispatch, dateRange]);
 
   const columns = [
-    { title: "Fecha", dataIndex: "date", key: "date", render: (v: string) => dayjs(v).format("YYYY-MM-DD") },
-    { title: "Ventas", dataIndex: "totalSales", key: "totalSales", render: (v: number) => `$${v.toLocaleString()}` },
-    { title: "Gastos", dataIndex: "totalExpense", key: "totalExpense", render: (v: number) => `$${v.toLocaleString()}` },
-    { title: "Cierre contado", dataIndex: "closingCash", key: "closingCash", render: (v: number) => `$${v.toLocaleString()}` },
-    { title: "Cierre sistema", dataIndex: "systemCash", key: "systemCash", render: (v: number) => `$${v.toLocaleString()}` },
+    { 
+      title: "📅 Fecha", 
+      dataIndex: "date", 
+      key: "date", 
+      render: (v: string) => (
+        <Space>
+          <CalendarOutlined />
+          {dayjs(v).format("DD/MM/YYYY")}
+        </Space>
+      ),
+      sorter: (a: any, b: any) => dayjs(a.date).valueOf() - dayjs(b.date).valueOf(),
+    },
+    { 
+      title: "💰 Ventas Total", 
+      dataIndex: "totalSales", 
+      key: "totalSales", 
+      render: (v: number) => (
+        <Statistic 
+          value={v} 
+          prefix="$" 
+          precision={0} 
+          valueStyle={{ fontSize: '14px', color: '#52c41a' }}
+        />
+      ),
+      sorter: (a: any, b: any) => a.totalSales - b.totalSales,
+    },
+    { 
+      title: "💸 Gastos", 
+      dataIndex: "totalExpense", 
+      key: "totalExpense", 
+      render: (v: number) => (
+        <Statistic 
+          value={v} 
+          prefix="$" 
+          precision={0} 
+          valueStyle={{ fontSize: '14px', color: '#ff4d4f' }}
+        />
+      ),
+      sorter: (a: any, b: any) => a.totalExpense - b.totalExpense,
+    },
+    { 
+      title: "🏧 Caja Real", 
+      dataIndex: "closingCash", 
+      key: "closingCash", 
+      render: (v: number) => (
+        <Statistic 
+          value={v} 
+          prefix="$" 
+          precision={0} 
+          valueStyle={{ fontSize: '14px', color: '#1890ff' }}
+        />
+      ),
+      sorter: (a: any, b: any) => a.closingCash - b.closingCash,
+    },
+    { 
+      title: "🖥️ Caja Sistema", 
+      dataIndex: "systemCash", 
+      key: "systemCash", 
+      render: (v: number) => (
+        <Statistic 
+          value={v} 
+          prefix="$" 
+          precision={0} 
+          valueStyle={{ fontSize: '14px', color: '#722ed1' }}
+        />
+      ),
+      sorter: (a: any, b: any) => a.systemCash - b.systemCash,
+    },
     {
-      title: "Diferencia",
+      title: "⚖️ Diferencia",
       dataIndex: "difference",
       key: "difference",
-      render: (v: number) =>
-        v === 0 ? (
-          <Tag color="green">Sin diferencia</Tag>
-        ) : (
-          <Tag color="red">{v > 0 ? "+" : ""}${v.toLocaleString()}</Tag>
-        ),
+      render: (v: number) => {
+        if (v === 0) {
+          return (
+            <Tag icon={<CheckCircleOutlined />} color="success">
+              Exacto
+            </Tag>
+          );
+        } else if (v > 0) {
+          return (
+            <Tag icon={<InfoCircleOutlined />} color="warning">
+              +${v.toLocaleString()} (Sobra)
+            </Tag>
+          );
+        } else {
+          return (
+            <Tag icon={<CloseCircleOutlined />} color="error">
+              ${Math.abs(v).toLocaleString()} (Falta)
+            </Tag>
+          );
+        }
+      },
+      sorter: (a: any, b: any) => a.difference - b.difference,
     },
-    { title: "Notas", dataIndex: "notes", key: "notes" },
+    { 
+      title: "📝 Notas", 
+      dataIndex: "notes", 
+      key: "notes",
+      render: (notes: string) => notes ? (
+        <Tooltip title={notes}>
+          <Text ellipsis style={{ maxWidth: 150 }}>
+            {notes}
+          </Text>
+        </Tooltip>
+      ) : (
+        <Text type="secondary">Sin notas</Text>
+      ),
+    },
   ];
 
   // Formulario de registro de cierre
   const [form] = Form.useForm();
   const [saving, setSaving] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(dayjs());
+  const [selectedDate, setSelectedDate] = useState(dayjs()); // Fecha actual por defecto
 
   // Maneja la carga de resumen al abrir modal
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  console.log('Current state - Summary:', summary, 'LoadingSummary:', loadingSummary, 'SelectedDate:', selectedDate.format('YYYY-MM-DD'));
+
   const handleOpenModal = () => {
+    console.log('Opening cash closing modal...');
     setIsModalOpen(true);
+    
     // Al abrir, trae el resumen del día seleccionado
     const fecha = selectedDate.format("YYYY-MM-DD");
+    console.log('Fetching summary for date:', fecha);
+    
     dispatch(fetchCashClosingSummary(fecha));
     form.setFieldsValue({
       date: selectedDate,
@@ -91,10 +215,13 @@ const CashClosingList: React.FC = () => {
 
   // Cuando cambia la fecha del cierre, actualiza el resumen
   const handleChangeDate = (date: any) => {
+    console.log('Date changed to:', date);
     setSelectedDate(date);
     form.setFieldsValue({ date });
     if (date) {
-      dispatch(fetchCashClosingSummary(date.format("YYYY-MM-DD")));
+      const dateString = date.format("YYYY-MM-DD");
+      console.log('Fetching summary for new date:', dateString);
+      dispatch(fetchCashClosingSummary(dateString));
     }
   };
 
@@ -128,79 +255,177 @@ const CashClosingList: React.FC = () => {
   };
 
   return (
-    <div className="p-4">
-      <Row justify="space-between" align="middle" className="mb-4">
+    <div className="p-6">
+      <Row justify="space-between" align="middle" className="mb-6">
         <Col>
-          <h1 className="text-2xl font-semibold">Cierres de Caja</h1>
-          <p className="text-gray-600">Historial de cierres diarios</p>
+          <Title level={2} style={{ margin: 0 }}>
+            💰 Cierres de Caja
+          </Title>
+          <Text type="secondary">
+            Control y seguimiento de cierres diarios de caja
+          </Text>
         </Col>
         <Col>
-          <Button type="primary" onClick={handleOpenModal} size="small">
-            Registrar cierre de caja
-          </Button>
+          <Space>
+            <Button 
+              icon={<ReloadOutlined />} 
+              onClick={() => dispatch(fetchCashClosings())}
+            >
+              Actualizar
+            </Button>
+            <Button 
+              type="primary" 
+              icon={<CalculatorOutlined />}
+              onClick={handleOpenModal}
+            >
+              Registrar Cierre
+            </Button>
+          </Space>
         </Col>
       </Row>
-      <Card className="mb-4">
+
+      {/* Filtros */}
+      <Card className="mb-6" size="small">
         <Form layout="inline">
-          <Form.Item label="Filtrar por fecha">
+          <Form.Item label="📅 Filtrar por fecha">
             <RangePicker
               value={dateRange}
               onChange={(dates) => setDateRange(dates as [any, any])}
               allowClear
-              format="YYYY-MM-DD"
+              format="DD/MM/YYYY"
+              placeholder={['Fecha inicial', 'Fecha final']}
             />
           </Form.Item>
         </Form>
       </Card>
+
+      {/* Tabla de cierres */}
       <Card>
-        <Table
-          dataSource={items}
-          columns={columns}
-          rowKey="id"
-          loading={loading}
-          scroll={{ x: true }}
-        />
-        {error && <div className="text-red-500 mt-2">{error}</div>}
+        {safeItems.length === 0 && !loading && !error ? (
+          <div className="text-center py-8">
+            <Title level={4} type="secondary">
+              📊 No hay cierres de caja registrados
+            </Title>
+            <Text type="secondary">
+              Comienza registrando tu primer cierre de caja del día
+            </Text>
+          </div>
+        ) : (
+          <Table
+            dataSource={safeItems}
+            columns={columns}
+            rowKey="id"
+            loading={loading}
+            scroll={{ x: true }}
+            pagination={{
+              showSizeChanger: true,
+              showQuickJumper: true,
+              showTotal: (total, range) => 
+                `${range[0]}-${range[1]} de ${total} registros`,
+            }}
+            size="middle"
+            locale={{
+              emptyText: loading ? 'Cargando...' : 'No hay cierres registrados'
+            }}
+          />
+        )}
+        {error && (
+          <Alert
+            message="Error al cargar cierres"
+            description={error}
+            type="error"
+            showIcon
+            className="mt-4"
+            closable
+          />
+        )}
       </Card>
       <Modal
         open={isModalOpen}
         onCancel={handleCloseModal}
         footer={null}
-        title="Registrar cierre de caja"
-        width={600}
+        title={
+          <Space>
+            <CalculatorOutlined />
+            <span>Registrar Cierre de Caja</span>
+          </Space>
+        }
+        width={800}
         destroyOnClose
       >
         {loadingSummary ? (
-          <Spin tip="Cargando resumen..." />
+          <div className="text-center py-8">
+            <Spin size="large" tip="Calculando resumen del día..." />
+          </div>
         ) : summary ? (
           <>
+            {/* Resumen del día */}
+            <Alert
+              message="📊 Resumen del Día Seleccionado"
+              description={`Datos automáticos calculados del ${dayjs(summary.fecha).format('DD/MM/YYYY')}`}
+              type="info"
+              showIcon
+              className="mb-4"
+            />
+            
+            <Row gutter={16} className="mb-6">
+              <Col span={8}>
+                <Card size="small" className="text-center">
+                  <Statistic
+                    title="💰 Total Ventas"
+                    value={summary.totalSales || 0}
+                    prefix="$"
+                    valueStyle={{ color: '#52c41a', fontSize: '18px' }}
+                  />
+                </Card>
+              </Col>
+              <Col span={8}>
+                <Card size="small" className="text-center">
+                  <Statistic
+                    title="💸 Total Gastos"
+                    value={summary.totalExpense || 0}
+                    prefix="$"
+                    valueStyle={{ color: '#ff4d4f', fontSize: '18px' }}
+                  />
+                </Card>
+              </Col>
+              <Col span={8}>
+                <Card size="small" className="text-center">
+                  <Statistic
+                    title="🖥️ Caja Sistema"
+                    value={summary.systemCash || 0}
+                    prefix="$"
+                    valueStyle={{ color: '#1890ff', fontSize: '18px' }}
+                  />
+                </Card>
+              </Col>
+            </Row>
+
             <Descriptions
               column={2}
               bordered
               size="small"
-              className="mb-4"
+              className="mb-6"
               layout="horizontal"
+              title="💳 Desglose de Ventas por Método de Pago"
             >
-              <Descriptions.Item label="Ventas totales" span={1}>
-                <b>${summary.totalSales?.toLocaleString()}</b>
+              <Descriptions.Item label="💵 Efectivo">
+                <Text strong>${summary.cashSales?.toLocaleString()}</Text>
               </Descriptions.Item>
-              <Descriptions.Item label="Gastos">
-                <b>${summary.totalExpense?.toLocaleString()}</b>
+              <Descriptions.Item label="💳 Tarjeta">
+                <Text strong>${summary.cardSales?.toLocaleString()}</Text>
               </Descriptions.Item>
-              <Descriptions.Item label="Efectivo vendido">
-                ${summary.cashSales?.toLocaleString()}
+              <Descriptions.Item label="🏦 Transferencia">
+                <Text strong>${summary.transferSales?.toLocaleString()}</Text>
               </Descriptions.Item>
-              <Descriptions.Item label="Tarjeta vendido">
-                ${summary.cardSales?.toLocaleString()}
+              <Descriptions.Item label="📋 Crédito">
+                <Text strong>${summary.creditSales?.toLocaleString()}</Text>
               </Descriptions.Item>
-              <Descriptions.Item label="Transferencia vendido">
-                ${summary.transferSales?.toLocaleString()}
+              <Descriptions.Item label="🏪 Pagos a Proveedores">
+                <Text strong>${summary.totalPayments?.toLocaleString()}</Text>
               </Descriptions.Item>
-              <Descriptions.Item label="Pagos a proveedores">
-                ${summary.totalPayments?.toLocaleString()}
-              </Descriptions.Item>
-              <Descriptions.Item label="Caja sistema" span={2}>
-                <b>${summary.systemCash?.toLocaleString()}</b>
+              <Descriptions.Item label="💰 Otros Ingresos">
+                <Text strong>${summary.totalIncome?.toLocaleString()}</Text>
               </Descriptions.Item>
             </Descriptions>
             <Form
@@ -215,36 +440,62 @@ const CashClosingList: React.FC = () => {
                 notes: "",
               }}
             >
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Form.Item
+                    label={
+                      <Space>
+                        <CalendarOutlined />
+                        <span>Fecha del Cierre</span>
+                      </Space>
+                    }
+                    name="date"
+                    rules={[{ required: true, message: "Selecciona la fecha" }]}
+                  >
+                    <DatePicker
+                      format="DD/MM/YYYY"
+                      style={{ width: "100%" }}
+                      value={selectedDate}
+                      onChange={handleChangeDate}
+                      allowClear={false}
+                      placeholder="Seleccionar fecha"
+                    />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item
+                    label={
+                      <Space>
+                        <DollarOutlined />
+                        <span>Saldo Inicial (Apertura)</span>
+                      </Space>
+                    }
+                    name="openingCash"
+                    rules={[{ required: true, message: "Ingresa el saldo inicial" }]}
+                    tooltip="Efectivo que había en caja al iniciar el día"
+                  >
+                    <InputNumber
+                      min={0}
+                      formatter={(v) =>
+                        `$ ${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+                      }
+                      style={{ width: "100%" }}
+                      placeholder="0"
+                    />
+                  </Form.Item>
+                </Col>
+              </Row>
+
               <Form.Item
-                label="Fecha"
-                name="date"
-                rules={[{ required: true, message: "Selecciona la fecha" }]}
-              >
-                <DatePicker
-                  format="YYYY-MM-DD"
-                  style={{ width: "100%" }}
-                  value={selectedDate}
-                  onChange={handleChangeDate}
-                  allowClear={false}
-                />
-              </Form.Item>
-              <Form.Item
-                label="Saldo inicial"
-                name="openingCash"
-                rules={[{ required: true, message: "Ingresa el saldo inicial" }]}
-              >
-                <InputNumber
-                  min={0}
-                  formatter={(v) =>
-                    `$ ${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
-                  }
-                  style={{ width: "100%" }}
-                />
-              </Form.Item>
-              <Form.Item
-                label="Saldo contado (final)"
+                label={
+                  <Space>
+                    <DollarOutlined />
+                    <span>Saldo Final Contado (Cierre Real)</span>
+                  </Space>
+                }
                 name="closingCash"
                 rules={[{ required: true, message: "Ingresa el saldo contado" }]}
+                tooltip="Efectivo real contado físicamente al final del día"
               >
                 <InputNumber
                   min={0}
@@ -252,37 +503,99 @@ const CashClosingList: React.FC = () => {
                     `$ ${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
                   }
                   style={{ width: "100%" }}
+                  placeholder="0"
+                  size="large"
                 />
               </Form.Item>
-              <Form.Item label="Notas" name="notes">
-                <Input.TextArea placeholder="Observaciones del cierre (opcional)" />
+
+              <Form.Item
+                label={
+                  <Space>
+                    <InfoCircleOutlined />
+                    <span>Observaciones</span>
+                  </Space>
+                }
+                name="notes"
+              >
+                <Input.TextArea 
+                  placeholder="Cualquier observación sobre el cierre del día (opcional)" 
+                  rows={3}
+                />
               </Form.Item>
-              <div style={{ marginBottom: 16 }}>
-                <b>
-                  Diferencia:{" "}
-                  {diff === 0 ? (
-                    <Tag color="green">Sin diferencia</Tag>
-                  ) : (
-                    <Tag color="red">{diff > 0 ? "+" : ""}${diff.toLocaleString()}</Tag>
-                  )}
-                </b>
-              </div>
+
+              {/* Indicador de diferencia */}
+              <Card 
+                size="small" 
+                className={`mb-4 ${
+                  diff === 0 ? 'border-green-400' : 
+                  diff > 0 ? 'border-yellow-400' : 'border-red-400'
+                }`}
+              >
+                <Row justify="center" align="middle">
+                  <Col span={24} className="text-center">
+                    <Text strong style={{ fontSize: '16px' }}>
+                      ⚖️ Diferencia: {" "}
+                      {diff === 0 ? (
+                        <Tag icon={<CheckCircleOutlined />} color="success" style={{ fontSize: '14px' }}>
+                          Caja Cuadrada - Sin Diferencia
+                        </Tag>
+                      ) : diff > 0 ? (
+                        <Tag icon={<InfoCircleOutlined />} color="warning" style={{ fontSize: '14px' }}>
+                          Sobra ${diff.toLocaleString()} - Revisar
+                        </Tag>
+                      ) : (
+                        <Tag icon={<CloseCircleOutlined />} color="error" style={{ fontSize: '14px' }}>
+                          Falta ${Math.abs(diff).toLocaleString()} - Revisar
+                        </Tag>
+                      )}
+                    </Text>
+                  </Col>
+                </Row>
+              </Card>
+
               <Form.Item>
                 <Button
                   type="primary"
                   htmlType="submit"
                   loading={saving}
                   block
-                  disabled={summary.totalSales === 0}
+                  size="large"
+                  disabled={!summary || summary.totalSales === 0}
+                  icon={<CheckCircleOutlined />}
                 >
-                  Guardar cierre
+                  {saving ? 'Guardando...' : 'Registrar Cierre de Caja'}
                 </Button>
+                {summary && summary.totalSales === 0 && (
+                  <Alert
+                    message="No hay ventas registradas para este día"
+                    type="warning"
+                    showIcon
+                    className="mt-2"
+                  />
+                )}
               </Form.Item>
             </Form>
           </>
         ) : (
-          <div className="text-red-500">
-            No hay ventas registradas este día o ocurrió un error.
+          <div className="text-center py-8">
+            <Alert
+              message="⚠️ Sin datos para mostrar"
+              description={
+                <div>
+                  <p>No hay ventas ni gastos registrados para el día seleccionado ({dayjs(selectedDate).format('DD/MM/YYYY')})</p>
+                  <p><strong>Debugging info:</strong></p>
+                  <pre style={{ fontSize: '12px', textAlign: 'left' }}>
+                    Summary: {JSON.stringify(summary, null, 2)}
+                    <br />
+                    Loading Summary: {loadingSummary ? 'true' : 'false'}
+                    <br />
+                    Selected Date: {selectedDate.format('YYYY-MM-DD')}
+                  </pre>
+                </div>
+              }
+              type="warning"
+              showIcon
+            />
           </div>
         )}
       </Modal>

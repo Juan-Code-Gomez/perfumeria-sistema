@@ -21,7 +21,6 @@ import {
   SaveOutlined,
   CloseOutlined,
   BarChartOutlined,
-  EyeOutlined,
 } from "@ant-design/icons";
 import { useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../../store";

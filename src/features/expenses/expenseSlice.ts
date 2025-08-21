@@ -7,6 +7,7 @@ export interface Expense {
   date: string;
   description: string;
   amount: number;
+  category: string;
   paymentMethod: string;
   notes?: string;
 }
@@ -15,6 +16,8 @@ export interface ExpenseFilters {
   dateFrom?: string;
   dateTo?: string;
   category?: string;
+  paymentMethod?: string;
+  search?: string;
   isRecurring?: boolean;
   page?: number;
   pageSize?: number;
@@ -28,7 +31,10 @@ interface ExpenseState {
   filters: ExpenseFilters;
   summary: {
     total: number;
+    dailyAverage: number;
+    previousMonthTotal: number;
     byCategory: Record<string, number>;
+    byPaymentMethod: Record<string, number>;
   };
 }
 
@@ -38,7 +44,13 @@ const initialState: ExpenseState = {
   loading: false,
   error: null,
   filters: { page: 1, pageSize: 20 },
-  summary: { total: 0, byCategory: {} },
+  summary: { 
+    total: 0, 
+    dailyAverage: 0,
+    previousMonthTotal: 0,
+    byCategory: {},
+    byPaymentMethod: {}
+  },
 };
 
 // 1) Thunk para lista + total
@@ -58,7 +70,13 @@ export const fetchExpenses = createAsyncThunk<
 
 // 2) Thunk para summary
 export const fetchExpenseSummary = createAsyncThunk<
-  { total: number; byCategory: Record<string, number> },
+  { 
+    total: number; 
+    dailyAverage: number;
+    previousMonthTotal: number;
+    byCategory: Record<string, number>;
+    byPaymentMethod: Record<string, number>;
+  },
   { dateFrom?: string; dateTo?: string } | undefined
 >(
   "expenses/fetchExpenseSummary",
@@ -139,7 +157,7 @@ const expenseSlice = createSlice({
       .addCase(fetchExpenseSummary.fulfilled, (state, action) => {
         state.summary = action.payload;
       })
-      .addCase(fetchExpenseSummary.rejected, (state, action) => {
+      .addCase(fetchExpenseSummary.rejected, () => {
         // opcional: manejar error de summary
       });
 
@@ -162,7 +180,7 @@ const expenseSlice = createSlice({
       });
 
     // removeExpense
-    builder.addCase(removeExpense.fulfilled, (state) => {
+    builder.addCase(removeExpense.fulfilled, () => {
       // tras borrar, recargará la lista en el componente
     });
   },

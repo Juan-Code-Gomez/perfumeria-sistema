@@ -3,10 +3,11 @@ import api from "./api";
 export interface Unit {
     id: number;
     name: string;
-    abbreviation?: string;
+    symbol?: string;
+    description?: string;
     unitType?: string;
-    conversionFactor?: number;
     isActive: boolean;
+    isDecimal: boolean;
     createdAt: string;
     updatedAt: string;
     _count?: {
@@ -20,12 +21,13 @@ export interface UnitStatistics {
     inactiveUnits: number;
     unitsWithProducts: number;
     unitsByType: Array<{
-        unitType: string;
+        type: string;
         count: number;
     }>;
     mostUsedUnits: Array<{
         id: number;
         name: string;
+        symbol: string;
         productCount: number;
     }>;
     recentUnits: Unit[];
@@ -33,9 +35,10 @@ export interface UnitStatistics {
 
 export const createUnit = async (unit: { 
     name: string; 
-    abbreviation?: string;
+    symbol?: string;
+    description?: string;
     unitType?: string;
-    conversionFactor?: number;
+    isDecimal?: boolean;
 }) => {
     const response = await api.post("/units", unit);
     return response.data;
@@ -52,36 +55,46 @@ export const getUnits = async (params?: {
     if (params?.unitType) queryParams.append('unitType', params.unitType);
     
     const response = await api.get(`/units?${queryParams.toString()}`);
-    return response.data;
+    // El backend devuelve { success: true, data: { success: true, data: units[] } }
+    const responseData = response.data.success ? response.data.data : response.data;
+    return responseData.success ? responseData.data : responseData;
 }
 
 export const getUnitStatistics = async (): Promise<UnitStatistics> => {
     const response = await api.get("/units/statistics");
-    return response.data;
+    // El backend devuelve { success: true, data: { success: true, data: statistics } }
+    const responseData = response.data.success ? response.data.data : response.data;
+    return responseData.success ? responseData.data : responseData;
 }
 
 export const getUnitsByType = async (type: string): Promise<Unit[]> => {
     const response = await api.get(`/units/by-type/${type}`);
-    return response.data;
+    // El backend devuelve { success: true, data: { success: true, data: units[] } }
+    const responseData = response.data.success ? response.data.data : response.data;
+    return responseData.success ? responseData.data : responseData;
 }
 
 export const getUnitById = async (id: number): Promise<Unit> => {
     const response = await api.get(`/units/${id}`);
-    return response.data;
+    // El backend devuelve { success: true, data: { success: true, data: unit } }
+    const responseData = response.data.success ? response.data.data : response.data;
+    return responseData.success ? responseData.data : responseData;
 }
 
 export const updateUnit = async (unit: { 
     id: number; 
     name: string;
-    abbreviation?: string;
+    symbol?: string;
+    description?: string;
     unitType?: string;
-    conversionFactor?: number;
+    isDecimal?: boolean;
 }) => {
     const response = await api.put(`/units/${unit.id}`, { 
         name: unit.name,
-        abbreviation: unit.abbreviation,
+        symbol: unit.symbol,
+        description: unit.description,
         unitType: unit.unitType,
-        conversionFactor: unit.conversionFactor
+        isDecimal: unit.isDecimal
     });
     return response.data;
 }

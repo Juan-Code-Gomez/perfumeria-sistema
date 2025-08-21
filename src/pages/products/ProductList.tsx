@@ -21,6 +21,8 @@ import {
   setFilters,
   clearFilters,
   setPage,
+  deleteProduct,
+  exportProducts,
 } from "../../features/products/productSlice";
 // import {
 //   deleteProduct,
@@ -61,10 +63,10 @@ const ProductList: React.FC = () => {
   useEffect(() => {
     // Solo cargar categorías si nunca se han cargado
     if (!listCategories || listCategories.length === 0) {
-      dispatch(getCategories());
+      dispatch(getCategories({}));
     }
     if (!listUnits || listUnits.length === 0) {
-      dispatch(getUnits());
+      dispatch(getUnits({}));
     }
     // Solo se ejecuta una vez al inicio
     // eslint-disable-next-line
@@ -79,14 +81,15 @@ const ProductList: React.FC = () => {
     // Limpia valores vacíos para evitar mandar undefined/null innecesarios
     const cleanValues = { ...values };
 
-    // Convierte precios y IDs a número (los selects devuelven string a veces)
+    // Convierte valores numéricos
     if (cleanValues.categoryId)
       cleanValues.categoryId = Number(cleanValues.categoryId);
     if (cleanValues.unitId) cleanValues.unitId = Number(cleanValues.unitId);
-    if (cleanValues.salePriceMin)
-      cleanValues.salePriceMin = Number(cleanValues.salePriceMin);
-    if (cleanValues.salePriceMax)
-      cleanValues.salePriceMax = Number(cleanValues.salePriceMax);
+    if (cleanValues.supplierId) cleanValues.supplierId = Number(cleanValues.supplierId);
+    if (cleanValues.stockMin)
+      cleanValues.stockMin = Number(cleanValues.stockMin);
+    if (cleanValues.stockMax)
+      cleanValues.stockMax = Number(cleanValues.stockMax);
 
     // Solo manda filtros relevantes (opcional)
     Object.keys(cleanValues).forEach((key) => {
@@ -105,9 +108,26 @@ const ProductList: React.FC = () => {
   };
 
   // CRUD local + llamada a thunks (puedes reemplazar add/update/delete por sus thunks)
-  const handleDelete = (_id: number) => {
-    // dispatch(deleteProduct(id));
-    message.success("Producto eliminado");
+  const handleDelete = async (id: number) => {
+    try {
+      await dispatch(deleteProduct(id)).unwrap();
+      message.success("Producto eliminado exitosamente");
+      // Recargar los productos para actualizar la lista
+      dispatch(fetchProducts(filters));
+    } catch (error) {
+      message.error("Error al eliminar el producto");
+      console.error("Error deleting product:", error);
+    }
+  };
+
+  const handleExport = async () => {
+    try {
+      await dispatch(exportProducts()).unwrap();
+      message.success("Productos exportados exitosamente");
+    } catch (error) {
+      message.error("Error al exportar productos");
+      console.error("Error exporting products:", error);
+    }
   };
 
   const handleShowModal = (product?: Product) => {
@@ -147,44 +167,53 @@ const ProductList: React.FC = () => {
       title: "Unidad",
       dataIndex: "unit",
       key: "unit",
-      render: (u: Unit) => <Tag>{u.name}</Tag>,
+      render: (u: Unit | undefined) => <Tag>{u?.name || 'Sin unidad'}</Tag>,
     },
     {
       title: "Categoría",
       dataIndex: "category",
       key: "category",
-      render: (c: Category) => <Tag>{c?.name}</Tag>,
+      render: (c: Category | undefined) => <Tag>{c?.name || 'Sin categoría'}</Tag>,
     },
     {
       title: "Stock",
       dataIndex: "stock",
       key: "stock",
-      render: (s: number) =>
-        s < 10 ? (
-          <Tag color="red">
-            {s} <span role="img">⚠️</span>
-          </Tag>
-        ) : (
-          s
-        ),
+      render: (s: number) => {
+        if (s <= 1) {
+          return (
+            <Tag color="red">
+              {s} <span role="img">🔴</span>
+            </Tag>
+          );
+        } else if (s === 2) {
+          return (
+            <Tag color="orange">
+              {s} <span role="img">🟡</span>
+            </Tag>
+          );
+        } else {
+          return <span>{s}</span>;
+        }
+      },
     },
     {
       title: "P. Compra",
       dataIndex: "purchasePrice",
       key: "purchasePrice",
-      render: (v: number) => `$${v.toLocaleString()}`,
+      render: (v: number) => v ? `$${v.toLocaleString()}` : '$0',
     },
     {
       title: "P. Venta",
       dataIndex: "salePrice",
       key: "salePrice",
-      render: (v: number) => `$${v.toLocaleString()}`,
+      render: (v: number) => v ? `$${v.toLocaleString()}` : '$0',
     },
     {
       title: "Utilidad",
       dataIndex: "utilidad",
       key: "utilidad",
-      render: (v: number) => (v !== undefined ? `$${v.toLocaleString()}` : "-"),
+      render: (v: number) => (v != null ? `$${v.toLocaleString()}` : "-"),
     },
     {
       title: "Margen",
@@ -243,6 +272,14 @@ const ProductList: React.FC = () => {
             Carga masiva
           </Button>
           <Button
+            onClick={handleExport}
+            style={{ marginRight: 8 }}
+            type="default"
+            loading={loading}
+          >
+            Exportar Excel
+          </Button>
+          <Button
             style={{ marginLeft: "6px" }}
             type="primary"
             onClick={() => handleShowModal()}
@@ -267,7 +304,7 @@ const ProductList: React.FC = () => {
             onFinish={onFinishFilters}
             className="mb-4 mt-2.5"
           >
-            <Form.Item name="name">
+            <Form.Item name="search">
               <Input
                 placeholder="Buscar producto..."
                 allowClear
@@ -303,12 +340,12 @@ const ProductList: React.FC = () => {
                 ))}
               </Select>
             </Form.Item>
-            <Form.Item name="onlyLowStock" valuePropName="checked">
+            <Form.Item name="lowStock" valuePropName="checked">
               <Checkbox>Stock bajo</Checkbox>
             </Form.Item>
-            <Form.Item name="salePriceMin">
+            <Form.Item name="stockMin">
               <Input
-                placeholder="Precio mín."
+                placeholder="Stock mín."
                 type="number"
                 min={0}
                 size="small"
@@ -317,9 +354,9 @@ const ProductList: React.FC = () => {
                 pattern="[0-9]*"
               />
             </Form.Item>
-            <Form.Item name="salePriceMax">
+            <Form.Item name="stockMax">
               <Input
-                placeholder="Precio máx."
+                placeholder="Stock máx."
                 type="number"
                 min={0}
                 size="small"

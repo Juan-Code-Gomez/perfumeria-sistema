@@ -1,30 +1,28 @@
-import axios from "axios";
-import type { Sale, CreateSalePayload } from "../types/SaleTypes";
-
-const API_URL = `${import.meta.env.VITE_API_URL}/sales`;
+import api from "./api";
+import type { CreateSalePayload, ProfitabilityStats } from "../types/SaleTypes";
 
 export async function getSales(params?: {
   dateFrom?: string;
   dateTo?: string;
 }) {
-  const res = await axios.get(API_URL, { params });
-  return res.data;
+  const res = await api.get("/sales", { params });
+  return res.data.data || res.data; // Extrae la data del wrapper si existe
 }
 
 export const createSale = async (data: CreateSalePayload) => {
-  const res = await axios.post(API_URL, data);
-  return res.data;
+  const res = await api.post("/sales", data);
+  return res.data.data || res.data; // Extrae la data del wrapper si existe
 };
 
 export async function getPendingSales() {
-  const res = await axios.get(`${API_URL}/pending`);
-  return res.data;
+  const res = await api.get("/sales/pending");
+  return res.data.data || res.data; // Extrae la data del wrapper si existe
 }
 
 // Obtener pagos de una venta
 export async function getSalePayments(saleId: number) {
-  const res = await axios.get(`${API_URL}/${saleId}/payments`);
-  return res.data;
+  const res = await api.get(`/sales/${saleId}/payments`);
+  return res.data.data || res.data; // Extrae la data del wrapper si existe
 }
 
 // Registrar un abono/pago
@@ -32,14 +30,23 @@ export async function createSalePayment(
   saleId: number,
   data: { amount: number; date: string; method?: string; note?: string }
 ) {
-  const res = await axios.post(`${API_URL}/${saleId}/payments`, data);
-  return res.data;
+  const res = await api.post(`/sales/${saleId}/payments`, data);
+  return res.data.data || res.data; // Extrae la data del wrapper si existe
 }
 
 export async function createCreditNote(data: {
   saleId: number;
   details: { productId: number; quantity: number }[];
 }) {
-  const res = await axios.post(`${API_URL}/credit-notes`, data);
+  const res = await api.post("/sales/credit-notes", data);
+  return res.data.data || res.data; // Extrae la data del wrapper si existe
+}
+
+// Obtener estadísticas de rentabilidad
+export async function getProfitabilityStats(params?: {
+  dateFrom?: string;
+  dateTo?: string;
+}): Promise<{ success: boolean; data: ProfitabilityStats }> {
+  const res = await api.get("/sales/analytics/profitability", { params });
   return res.data;
 }

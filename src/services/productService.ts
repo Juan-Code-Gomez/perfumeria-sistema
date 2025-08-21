@@ -75,21 +75,28 @@ export interface FinancialStatistics {
 
 export const getProducts = async (filters?: {
   name?: string;
+  search?: string;
   categoryId?: number;
   unitId?: number;
-  onlyLowStock?: boolean;
-  salePriceMin?: number;
-  salePriceMax?: number;
+  supplierId?: number;
+  stockMin?: number;
+  stockMax?: number;
+  includeInactive?: boolean;
+  lowStock?: boolean;
   page?: number;
   pageSize?: number;
-  search?: string;
-  productType?: string;
-  brand?: string;
-  gender?: string;
-  isActive?: boolean;
 }) => {
-  const response = await api.get("/products", { params: filters });
-  return response.data;
+  try {
+    const response = await api.get("/products", { params: filters });
+    console.log('getProducts API response:', response.data);
+    // Handle double response wrapper: response.data.data contains the actual data
+    const result = response.data?.success ? response.data.data : response.data;
+    console.log('getProducts processed result:', result);
+    return result;
+  } catch (error: any) {
+    console.error('Error fetching products:', error);
+    throw error;
+  }
 };
 
 export const searchProducts = async (query: string) => {
@@ -98,13 +105,24 @@ export const searchProducts = async (query: string) => {
 };
 
 export const getProductStatistics = async (): Promise<ProductStatistics> => {
-  const response = await api.get("/products/statistics");
-  return response.data;
+  try {
+    const response = await api.get("/products/statistics");
+    // Handle double response wrapper
+    return response.data?.data || response.data;
+  } catch (error: any) {
+    console.error('Error fetching product statistics:', error);
+    throw error;
+  }
 };
 
 export const getFinancialStatistics = async (): Promise<FinancialStatistics> => {
-  const response = await api.get("/products/financial-statistics");
-  return response.data;
+  try {
+    const response = await api.get("/products/financial-statistics");
+    return response.data?.data || response.data;
+  } catch (error: any) {
+    console.error('Error fetching financial statistics:', error);
+    throw error;
+  }
 };
 
 export const getInventoryValue = async () => {
@@ -128,22 +146,50 @@ export const getProductsBySupplier = async (supplierId: number) => {
 };
 
 export const createProduct = async (product: Partial<Product>) => {
-  const response = await api.post("/products", product);
-  return response.data;
+  try {
+    const response = await api.post("/products", product);
+    console.log('createProduct API response:', response.data);
+    // Handle double response wrapper: response.data.data contains the actual product
+    const result = response.data?.success ? response.data.data : response.data;
+    console.log('createProduct processed result:', result);
+    return result;
+  } catch (error: any) {
+    console.error('Error creating product:', error);
+    throw error;
+  }
 };
 
 export const createBulkProducts = async (products: Partial<Product>[]) => {
-  const response = await api.post("/products/bulk", { products });
-  return response.data;
+  try {
+    const response = await api.post("/products/bulk", { products });
+    return response.data?.data || response.data;
+  } catch (error: any) {
+    console.error('Error creating bulk products:', error);
+    throw error;
+  }
 };
 
 export const updateProduct = async (id: number, product: Partial<Product>) => {
-  const response = await api.patch(`/products/${id}`, product);
-  return response.data;
+  try {
+    const response = await api.put(`/products/${id}`, product);
+    console.log('updateProduct API response:', response.data);
+    const result = response.data?.success ? response.data.data : response.data;
+    console.log('updateProduct processed result:', result);
+    return result;
+  } catch (error: any) {
+    console.error('Error updating product:', error);
+    throw error;
+  }
 };
 
 export const deleteProduct = async (id: number) => {
-  await api.delete(`/products/${id}`);
+  try {
+    const response = await api.delete(`/products/${id}`);
+    return response.data?.data || response.data;
+  } catch (error: any) {
+    console.error('Error deleting product:', error);
+    throw error;
+  }
 };
 
 export const toggleProductStatus = async (id: number) => {
@@ -152,8 +198,16 @@ export const toggleProductStatus = async (id: number) => {
 };
 
 export const getProductById = async (id: number): Promise<Product> => {
-  const response = await api.get(`/products/${id}`);
-  return response.data;
+  try {
+    const response = await api.get(`/products/${id}`);
+    console.log('getProductById API response:', response.data);
+    const result = response.data?.success ? response.data.data : response.data;
+    console.log('getProductById processed result:', result);
+    return result;
+  } catch (error: any) {
+    console.error('Error fetching product by ID:', error);
+    throw error;
+  }
 };
 
 export const getLowStockProducts = async () => {
@@ -240,9 +294,10 @@ export const getVariantTypes = async () => {
   return response.data;
 };
 
-export const bulkUploadProducts = async (file: File) => {
+export const bulkUploadProducts = async (file: File, withSupplier: boolean = false) => {
   const formData = new FormData();
   formData.append("file", file);
+  formData.append("withSupplier", withSupplier.toString());
 
   const response = await api.post("/products/bulk-upload", formData, {
     headers: {
@@ -250,5 +305,57 @@ export const bulkUploadProducts = async (file: File) => {
     },
   });
 
-  return response.data;
+  const result = response.data?.data || response.data;
+  
+  // Si hay errores, lanzar excepción con detalles
+  if (result.errores && result.errores.length > 0) {
+    const errorDetails = result.errores.map((error: any) => 
+      error.proveedor ? `Proveedor "${error.proveedor}": ${error.error}` :
+      error.fila ? `Fila ${error.fila}: ${error.error}` : 
+      error.error
+    ).join(', ');
+    
+    throw new Error(`Errores en la carga: ${errorDetails}`);
+  }
+
+  return result;
+};
+
+export const exportProductsToExcel = async () => {
+  try {
+    const response = await api.get("/products/export/excel", {
+      responseType: 'blob', // Importante para manejar archivos binarios
+    });
+
+    // Crear objeto URL para descargar el archivo
+    const blob = new Blob([response.data], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+    
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    
+    // Obtener nombre del archivo de los headers o usar uno por defecto
+    const contentDisposition = response.headers['content-disposition'];
+    let filename = `productos_exportacion_${new Date().toISOString().split('T')[0]}.xlsx`;
+    
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+      if (filenameMatch) {
+        filename = filenameMatch[1];
+      }
+    }
+    
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+
+    return { success: true, message: 'Archivo exportado exitosamente' };
+  } catch (error: any) {
+    console.error('Error exporting products:', error);
+    throw error;
+  }
 };

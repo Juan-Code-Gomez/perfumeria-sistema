@@ -1,9 +1,11 @@
 import React, { useState } from "react";
-import { Modal, Upload, Button, message, Alert } from "antd";
+import { Modal, Upload, Button, message, Alert, Switch, Typography } from "antd";
 import { FileExcelOutlined, UploadOutlined } from "@ant-design/icons";
 import type { RcFile } from "antd/es/upload";
 import { useAppDispatch } from "../../store";
 import { bulkUploadProducts } from "../../features/products/productSlice";
+
+const { Text } = Typography;
 
 interface BulkProductUploadModalProps {
   open: boolean;
@@ -20,6 +22,7 @@ const BulkProductUploadModal: React.FC<BulkProductUploadModalProps> = ({
   const [file, setFile] = useState<RcFile | null>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [withSupplier, setWithSupplier] = useState(false);
 
   const handleBeforeUpload = (file: RcFile) => {
     const isExcel =
@@ -47,13 +50,23 @@ const BulkProductUploadModal: React.FC<BulkProductUploadModalProps> = ({
     setError(null);
 
     try {
-      await dispatch(bulkUploadProducts(file)).unwrap();
-      message.success("Carga masiva exitosa");
+      const result = await dispatch(bulkUploadProducts({ file, withSupplier })).unwrap();
+      
+      // Mostrar mensaje de éxito con detalles
+      if (result.productosCreados > 0 || result.productosActualizados > 0) {
+        message.success(
+          `Carga exitosa: ${result.productosCreados} productos creados, ${result.productosActualizados} actualizados`
+        );
+      } else {
+        message.warning("Carga completada pero no se procesaron productos");
+      }
+      
       setFile(null);
       onUploaded();
       onClose();
     } catch (err: any) {
       setError(err.message || "Error al subir el archivo");
+      message.error("Error en la carga masiva");
     } finally {
       setUploading(false);
     }
@@ -82,10 +95,44 @@ const BulkProductUploadModal: React.FC<BulkProductUploadModalProps> = ({
       width={450}
       destroyOnClose
     >
-      <p>
-        Adjunta un archivo Excel con la plantilla proporcionada. El sistema validará
-        productos existentes, actualizará stock o los creará según corresponda.
-      </p>
+      <div style={{ marginBottom: 16 }}>
+        <Switch
+          checked={withSupplier}
+          onChange={setWithSupplier}
+          style={{ marginRight: 8 }}
+        />
+        <Text>Incluir información de proveedor en el Excel</Text>
+      </div>
+      
+      {withSupplier ? (
+        <div>
+          <p>
+            Adjunta un archivo Excel con la plantilla que incluye columna "Proveedor". 
+            El sistema validará productos existentes, actualizará stock o los creará 
+            asociándolos al proveedor correspondiente.
+          </p>
+          <p style={{ fontSize: 12, color: '#666', marginTop: 8 }}>
+            💡 <strong>Cálculo automático:</strong> Precio de venta es opcional. Si no lo especificas, se calculará automáticamente:
+            <br />• <strong>Perfumes 1.1:</strong> +80% sobre precio de compra
+            <br />• <strong>Otras categorías:</strong> +60% sobre precio de compra
+            <br />• Solo se requiere: <strong>Nombre producto, Categoría, Unidad, Precio compra, Proveedor</strong>
+          </p>
+        </div>
+      ) : (
+        <div>
+          <p>
+            Adjunta un archivo Excel con productos <strong>sin proveedor</strong>. 
+            Los productos se crearán o actualizarán sin asociación a proveedores.
+            Ideal para cargas de inventario inicial.
+          </p>
+          <p style={{ fontSize: 12, color: '#666', marginTop: 8 }}>
+            💡 <strong>Cálculo automático:</strong> Precio de venta es opcional. Si no lo especificas, se calculará automáticamente:
+            <br />• <strong>Perfumes 1.1:</strong> +80% sobre precio de compra
+            <br />• <strong>Otras categorías:</strong> +60% sobre precio de compra
+            <br />• Solo se requiere: <strong>Nombre producto, Categoría, Unidad, Precio compra</strong>
+          </p>
+        </div>
+      )}
       <Upload.Dragger
         maxCount={1}
         accept=".xlsx,.xls"

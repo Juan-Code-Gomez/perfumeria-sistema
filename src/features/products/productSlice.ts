@@ -6,11 +6,14 @@ import * as productService from "../../services/productService";
 
 export interface ProductFilters {
   name?: string;
+  search?: string;
   categoryId?: number;
   unitId?: number;
-  onlyLowStock?: boolean;
-  salePriceMin?: number;
-  salePriceMax?: number;
+  supplierId?: number;
+  stockMin?: number;
+  stockMax?: number;
+  includeInactive?: boolean;
+  lowStock?: boolean;
   page?: number;
   pageSize?: number;
 }
@@ -36,7 +39,7 @@ const initialState: ProductsState = {
 
 // Thunk para traer productos con filtros
 export const fetchProducts = createAsyncThunk<
-  { items: Product[]; total: number; page: number; pageSize: number },
+  { data: { items: Product[]; total: number; page: number; pageSize: number } },
   ProductFilters | undefined,
   { rejectValue: string }
 >("products/fetch", async (filters, thunkAPI) => {
@@ -65,7 +68,7 @@ export const fetchProductById = createAsyncThunk<
 
 export const createProduct = createAsyncThunk<
   Product,
-  Product,
+  Partial<Product>,
   { rejectValue: string }
 >("products/create", async (product, thunkAPI) => {
   try {
@@ -78,7 +81,7 @@ export const createProduct = createAsyncThunk<
 
 export const updateProduct = createAsyncThunk<
   Product,
-  { id: number; product: Product },
+  { id: number; product: Partial<Product> },
   { rejectValue: string }
 >("products/update", async ({ id, product }, thunkAPI) => {
   try {
@@ -107,15 +110,31 @@ export const deleteProduct = createAsyncThunk<
 });
 
 export const bulkUploadProducts = createAsyncThunk<
-  void,
-  File,
+  { mensaje: string; productosCreados: number; productosActualizados: number; comprasCreadas: number; errores: any[] },
+  { file: File; withSupplier: boolean },
   { rejectValue: string }
->("products/bulkUpload", async (file, thunkAPI) => {
+>("products/bulkUpload", async ({ file, withSupplier }, thunkAPI) => {
   try {
-    await productService.bulkUploadProducts(file);
+    const result = await productService.bulkUploadProducts(file, withSupplier);
+    return result;
   } catch (err: any) {
     return thunkAPI.rejectWithValue(
-      err.message || "Error al subir productos masivamente"
+      err.message || "Error en la carga masiva"
+    );
+  }
+});
+
+export const exportProducts = createAsyncThunk<
+  { success: boolean; message: string },
+  void,
+  { rejectValue: string }
+>("products/export", async (_, thunkAPI) => {
+  try {
+    const result = await productService.exportProductsToExcel();
+    return result;
+  } catch (err: any) {
+    return thunkAPI.rejectWithValue(
+      err.message || "Error al exportar productos"
     );
   }
 });
@@ -153,12 +172,12 @@ const productSlice = createSlice({
         state.error = null;
       })
       .addCase(fetchProducts.fulfilled, (state, action) => {
-        console.log(action.payload, "fetchProducts fulfilled");
+        console.log('fetchProducts.fulfilled payload:', action.payload);
 
-        state.items = action.payload.items;
-        state.total = action.payload.total;
-        state.page = action.payload.page;
-        state.pageSize = action.payload.pageSize;
+        state.items = action.payload.data.items || [];
+        state.total = action.payload.data.total || 0;
+        state.page = action.payload.data.page || 1;
+        state.pageSize = action.payload.data.pageSize || 7;
         state.loading = false;
       })
       .addCase(fetchProducts.rejected, (state, action) => {
@@ -181,19 +200,23 @@ const productSlice = createSlice({
       })
       .addCase(fetchProductById.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload ?? "Error desconocido al cargar producto";
+        state.error = action.payload || "Error desconocido al cargar producto";
       })
       .addCase(createProduct.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(createProduct.fulfilled, (state, action) => {
-        state.items.push(action.payload);
+        console.log('createProduct.fulfilled payload:', action.payload);
+        if (action.payload) {
+          state.items.push(action.payload);
+          state.total += 1; // Incrementar el total también
+        }
         state.loading = false;
       })
       .addCase(createProduct.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload ?? "Error desconocido al crear producto";
+        state.error = action.payload || "Error desconocido al crear producto";
       })
       .addCase(updateProduct.pending, (state) => {
         state.loading = true;
@@ -223,6 +246,17 @@ const productSlice = createSlice({
         state.loading = false;
         state.error =
           action.payload ?? "Error desconocido al eliminar producto";
+      })
+      .addCase(exportProducts.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(exportProducts.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(exportProducts.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload ?? "Error al exportar productos";
       });
   },
 });
