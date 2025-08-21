@@ -6,7 +6,6 @@ import PrivateRoute from "../components/PrivateRoute";
 import ProductList from "../pages/products/ProductList";
 import ProviderList from "../pages/providers/ProviderList";
 import ProfitSummary from "../pages/reports/ProfitSummary";
-import DashboardHome from "../pages/Dashboard";
 import ExecutiveDashboard from "../pages/ExecutiveDashboard";
 import Unauthorized from "../pages/Unauthorized";
 import AppLayout from "../components/AppLayout";

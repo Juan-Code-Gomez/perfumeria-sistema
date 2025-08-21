@@ -2,7 +2,6 @@
 import React from "react";
 import { Menu } from "antd";
 import {
-  DashboardOutlined,
   ShoppingCartOutlined,
   GiftOutlined,
   TeamOutlined,
@@ -10,7 +9,6 @@ import {
   FolderOpenOutlined,
   DollarOutlined,
   SettingOutlined,
-  BankOutlined,
   FileDoneOutlined,
   LogoutOutlined,
   CreditCardOutlined,
