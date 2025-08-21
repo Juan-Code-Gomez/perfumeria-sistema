@@ -20,6 +20,8 @@ import ExpenseList from "../pages/expenses/ExpenseList";
 import PendingSales from "../pages/sales/PendingSales";
 import ClientList from "../pages/clients/ClientList";
 import POSPage from "../pages/sales/POSPage";
+import CapitalManagement from "../pages/capital/CapitalManagement";
+import InvoiceManagement from "../pages/invoices/InvoiceManagement";
 
 export const router = createBrowserRouter([
   {
@@ -28,8 +30,8 @@ export const router = createBrowserRouter([
       {
         element: <PrivateRoute />,
         children: [
-          { path: "/", element: <DashboardHome /> },
-          { path: "/executive-dashboard", element: <ExecutiveDashboard /> },
+          // { path: "/", element: <DashboardHome /> },
+          { path: "/", element: <ExecutiveDashboard /> },
           { path: "/pos", element: <POSPage /> },
           { path: "/ventas", element: <SaleList /> },
           {
@@ -54,6 +56,8 @@ export const router = createBrowserRouter([
           { path: "/cash-closings", element: <CashClosingPage /> },
           { path: "/pending-sales", element: <PendingSales /> },
           { path: "/clients", element: <ClientList /> },
+          { path: "/capital", element: <CapitalManagement /> },
+          { path: "/invoices", element: <InvoiceManagement /> },
         ],
       },
 

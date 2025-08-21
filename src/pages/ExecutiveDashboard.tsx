@@ -24,7 +24,8 @@ import {
   DollarOutlined,
   TeamOutlined,
   StockOutlined,
-  ReloadOutlined
+  ReloadOutlined,
+  BankOutlined
 } from "@ant-design/icons";
 import {
   AreaChart,
@@ -87,6 +88,17 @@ interface ExecutiveSummary {
     expensesByCategory: Record<string, number>;
   };
   finances: {
+    investment: {
+      totalInvestment: number;
+      totalProducts: number;
+      totalUnits: number;
+    };
+    capital: {
+      cash: number;
+      bank: number;
+      total: number;
+      lastUpdate: string | null;
+    };
     cashFlow: {
       income: number;
       expenses: number;
@@ -185,6 +197,17 @@ const ExecutiveDashboard: React.FC = () => {
   };
 
   const safeFinances = {
+    investment: {
+      totalInvestment: finances?.investment?.totalInvestment || 0,
+      totalProducts: finances?.investment?.totalProducts || 0,
+      totalUnits: finances?.investment?.totalUnits || 0
+    },
+    capital: {
+      cash: finances?.capital?.cash || 0,
+      bank: finances?.capital?.bank || 0,
+      total: finances?.capital?.total || 0,
+      lastUpdate: finances?.capital?.lastUpdate || null
+    },
     cashFlow: {
       income: finances?.cashFlow?.income || 0,
       expenses: finances?.cashFlow?.expenses || 0,
@@ -362,6 +385,72 @@ const ExecutiveDashboard: React.FC = () => {
               value={safeKpis.today.cashInRegister}
               formatter={(value) => formatCurrency(Number(value))}
               prefix={<DollarOutlined />}
+            />
+          </Card>
+        </Col>
+      </Row>
+
+      {/* Inversión en Productos */}
+      <Row gutter={[16, 16]} className="mb-6">
+        <Col xs={24} sm={12} lg={8}>
+          <Card>
+            <Statistic
+              title="Inversión Total en Productos"
+              value={safeFinances.investment.totalInvestment}
+              formatter={(value) => formatCurrency(Number(value))}
+              prefix={<StockOutlined style={{ color: '#1890ff' }} />}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={8}>
+          <Card>
+            <Statistic
+              title="Total de Productos"
+              value={safeFinances.investment.totalProducts}
+              prefix={<TeamOutlined style={{ color: '#52c41a' }} />}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={8}>
+          <Card>
+            <Statistic
+              title="Total de Unidades en Stock"
+              value={safeFinances.investment.totalUnits}
+              prefix={<StockOutlined style={{ color: '#faad14' }} />}
+            />
+          </Card>
+        </Col>
+      </Row>
+
+      {/* Capital Disponible */}
+      <Row gutter={[16, 16]} className="mb-6">
+        <Col xs={24} sm={12} lg={8}>
+          <Card>
+            <Statistic
+              title="Efectivo en Caja"
+              value={safeFinances.capital.cash}
+              formatter={(value) => formatCurrency(Number(value))}
+              prefix={<DollarOutlined style={{ color: '#52c41a' }} />}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={8}>
+          <Card>
+            <Statistic
+              title="Dinero en Banco"
+              value={safeFinances.capital.bank}
+              formatter={(value) => formatCurrency(Number(value))}
+              prefix={<BankOutlined style={{ color: '#1890ff' }} />}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={8}>
+          <Card>
+            <Statistic
+              title="Capital Total Disponible"
+              value={safeFinances.capital.total}
+              formatter={(value) => formatCurrency(Number(value))}
+              prefix={<DollarOutlined style={{ color: '#722ed1' }} />}
             />
           </Card>
         </Col>

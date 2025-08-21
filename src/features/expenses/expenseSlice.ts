@@ -61,7 +61,8 @@ export const fetchExpenses = createAsyncThunk<
   "expenses/fetchExpenses",
   async (params, thunkAPI) => {
     try {
-      return await expensesService.getExpenses(params);
+      const response = await expensesService.getExpenses(params);
+      return response;
     } catch (err: any) {
       return thunkAPI.rejectWithValue(err.message || "Error al cargar gastos");
     }

@@ -17,7 +17,7 @@ import {
   Space,
   Tooltip,
 } from "antd";
-import { SearchOutlined, DownloadOutlined, FileExcelOutlined } from "@ant-design/icons";
+import { DownloadOutlined, FileExcelOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import type { ColumnsType } from "antd/lib/table";
 

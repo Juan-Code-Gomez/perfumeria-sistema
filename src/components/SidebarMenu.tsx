@@ -15,6 +15,8 @@ import {
   LogoutOutlined,
   CreditCardOutlined,
   PieChartOutlined,
+  WalletOutlined,
+  FileTextOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { useAppSelector } from "../store/index";
@@ -61,16 +63,10 @@ const SidebarMenu: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
   // Puedes seguir agrupando más si tienes muchos módulos
   const mainMenu = [
     {
-      key: "/",
-      icon: <DashboardOutlined />,
-      label: "Dashboard",
-      onClick: () => navigate("/"),
-    },
-    {
       key: "/executive-dashboard",
       icon: <PieChartOutlined />,
       label: "Dashboard Ejecutivo",
-      onClick: () => navigate("/executive-dashboard"),
+      onClick: () => navigate("/"),
     },
     {
       key: "/pos",
@@ -84,24 +80,24 @@ const SidebarMenu: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
       label: "Ventas",
       onClick: () => navigate("/ventas"),
     },
-    {
-      key: "/compras",
-      icon: <GiftOutlined />,
-      label: "Compras",
-      onClick: () => navigate("/purchases"),
-    },
+    // {
+    //   key: "/compras",
+    //   icon: <GiftOutlined />,
+    //   label: "Compras",
+    //   onClick: () => navigate("/purchases"),
+    // },
     {
       key: "/products",
       icon: <FolderOpenOutlined />,
       label: "Productos",
       onClick: () => navigate("/products"),
     },
-    {
-      key: "/providers",
-      icon: <BankOutlined />,
-      label: "Proveedores",
-      onClick: () => navigate("/providers"),
-    },
+    // {
+    //   key: "/providers",
+    //   icon: <BankOutlined />,
+    //   label: "Proveedores",
+    //   onClick: () => navigate("/providers"),
+    // },
     {
       key: "/expenses",
       icon: <DollarOutlined />,
@@ -114,17 +110,29 @@ const SidebarMenu: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
       label: "Cierres de caja",
       onClick: () => navigate("/cash-closings"),
     },
-    {
-      key: "/pending-sales",
-      icon: <FileDoneOutlined />,
-      label: "Ventas pendientes",
-      onClick: () => navigate("/pending-sales"),
-    },
+    // {
+    //   key: "/pending-sales",
+    //   icon: <FileDoneOutlined />,
+    //   label: "Ventas pendientes",
+    //   onClick: () => navigate("/pending-sales"),
+    // },
     {
       key: "/clients",
       icon: <TeamOutlined />,
       label: "Clientes",
       onClick: () => navigate("/clients"),
+    },
+    {
+      key: "/capital",
+      icon: <WalletOutlined />,
+      label: "Capital",
+      onClick: () => navigate("/capital"),
+    },
+    {
+      key: "/invoices",
+      icon: <FileTextOutlined />,
+      label: "Facturas",
+      onClick: () => navigate("/invoices"),
     }
   ];
 

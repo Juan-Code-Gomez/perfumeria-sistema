@@ -13,16 +13,16 @@ export interface ExpenseFilters {
 }
 
 // Devuelve { items: Expense[], total: number }
-export const getExpenses = async (params?: ExpenseFilters) => {
-  const response = await api.get<{ items: any[]; total: number }>('/expenses', {
+export const getExpenses = async (params?: ExpenseFilters): Promise<{ items: any[]; total: number }> => {
+  const response = await api.get<{ items: any[]; total: number } | { data: { items: any[]; total: number } }>('/expenses', {
     params,
   });
   
   // Verificar si la respuesta tiene el wrapper de success
   if (response.data && typeof response.data === 'object' && 'data' in response.data) {
-    return response.data.data; // Extraer data del wrapper
+    return response.data.data as { items: any[]; total: number }; // Extraer data del wrapper
   } else {
-    return response.data; // Usar directamente si no hay wrapper
+    return response.data as { items: any[]; total: number }; // Usar directamente si no hay wrapper
   }
 };
 
