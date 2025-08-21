@@ -12,6 +12,7 @@ import {
   Badge,
   Button,
   Space,
+  Divider,
   Avatar
 } from "antd";
 import {
@@ -647,169 +648,230 @@ const ExecutiveDashboard: React.FC = () => {
           📊 Resumen del Mes Actual
         </Title>
         <Row gutter={[24, 24]}>
-          <Col xs={24} lg={8}>
-            <Card className="shadow-lg border-0">
-              <Title level={5} className="mb-4 text-gray-600">Métricas Mensuales</Title>
-              <Row gutter={16}>
-                <Col span={8}>
-                  <Statistic
-                    title="Ventas"
-                    value={safeKpis.month.sales}
-                    formatter={(value) => formatCurrency(Number(value))}
-                  />
-                  <div className="flex items-center mt-1">
-                    {safeKpis.month.salesGrowth >= 0 ? (
-                      <ArrowUpOutlined className="text-green-500 mr-1" />
-                    ) : (
-                      <ArrowDownOutlined className="text-red-500 mr-1" />
-                    )}
-                    <Text className={safeKpis.month.salesGrowth >= 0 ? 'text-green-600' : 'text-red-600'}>
-                      {Math.abs(safeKpis.month.salesGrowth).toFixed(1)}%
-                    </Text>
-                  </div>
-                </Col>
-                <Col span={8}>
-                  <Statistic
-                    title="Gastos"
-                    value={safeKpis.month.expenses}
-                    formatter={(value) => formatCurrency(Number(value))}
-                  />
-                  <div className="flex items-center mt-1">
-                    {safeKpis.month.expenseGrowth >= 0 ? (
-                      <ArrowUpOutlined className="text-red-500 mr-1" />
-                    ) : (
-                      <ArrowDownOutlined className="text-green-500 mr-1" />
-                    )}
-                    <Text className={safeKpis.month.expenseGrowth >= 0 ? 'text-red-600' : 'text-green-600'}>
-                      {Math.abs(safeKpis.month.expenseGrowth).toFixed(1)}%
-                    </Text>
-                  </div>
-                </Col>
-                <Col span={8}>
-                  <Statistic
-                    title="Utilidad"
-                    value={safeKpis.month.profit}
-                    formatter={(value) => formatCurrency(Number(value))}
-                    valueStyle={{ 
-                      color: safeKpis.month.profit >= 0 ? '#3f8600' : '#cf1322' 
-                    }}
-                  />
-                </Col>
-              </Row>
-            </Card>
-          </Col>
-          
-          <Col xs={24} lg={16}>
-            <Card className="shadow-lg border-0">
-              <Title level={5} className="mb-4 text-gray-600">📈 Tendencia de Ventas (Últimos 7 días)</Title>
-              <div style={{ height: 250 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={safeCharts.salesTrend.slice(-7)}>
-                    <defs>
-                      <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#1890ff" stopOpacity={0.8}/>
-                        <stop offset="95%" stopColor="#1890ff" stopOpacity={0.1}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis 
-                      dataKey="day" 
-                      tick={{ fontSize: 12 }}
-                    />
-                    <YAxis 
-                      tick={{ fontSize: 12 }}
-                      tickFormatter={(value) => `$${(value / 1000).toFixed(0)}K`}
-                    />
-                    <RechartsTooltip 
-                      formatter={(value: number) => formatCurrency(value)}
-                      labelFormatter={(label) => `Día: ${label}`}
-                    />
-                    <Area 
-                      type="monotone" 
-                      dataKey="sales" 
-                      stroke="#1890ff" 
-                      fillOpacity={1} 
-                      fill="url(#colorSales)" 
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
+        <Col xs={24} lg={8}>
+          <Card title="Resumen del Mes">
+            <Row gutter={16}>
+              <Col span={8}>
+                <Statistic
+                  title="Ventas"
+                  value={safeKpis.month.sales}
+                  formatter={(value) => formatCurrency(Number(value))}
+                />
+                <div className="flex items-center mt-1">
+                  {safeKpis.month.salesGrowth >= 0 ? (
+                    <ArrowUpOutlined style={{ color: '#3f8600', fontSize: '12px' }} />
+                  ) : (
+                    <ArrowDownOutlined style={{ color: '#cf1322', fontSize: '12px' }} />
+                  )}
+                  <Text 
+                    type={safeKpis.month.salesGrowth >= 0 ? 'success' : 'danger'}
+                    className="ml-1 text-sm"
+                  >
+                    {Math.abs(safeKpis.month.salesGrowth).toFixed(1)}%
+                  </Text>
+                </div>
+              </Col>
+              <Col span={8}>
+                <Statistic
+                  title="Gastos"
+                  value={safeKpis.month.expenses}
+                  formatter={(value) => formatCurrency(Number(value))}
+                />
+                <div className="flex items-center mt-1">
+                  {safeKpis.month.expenseGrowth >= 0 ? (
+                    <ArrowUpOutlined style={{ color: '#cf1322', fontSize: '12px' }} />
+                  ) : (
+                    <ArrowDownOutlined style={{ color: '#3f8600', fontSize: '12px' }} />
+                  )}
+                  <Text 
+                    type={safeKpis.month.expenseGrowth >= 0 ? 'danger' : 'success'}
+                    className="ml-1 text-sm"
+                  >
+                    {Math.abs(safeKpis.month.expenseGrowth).toFixed(1)}%
+                  </Text>
+                </div>
+              </Col>
+              <Col span={8}>
+                <Statistic
+                  title="Utilidad"
+                  value={safeKpis.month.profit}
+                  formatter={(value) => formatCurrency(Number(value))}
+                  valueStyle={{ color: safeKpis.month.profit >= 0 ? '#3f8600' : '#cf1322' }}
+                />
+              </Col>
+            </Row>
+          </Card>
+        </Col>
+        <Col xs={24} lg={8}>
+          <Card title="Flujo de Caja">
+            <div className="space-y-3">
+              <div className="flex justify-between">
+                <Text>Ingresos:</Text>
+                <Text strong className="text-green-600">
+                  {formatCurrency(safeFinances.cashFlow.income)}
+                </Text>
               </div>
-            </Card>
-          </Col>
-        </Row>
-      </div>
-
-      {/* Análisis de Ventas y Productos */}
-      <div className="mb-8">
-        <Row gutter={[24, 24]}>
-          <Col xs={24} lg={12}>
-            <Card className="shadow-lg border-0">
-              <Title level={5} className="mb-4 text-gray-600">🏆 Productos Más Vendidos</Title>
-              <Table
-                columns={productColumns}
-                dataSource={safeCharts.topProducts.slice(0, 5)}
-                pagination={false}
-                size="small"
-                rowKey={(record) => record.product.id}
-              />
-            </Card>
-          </Col>
-          
-          <Col xs={24} lg={12}>
-            <Card className="shadow-lg border-0">
-              <Title level={5} className="mb-4 text-gray-600">💳 Métodos de Pago</Title>
-              {paymentMethodData.length > 0 ? (
-                <div style={{ height: 250 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={paymentMethodData}
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={80}
-                        dataKey="value"
-                        label={({ name, percentage }) => `${name}: ${percentage}%`}
-                      >
-                        {paymentMethodData.map((_, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <RechartsTooltip formatter={(value: number) => formatCurrency(value)} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <Text type="secondary">No hay datos de métodos de pago disponibles</Text>
-                </div>
-              )}
-            </Card>
-          </Col>
-        </Row>
-      </div>
-
-      {/* Análisis Financiero Final */}
-      {expenseData.length > 0 && (
-        <div className="mb-8">
-          <Card className="shadow-lg border-0">
-            <Title level={5} className="mb-4 text-gray-600">💰 Gastos por Categoría</Title>
-            <div style={{ height: 300 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={expenseData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                  <YAxis 
-                    tick={{ fontSize: 12 }}
-                    tickFormatter={(value) => `$${(value / 1000).toFixed(0)}K`}
-                  />
-                  <RechartsTooltip formatter={(value: number) => formatCurrency(value)} />
-                  <Bar dataKey="value" fill="#ff7875" />
-                </BarChart>
-              </ResponsiveContainer>
+              <div className="flex justify-between">
+                <Text>Egresos:</Text>
+                <Text strong className="text-red-600">
+                  {formatCurrency(safeFinances.cashFlow.expenses)}
+                </Text>
+              </div>
+              <Divider className="my-2" />
+              <div className="flex justify-between">
+                <Text strong>Flujo Neto:</Text>
+                <Text 
+                  strong 
+                  className={safeFinances.cashFlow.netFlow >= 0 ? 'text-green-600' : 'text-red-600'}
+                >
+                  {formatCurrency(safeFinances.cashFlow.netFlow)}
+                </Text>
+              </div>
             </div>
           </Card>
-        </div>
-      )}
+        </Col>
+        <Col xs={24} lg={8}>
+          <Card title="Cuentas">
+            <div className="space-y-3">
+              <div className="flex justify-between">
+                <Text>Por Cobrar:</Text>
+                <Text strong className="text-blue-600">
+                  {formatCurrency(safeFinances.accounts.receivable)}
+                </Text>
+              </div>
+              <div className="flex justify-between">
+                <Text>Por Pagar:</Text>
+                <Text strong className="text-orange-600">
+                  {formatCurrency(safeFinances.accounts.payable)}
+                </Text>
+              </div>
+              <Divider className="my-2" />
+              <div className="flex justify-between">
+                <Text strong>Posición Neta:</Text>
+                <Text 
+                  strong 
+                  className={safeFinances.accounts.netPosition >= 0 ? 'text-green-600' : 'text-red-600'}
+                >
+                  {formatCurrency(safeFinances.accounts.netPosition)}
+                </Text>
+              </div>
+            </div>
+          </Card>
+        </Col>
+      </Row>
+
+      {/* Gráficos */}
+      <Row gutter={[16, 16]} className="mb-6">
+        {/* Tendencia de Ventas */}
+        <Col xs={24} lg={12}>
+          <Card title="Tendencia de Ventas (7 días)" size="small">
+            <ResponsiveContainer width="100%" height={300}>
+              <AreaChart data={safeCharts.salesTrend}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="day" />
+                <YAxis tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
+                <RechartsTooltip 
+                  formatter={(value: any) => {
+                    // Manejar tanto arrays como valores individuales
+                    const actualValue = Array.isArray(value) ? value[0] : value;
+                    return [formatCurrency(Number(actualValue)), 'Ventas'];
+                  }}
+                  labelFormatter={(day, payload) => {
+                    if (payload && payload[0]) {
+                      return `${day} - ${payload[0].payload.date}`;
+                    }
+                    return day;
+                  }}
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="sales" 
+                  stroke="#1890ff" 
+                  fill="#1890ff" 
+                  fillOpacity={0.3}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </Card>
+        </Col>
+
+        {/* Métodos de Pago */}
+        <Col xs={24} lg={12}>
+          <Card title="Métodos de Pago (Este Mes)" size="small">
+            {paymentMethodData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={paymentMethodData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percentage }) => `${name}: ${percentage}%`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {paymentMethodData.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip formatter={(value: any) => {
+                    const actualValue = Array.isArray(value) ? value[0] : value;
+                    return formatCurrency(Number(actualValue));
+                  }} />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex justify-center items-center h-[300px] text-gray-500">
+                No hay datos de métodos de pago para mostrar
+              </div>
+            )}
+          </Card>
+        </Col>
+      </Row>
+
+      <Row gutter={[16, 16]}>
+        {/* Top Productos */}
+        <Col xs={24} lg={12}>
+          <Card 
+            title={<><TrophyOutlined /> Top Productos del Mes</>} 
+            size="small"
+          >
+            <Table
+              dataSource={safeCharts.topProducts}
+              columns={productColumns}
+              pagination={false}
+              size="small"
+              rowKey={(record) => record.product.id}
+              scroll={{ y: 300 }}
+            />
+          </Card>
+        </Col>
+
+        {/* Gastos por Categoría */}
+        <Col xs={24} lg={12}>
+          <Card title="Gastos por Categoría (Este Mes)" size="small">
+            {expenseData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={expenseData} layout="horizontal">
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis type="number" tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
+                  <YAxis dataKey="name" type="category" width={100} />
+                  <RechartsTooltip formatter={(value: any) => {
+                    const actualValue = Array.isArray(value) ? value[0] : value;
+                    return formatCurrency(Number(actualValue));
+                  }} />
+                  <Bar dataKey="value" fill="#ff7300" />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex justify-center items-center h-[300px] text-gray-500">
+                No hay datos de gastos para mostrar
+              </div>
+            )}
+          </Card>
+        </Col>
+      </Row>
     </div>
   );
 };
