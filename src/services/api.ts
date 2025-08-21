@@ -8,9 +8,16 @@ const api = axios.create({
 
 console.log("api", api);
 
-// Interceptor para agregar el token automáticamente a cada solicitud
+// Interceptor para debug de requests
 api.interceptors.request.use(
   (config) => {
+    console.log("🚀 Axios Request Interceptor:");
+    console.log("🚀 Method:", config.method);
+    console.log("🚀 URL:", config.url);
+    console.log("🚀 Full URL:", (config.baseURL || '') + (config.url || ''));
+    console.log("🚀 Data:", config.data);
+    console.log("🚀 Headers:", config.headers);
+    
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -18,16 +25,25 @@ api.interceptors.request.use(
     return config;
   },
   (error) => {
+    console.error("🚀 Request Interceptor Error:", error);
     return Promise.reject(error);
   }
 );
 
-// Interceptor para manejar respuestas (opcional pero útil)
+// Interceptor para debug de responses
 api.interceptors.response.use(
   (response) => {
+    console.log("✅ Axios Response Interceptor:");
+    console.log("✅ Status:", response.status);
+    console.log("✅ Data:", response.data);
     return response;
   },
   (error) => {
+    console.error("❌ Axios Response Error Interceptor:");
+    console.error("❌ Status:", error.response?.status);
+    console.error("❌ Data:", error.response?.data);
+    console.error("❌ Config:", error.config);
+    
     // Si recibimos 401, limpiar el token pero NO redirigir automáticamente
     // para evitar bucles infinitos
     if (error.response?.status === 401) {
