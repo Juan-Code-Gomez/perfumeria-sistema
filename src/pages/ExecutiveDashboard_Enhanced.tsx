@@ -4,6 +4,7 @@ import {
   Card,
   Row,
   Col,
+  Statistic,
   Spin,
   Alert,
   Typography,
@@ -12,19 +13,27 @@ import {
   Button,
   Space,
   Avatar,
+  Progress,
   Tag,
+  Divider,
+  Tooltip
 } from "antd";
 import {
   ArrowUpOutlined,
   ArrowDownOutlined,
+  ExclamationCircleOutlined,
   WarningOutlined,
+  TrophyOutlined,
   ShoppingCartOutlined,
   DollarOutlined,
   TeamOutlined,
+  StockOutlined,
   ReloadOutlined,
   BankOutlined,
   CalendarOutlined,
   RiseOutlined,
+  EyeOutlined,
+  FireOutlined,
   ThunderboltOutlined,
   CrownOutlined
 } from "@ant-design/icons";
@@ -34,11 +43,15 @@ import {
   PieChart,
   Pie,
   Cell,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip as RechartsTooltip,
-  ResponsiveContainer
+  ResponsiveContainer,
+  LineChart,
+  Line
 } from "recharts";
 import api from "../services/api";
 import dayjs from "dayjs";
@@ -184,51 +197,11 @@ const ExecutiveDashboard: React.FC = () => {
     );
   }
 
-  // Datos seguros con valores por defecto usando optional chaining
-  const safeKpis = {
-    today: {
-      sales: data?.kpis?.today?.sales || 0,
-      expenses: data?.kpis?.today?.expenses || 0,
-      profit: data?.kpis?.today?.profit || 0,
-      transactions: data?.kpis?.today?.transactions || 0,
-      cashInRegister: data?.kpis?.today?.cashInRegister || 0
-    },
-    month: {
-      sales: data?.kpis?.month?.sales || 0,
-      expenses: data?.kpis?.month?.expenses || 0,
-      profit: data?.kpis?.month?.profit || 0,
-      transactions: data?.kpis?.month?.transactions || 0,
-      salesGrowth: data?.kpis?.month?.salesGrowth || 0,
-      expenseGrowth: data?.kpis?.month?.expenseGrowth || 0
-    }
-  };
-  
-  const safeCharts = {
-    salesTrend: data?.charts?.salesTrend || [],
-    topProducts: data?.charts?.topProducts || [],
-    paymentMethods: data?.charts?.paymentMethods || {},
-    expensesByCategory: data?.charts?.expensesByCategory || {}
-  };
-  
-  const safeFinances = {
-    investment: {
-      totalInvestment: data?.finances?.investment?.totalInvestment || 0,
-      totalProducts: data?.finances?.investment?.totalProducts || 0,
-      totalUnits: data?.finances?.investment?.totalUnits || 0
-    },
-    capital: {
-      cash: data?.finances?.capital?.cash || 0,
-      bank: data?.finances?.capital?.bank || 0,
-      pending: data?.finances?.capital?.pending || 0
-    },
-    receivables: {
-      currentCredits: data?.finances?.receivables?.currentCredits || 0,
-      overdueCredits: data?.finances?.receivables?.overdueCredits || 0,
-      totalCredits: data?.finances?.receivables?.totalCredits || 0
-    }
-  };
-  
-  const safeAlerts = data?.alerts || [];
+  // Datos seguros con valores por defecto
+  const safeKpis = data.kpis || { today: {}, month: {} };
+  const safeCharts = data.charts || { salesTrend: [], topProducts: [], paymentMethods: {}, expensesByCategory: {} };
+  const safeFinances = data.finances || { investment: {}, capital: {}, receivables: {} };
+  const safeAlerts = data.alerts || [];
 
   // Crear Card con gradiente y sombra mejorada
   const GradientCard: React.FC<{
@@ -312,72 +285,56 @@ const ExecutiveDashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)' }}>
-      <div style={{ padding: '0 16px' }}>
-        {/* Header reorganizado */}
+      <div className="p-6">
+        {/* Header mejorado */}
         <div className="mb-8">
-          <Row justify="space-between" align="middle" className="mb-6">
-            <Col xs={24} lg={12}>
-              <div>
-                <Title 
-                  level={1} 
-                  className="mb-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"
-                  style={{ fontWeight: 700, fontSize: '2.5rem' }}
-                >
-                  📊 Dashboard Ejecutivo
-                </Title>
-                <Text className="text-lg text-gray-600">
-                  Visión completa y en tiempo real de Milán Fragancias
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <Title 
+                level={1} 
+                className="mb-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"
+                style={{ fontWeight: 700, fontSize: '2.5rem' }}
+              >
+                📊 Dashboard Ejecutivo
+              </Title>
+              <Text className="text-lg text-gray-600">
+                Visión completa y en tiempo real de Milán Fragancias
+              </Text>
+            </div>
+            <div className="text-right">
+              <Button 
+                type="primary"
+                size="large"
+                icon={<ReloadOutlined />} 
+                onClick={loadDashboardData}
+                loading={loading}
+                className="shadow-lg hover:shadow-xl transition-shadow"
+                style={{
+                  borderRadius: '12px',
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  border: 'none'
+                }}
+              >
+                Actualizar
+              </Button>
+              <div className="mt-2">
+                <Text type="secondary" className="text-sm">
+                  <CalendarOutlined className="mr-1" />
+                  {dayjs(lastUpdate).format('DD/MM/YYYY HH:mm')}
                 </Text>
               </div>
-            </Col>
-            <Col xs={24} lg={12}>
-              <div className="flex justify-end items-center gap-4">
-                <div className="text-center">
-                  <Text type="secondary" className="text-xs block">
-                    Última actualización
-                  </Text>
-                  <Text className="text-sm font-semibold text-gray-700">
-                    <CalendarOutlined className="mr-1" />
-                    {dayjs(lastUpdate).format('DD/MM/YYYY HH:mm')}
-                  </Text>
-                </div>
-                <Button 
-                  type="primary"
-                  size="large"
-                  icon={<ReloadOutlined />} 
-                  onClick={loadDashboardData}
-                  loading={loading}
-                  className="shadow-lg hover:shadow-xl transition-shadow"
-                  style={{
-                    borderRadius: '12px',
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    border: 'none'
-                  }}
-                >
-                  Actualizar
-                </Button>
-              </div>
-            </Col>
-          </Row>
+            </div>
+          </div>
         </div>
 
-        {/* Alertas reorganizadas */}
+        {/* Alertas mejoradas */}
         {safeAlerts.length > 0 && (
           <div className="mb-8">
-            <Row justify="space-between" align="middle" className="mb-4">
-              <Col>
-                <Title level={4} className="mb-0 text-gray-700 flex items-center gap-2">
-                  <WarningOutlined className="text-orange-500" />
-                  Alertas Importantes
-                </Title>
-              </Col>
-              <Col>
-                <Text type="secondary" className="text-sm">
-                  {safeAlerts.length} alerta{safeAlerts.length > 1 ? 's' : ''} activa{safeAlerts.length > 1 ? 's' : ''}
-                </Text>
-              </Col>
-            </Row>
-            <Row gutter={[24, 16]}>
+            <Title level={4} className="mb-4 text-gray-700 flex items-center gap-2">
+              <WarningOutlined className="text-orange-500" />
+              Alertas Importantes
+            </Title>
+            <Row gutter={[16, 16]}>
               {safeAlerts.slice(0, 3).map((alert, index) => (
                 <Col xs={24} lg={8} key={alert.id || index}>
                   <Alert
@@ -407,7 +364,7 @@ const ExecutiveDashboard: React.FC = () => {
             <Col xs={24} sm={12} xl={6}>
               <GradientCard
                 title="Ventas del Día"
-                value={safeKpis.today.sales}
+                value={safeKpis.today.sales || 0}
                 icon={<ShoppingCartOutlined />}
                 gradient={COLORS.gradient.blue}
                 trend={safeKpis.month.salesGrowth}
@@ -417,7 +374,7 @@ const ExecutiveDashboard: React.FC = () => {
             <Col xs={24} sm={12} xl={6}>
               <GradientCard
                 title="Gastos del Día"
-                value={safeKpis.today.expenses}
+                value={safeKpis.today.expenses || 0}
                 icon={<DollarOutlined />}
                 gradient={COLORS.gradient.orange}
                 trend={safeKpis.month.expenseGrowth}
@@ -427,17 +384,17 @@ const ExecutiveDashboard: React.FC = () => {
             <Col xs={24} sm={12} xl={6}>
               <GradientCard
                 title="Utilidad del Día"
-                value={safeKpis.today.sales - safeKpis.today.expenses}
+                value={(safeKpis.today.sales || 0) - (safeKpis.today.expenses || 0)}
                 icon={<RiseOutlined />}
                 gradient={COLORS.gradient.green}
-                trend={(safeKpis.today.sales - safeKpis.today.expenses) > 0 ? 15 : -10}
+                trend={((safeKpis.today.sales || 0) - (safeKpis.today.expenses || 0)) > 0 ? 15 : -10}
                 trendLabel="rendimiento"
               />
             </Col>
             <Col xs={24} sm={12} xl={6}>
               <GradientCard
                 title="Transacciones"
-                value={safeKpis.today.transactions}
+                value={safeKpis.today.transactions || 0}
                 icon={<TeamOutlined />}
                 gradient={COLORS.gradient.purple}
                 suffix=" ventas"
@@ -529,7 +486,7 @@ const ExecutiveDashboard: React.FC = () => {
                         paddingAngle={5}
                         dataKey="value"
                       >
-                        {paymentMethodsData.map((_, index) => (
+                        {paymentMethodsData.map((entry, index) => (
                           <Cell 
                             key={`cell-${index}`} 
                             fill={COLORS.chart[index % COLORS.chart.length]} 
@@ -662,20 +619,20 @@ const ExecutiveDashboard: React.FC = () => {
                   <div className="flex justify-between items-center mb-2">
                     <Text className="text-gray-600 font-semibold">💰 Capital Disponible</Text>
                     <Text strong className="text-green-600 text-lg">
-                      {formatCurrency(safeFinances.capital.cash + safeFinances.capital.bank)}
+                      {formatCurrency((safeFinances.capital.cash || 0) + (safeFinances.capital.bank || 0))}
                     </Text>
                   </div>
                   <div className="grid grid-cols-2 gap-4 mt-3">
                     <div>
                       <Text type="secondary" className="text-xs">Efectivo</Text>
                       <div className="text-green-600 font-semibold">
-                        {formatCurrency(safeFinances.capital.cash)}
+                        {formatCurrency(safeFinances.capital.cash || 0)}
                       </div>
                     </div>
                     <div>
                       <Text type="secondary" className="text-xs">Banco</Text>
                       <div className="text-green-600 font-semibold">
-                        {formatCurrency(safeFinances.capital.bank)}
+                        {formatCurrency(safeFinances.capital.bank || 0)}
                       </div>
                     </div>
                   </div>
@@ -686,20 +643,20 @@ const ExecutiveDashboard: React.FC = () => {
                   <div className="flex justify-between items-center mb-2">
                     <Text className="text-gray-600 font-semibold">📦 Inversión en Inventario</Text>
                     <Text strong className="text-blue-600 text-lg">
-                      {formatCurrency(safeFinances.investment.totalInvestment)}
+                      {formatCurrency(safeFinances.investment.totalInvestment || 0)}
                     </Text>
                   </div>
                   <div className="grid grid-cols-2 gap-4 mt-3">
                     <div>
                       <Text type="secondary" className="text-xs">Productos</Text>
                       <div className="text-blue-600 font-semibold">
-                        {safeFinances.investment.totalProducts}
+                        {safeFinances.investment.totalProducts || 0}
                       </div>
                     </div>
                     <div>
                       <Text type="secondary" className="text-xs">Unidades</Text>
                       <div className="text-blue-600 font-semibold">
-                        {safeFinances.investment.totalUnits}
+                        {safeFinances.investment.totalUnits || 0}
                       </div>
                     </div>
                   </div>
@@ -710,20 +667,20 @@ const ExecutiveDashboard: React.FC = () => {
                   <div className="flex justify-between items-center mb-2">
                     <Text className="text-gray-600 font-semibold">📋 Cuentas por Cobrar</Text>
                     <Text strong className="text-orange-600 text-lg">
-                      {formatCurrency(safeFinances.receivables.totalCredits)}
+                      {formatCurrency(safeFinances.receivables.totalCredits || 0)}
                     </Text>
                   </div>
                   <div className="mt-3">
                     <div className="flex justify-between mb-1">
                       <Text type="secondary" className="text-xs">Al día</Text>
                       <Text className="text-green-600 font-semibold text-sm">
-                        {formatCurrency(safeFinances.receivables.currentCredits)}
+                        {formatCurrency(safeFinances.receivables.currentCredits || 0)}
                       </Text>
                     </div>
                     <div className="flex justify-between">
                       <Text type="secondary" className="text-xs">Vencidos</Text>
                       <Text className="text-red-600 font-semibold text-sm">
-                        {formatCurrency(safeFinances.receivables.overdueCredits)}
+                        {formatCurrency(safeFinances.receivables.overdueCredits || 0)}
                       </Text>
                     </div>
                   </div>

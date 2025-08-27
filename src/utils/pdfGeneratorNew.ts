@@ -23,14 +23,12 @@ interface InvoiceData extends Sale {
 export const generateInvoicePDF = async (data: InvoiceData): Promise<jsPDF> => {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
-  const pageHeight = doc.internal.pageSize.getHeight();
   
   // Colores profesionales basados en la imagen de referencia
   const primaryBlue: [number, number, number] = [52, 73, 130];
   const darkGray: [number, number, number] = [64, 64, 64];
   const lightGray: [number, number, number] = [240, 240, 240];
   const borderGray: [number, number, number] = [180, 180, 180];
-  const mediumGray: [number, number, number] = [120, 120, 120];
   const accentColor: [number, number, number] = [220, 53, 69];
 
   // HEADER CON DISEÑO CORPORATIVO
@@ -248,63 +246,41 @@ export const generateInvoicePDF = async (data: InvoiceData): Promise<jsPDF> => {
     doc.text('PENDIENTE', pageWidth - 25, totalY, { align: 'right' });
   }
 
-  // Pagos parciales si existen
-  if (!data.isPaid && data.paidAmount && data.paidAmount > 0) {
-    totalY += 8;
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.setTextColor(40, 167, 69);
-    doc.text('Pagado:', pageWidth - 85, totalY);
-    doc.text(`$${data.paidAmount.toLocaleString('es-CO')}`, pageWidth - 25, totalY, { align: 'right' });
-    
-    totalY += 6;
-    doc.setTextColor(accentColor[0], accentColor[1], accentColor[2]);
-    doc.text('Saldo:', pageWidth - 85, totalY);
-    doc.text(`$${((data.totalAmount || 0) - data.paidAmount).toLocaleString('es-CO')}`, pageWidth - 25, totalY, { align: 'right' });
-  }
-
   // FOOTER
-  const footerY = pageHeight - 40;
+  const footerY = 270;
   doc.setDrawColor(borderGray[0], borderGray[1], borderGray[2]);
   doc.setLineWidth(0.3);
   doc.line(15, footerY, pageWidth - 15, footerY);
 
   doc.setTextColor(darkGray[0], darkGray[1], darkGray[2]);
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Gracias por elegir Milan Fragancias', pageWidth / 2, footerY + 8, { align: 'center' });
-  
-  // Términos compactos
-  doc.setFontSize(7);
+  doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(mediumGray[0], mediumGray[1], mediumGray[2]);
-  doc.text('Los productos de perfumería no tienen cambio ni devolución una vez abiertos', pageWidth / 2, footerY + 16, { align: 'center' });
-  doc.text('Factura generada electrónicamente', pageWidth / 2, footerY + 22, { align: 'center' });
+  doc.text('Gracias por su compra - Milán Fragancias', pageWidth / 2, footerY + 8, { align: 'center' });
+  doc.text('Esta factura es válida como comprobante de compra', pageWidth / 2, footerY + 14, { align: 'center' });
 
   return doc;
 };
 
-// Función para descargar la factura
-export const downloadInvoice = async (sale: Sale, companyInfo: CompanyInfo) => {
+// Funciones existentes para mantener compatibilidad
+export const printInvoice = async (sale: Sale, companyInfo: CompanyInfo): Promise<void> => {
   const invoiceData: InvoiceData = {
     ...sale,
     companyInfo,
-    invoiceNumber: `PF-${(sale.id || 0).toString().padStart(6, '0')}`,
-  };
-  
-  const doc = await generateInvoicePDF(invoiceData);
-  doc.save(`Factura-${invoiceData.invoiceNumber}.pdf`);
-};
-
-// Función para imprimir la factura
-export const printInvoice = async (sale: Sale, companyInfo: CompanyInfo) => {
-  const invoiceData: InvoiceData = {
-    ...sale,
-    companyInfo,
-    invoiceNumber: `PF-${(sale.id || 0).toString().padStart(6, '0')}`,
+    invoiceNumber: `${sale.id}`.padStart(6, '0'),
   };
   
   const doc = await generateInvoicePDF(invoiceData);
   doc.autoPrint();
   window.open(doc.output('bloburl'), '_blank');
+};
+
+export const downloadInvoice = async (sale: Sale, companyInfo: CompanyInfo): Promise<void> => {
+  const invoiceData: InvoiceData = {
+    ...sale,
+    companyInfo,
+    invoiceNumber: `${sale.id}`.padStart(6, '0'),
+  };
+  
+  const doc = await generateInvoicePDF(invoiceData);
+  doc.save(`Factura-${invoiceData.invoiceNumber}.pdf`);
 };

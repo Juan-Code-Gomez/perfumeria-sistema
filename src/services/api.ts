@@ -19,12 +19,18 @@ api.interceptors.request.use(
     console.log("🚀 URL:", config.url);
     console.log("🚀 Full URL:", (config.baseURL || '') + (config.url || ''));
     console.log("🚀 Data:", config.data);
-    console.log("🚀 Headers:", config.headers);
     
     const token = localStorage.getItem('token');
+    console.log("🔑 Token desde localStorage:", token ? `${token.substring(0, 50)}...` : 'NO EXISTE');
+    
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      console.log("✅ Token agregado al header Authorization");
+    } else {
+      console.log("❌ NO se agregó token - no existe en localStorage");
     }
+    
+    console.log("🚀 Headers finales:", config.headers);
     return config;
   },
   (error) => {

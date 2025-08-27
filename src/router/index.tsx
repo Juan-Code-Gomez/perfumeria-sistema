@@ -5,6 +5,7 @@ import Login from "../pages/Login";
 import PrivateRoute from "../components/PrivateRoute";
 import ProductList from "../pages/products/ProductList";
 import ProviderList from "../pages/providers/ProviderList";
+import SupplierList from "../pages/suppliers/SupplierList";
 import ProfitSummary from "../pages/reports/ProfitSummary";
 import ExecutiveDashboard from "../pages/ExecutiveDashboard";
 import Unauthorized from "../pages/Unauthorized";
@@ -14,6 +15,7 @@ import UnitList from "../pages/units/UnitsList";
 import PurchaseList from "../pages/purchases/PurchaseList";
 import SaleList from "../pages/sales/SaleList";
 import UserList from "../pages/users/UserList";
+import RolesPage from "../pages/roles/RolesPage";
 import CashClosingPage from "../pages/cashClosing/CashClosingPage";
 import ExpenseList from "../pages/expenses/ExpenseList";
 import PendingSales from "../pages/sales/PendingSales";
@@ -21,6 +23,7 @@ import ClientList from "../pages/clients/ClientList";
 import POSPage from "../pages/sales/POSPage";
 import CapitalManagement from "../pages/capital/CapitalManagement";
 import InvoiceManagement from "../pages/invoices/InvoiceManagement";
+import CompanyConfig from "../pages/company-config/CompanyConfig";
 
 export const router = createBrowserRouter([
   {
@@ -51,12 +54,14 @@ export const router = createBrowserRouter([
           },
           { path: "/categories", element: <CategoriesList /> },
           { path: "/units", element: <UnitList /> },
+          { path: "/suppliers", element: <SupplierList /> },
           { path: "/expenses", element: <ExpenseList /> },
           { path: "/cash-closings", element: <CashClosingPage /> },
           { path: "/pending-sales", element: <PendingSales /> },
           { path: "/clients", element: <ClientList /> },
           { path: "/capital", element: <CapitalManagement /> },
           { path: "/invoices", element: <InvoiceManagement /> },
+          { path: "/company-config", element: <CompanyConfig /> },
         ],
       },
 
@@ -65,6 +70,14 @@ export const router = createBrowserRouter([
         children: [
           { path: "/users", element: <UserList /> },
           // Si tienes otras rutas solo admin, aquí
+        ],
+      },
+
+      {
+        element: <PrivateRoute allowedRoles={["SUPER_ADMIN"]} />, // SOLO SUPER_ADMIN
+        children: [
+          { path: "/roles", element: <RolesPage /> },
+          // Otras rutas solo para super admin
         ],
       },
     ],

@@ -16,29 +16,26 @@ import {
   InputNumber,
   Select,
   Input,
-  Radio,
 } from 'antd';
 import {
   CalendarOutlined,
   DollarOutlined,
   ShoppingCartOutlined,
-  RiseOutlined,
+  TrendingUpOutlined,
   EyeOutlined,
   FileTextOutlined,
   PrinterOutlined,
   PlusOutlined,
   DownloadOutlined,
-  FilterOutlined,
-  CheckCircleOutlined,
 } from '@ant-design/icons';
-import { useAppDispatch, useAppSelector } from '../../store';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import {
   fetchSales,
   addSalePayment,
-  setFilters,
+  setSalesFilters,
 } from '../../features/sales/salesSlice';
 import SaleDetailModal from '../../components/sales/SaleDetailModal';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import dayjs from 'dayjs';
 import 'dayjs/locale/es';
 import { downloadInvoice, printInvoice } from '../../utils/pdfGenerator';
@@ -55,14 +52,12 @@ const paymentMethodsForPayments = ["Efectivo", "Transferencia", "Tarjeta", "Otro
 
 const SaleList: React.FC = () => {
   const dispatch = useAppDispatch();
-  const navigate = useNavigate();
-  const { items, loading, filters } = useAppSelector(
-    (state: any) => state.sales
+  const { items, loading, error, filters } = useAppSelector(
+    (state) => state.sales
   );
 
   const [selectedSale, setSelectedSale] = useState<any>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<string>('all'); // all, paid, pending, partial
   const [posTicketModal, setPosTicketModal] = useState<{
     open: boolean;
     sale: any;
@@ -77,50 +72,15 @@ const SaleList: React.FC = () => {
   const [method, setMethod] = useState<string>("Efectivo");
   const [note, setNote] = useState<string>("");
 
-  // Cargar ventas al montar el componente y cuando cambien los filtros
   useEffect(() => {
     if (!filters.dateFrom || !filters.dateTo) {
       const today = dayjs();
-      const dateFilters = {
+      dispatch(setSalesFilters({
         dateFrom: today.startOf('month').format('YYYY-MM-DD'),
         dateTo: today.format('YYYY-MM-DD')
-      };
-      dispatch(setFilters(dateFilters));
-      dispatch(fetchSales(dateFilters));
-    } else {
-      dispatch(fetchSales(filters));
+      }));
     }
-  }, [dispatch, filters.dateFrom, filters.dateTo]);
-
-  // Función para ir al POS
-  const handleGoToPOS = () => {
-    navigate('/pos');
-  };
-
-  // Función para filtrar ventas según el estado
-  const getFilteredSales = () => {
-    if (!items) return [];
-    
-    switch (statusFilter) {
-      case 'paid':
-        return items.filter((sale: any) => {
-          const pendiente = (sale.totalAmount || 0) - (sale.paidAmount || 0);
-          return sale.isPaid || pendiente <= 0;
-        });
-      case 'pending':
-        return items.filter((sale: any) => {
-          const pendiente = (sale.totalAmount || 0) - (sale.paidAmount || 0);
-          return !sale.isPaid && pendiente > 0 && (sale.paidAmount || 0) === 0;
-        });
-      case 'partial':
-        return items.filter((sale: any) => {
-          const pendiente = (sale.totalAmount || 0) - (sale.paidAmount || 0);
-          return !sale.isPaid && pendiente > 0 && (sale.paidAmount || 0) > 0;
-        });
-      default:
-        return items;
-    }
-  };
+  }, [dispatch, filters]);
 
   const handleViewDetail = (sale: any) => {
     setSelectedSale(sale);
@@ -132,10 +92,14 @@ const SaleList: React.FC = () => {
     setIsDetailModalOpen(false);
   };
 
+  const handleAfterSave = () => {
+    dispatch(fetchSales(filters));
+  };
+
   const handleDateChange = (dates: any, dateStrings: [string, string]) => {
     if (dates && dateStrings[0] && dateStrings[1]) {
       dispatch(
-        setFilters({
+        setSalesFilters({
           dateFrom: dateStrings[0],
           dateTo: dateStrings[1],
         })
@@ -173,85 +137,10 @@ const SaleList: React.FC = () => {
     }
   };
 
-  const handleSaldarTodasDeudasPequenas = async () => {
-    const ventasConDeudasPequenas = filteredSales.filter((sale: any) => {
-      const totalAmount = Math.round((sale.totalAmount || 0) * 100) / 100;
-      const paidAmount = Math.round((sale.paidAmount || 0) * 100) / 100;
-      const pendiente = Math.round((totalAmount - paidAmount) * 100) / 100;
-      return pendiente > 0 && pendiente <= 1 && !sale.isPaid;
-    });
-
-    if (ventasConDeudasPequenas.length === 0) {
-      message.info('No hay deudas pequeñas (menores a $1) para saldar');
-      return;
-    }
-
-    try {
-      for (const sale of ventasConDeudasPequenas) {
-        const totalAmount = Math.round((sale.totalAmount || 0) * 100) / 100;
-        const paidAmount = Math.round((sale.paidAmount || 0) * 100) / 100;
-        const pendiente = Math.round((totalAmount - paidAmount) * 100) / 100;
-        
-        await dispatch(
-          addSalePayment({
-            saleId: sale.id,
-            amount: pendiente,
-            date: dayjs().format("YYYY-MM-DD"),
-            method: "Ajuste",
-            note: `Saldo de centavos: $${pendiente} - Ajuste automático masivo`,
-          })
-        ).unwrap();
-      }
-      
-      message.success(`${ventasConDeudasPequenas.length} deudas pequeñas saldadas automáticamente`);
-      dispatch(fetchSales(filters));
-    } catch (err: any) {
-      message.error(err.message || "Error al saldar deudas");
-    }
-  };
-
-  const handleSaldarDeudaPequena = async (sale: any) => {
-    const totalAmount = Math.round((sale.totalAmount || 0) * 100) / 100;
-    const paidAmount = Math.round((sale.paidAmount || 0) * 100) / 100;
-    const pendiente = Math.round((totalAmount - paidAmount) * 100) / 100;
-    
-    if (pendiente <= 0) {
-      message.info('Esta venta ya está pagada');
-      return;
-    }
-    
-    if (pendiente > 1) {
-      message.warning('Solo se pueden saldar automáticamente deudas menores a $1');
-      return;
-    }
-
-    try {
-      await dispatch(
-        addSalePayment({
-          saleId: sale.id,
-          amount: pendiente,
-          date: dayjs().format("YYYY-MM-DD"),
-          method: "Ajuste",
-          note: `Saldo de centavos: $${pendiente} - Ajuste automático`,
-        })
-      ).unwrap();
-      
-      message.success(`Deuda de $${pendiente.toLocaleString()} saldada automáticamente`);
-      dispatch(fetchSales(filters));
-    } catch (err: any) {
-      message.error(err.message || "Error al saldar deuda");
-    }
-  };
-
   const handleOpenAbonoModal = (sale: any) => {
-    // Usar Math.round para evitar problemas de decimales
-    const totalAmount = Math.round((sale.totalAmount || 0) * 100) / 100;
-    const paidAmount = Math.round((sale.paidAmount || 0) * 100) / 100;
-    const maxAmount = Math.round((totalAmount - paidAmount) * 100) / 100;
-    
-    // Considerar como pagado si la diferencia es menor a 1 peso
-    if (maxAmount <= 1) {
-      message.info('Esta venta está completamente pagada');
+    const maxAmount = (sale.totalAmount || 0) - (sale.paidAmount || 0);
+    if (maxAmount <= 0) {
+      message.info('Esta venta ya está completamente pagada');
       return;
     }
     setAbonoModal({ open: true, sale });
@@ -266,14 +155,9 @@ const SaleList: React.FC = () => {
       return;
     }
 
-    // Usar Math.round para manejar decimales correctamente
-    const totalAmount = Math.round((abonoModal.sale.totalAmount || 0) * 100) / 100;
-    const paidAmount = Math.round((abonoModal.sale.paidAmount || 0) * 100) / 100;
-    const maxAmount = Math.round((totalAmount - paidAmount) * 100) / 100;
-    const abonoRounded = Math.round(abono * 100) / 100;
-
-    if (abonoRounded > maxAmount) {
-      message.error(`El monto ($${abonoRounded.toLocaleString()}) no puede ser mayor al saldo pendiente ($${maxAmount.toLocaleString()})`);
+    const maxAmount = (abonoModal.sale.totalAmount || 0) - (abonoModal.sale.paidAmount || 0);
+    if (abono > maxAmount) {
+      message.error(`El monto ($${abono.toLocaleString()}) no puede ser mayor al saldo pendiente ($${maxAmount.toLocaleString()})`);
       setAbono(maxAmount);
       return;
     }
@@ -292,24 +176,13 @@ const SaleList: React.FC = () => {
       await dispatch(
         addSalePayment({
           saleId: abonoModal.sale.id,
-          amount: abonoRounded,
+          amount: abono,
           date: dayjs().format("YYYY-MM-DD"),
           method,
           note,
         })
       ).unwrap();
-      
-      // Verificar si la venta queda completamente pagada (tolerancia de 1 peso)
-      const newPaidAmount = paidAmount + abonoRounded;
-      const remainingBalance = Math.round((totalAmount - newPaidAmount) * 100) / 100;
-      const isFullyPaid = remainingBalance <= 1;
-      
-      if (isFullyPaid) {
-        message.success(`¡Venta completamente pagada! Abono final de $${abonoRounded.toLocaleString()}`);
-      } else {
-        message.success(`Abono de $${abonoRounded.toLocaleString()} registrado correctamente`);
-      }
-      
+      message.success(`Abono de $${abono.toLocaleString()} registrado correctamente`);
       setAbono(0);
       setNote("");
       setMethod("Efectivo");
@@ -387,17 +260,12 @@ const SaleList: React.FC = () => {
       key: 'status',
       width: 120,
       render: (record: any) => {
-        // Usar Math.round para evitar problemas de decimales
-        const totalAmount = Math.round((record.totalAmount || 0) * 100) / 100;
-        const paidAmount = Math.round((record.paidAmount || 0) * 100) / 100;
-        const pendiente = Math.round((totalAmount - paidAmount) * 100) / 100;
+        const pendiente = (record.totalAmount || 0) - (record.paidAmount || 0);
+        const isCredit = record.paymentMethod === 'Crédito' || pendiente > 0;
         
-        // Si está pagado completamente (incluyendo tolerancia para decimales menores a 1)
-        if (record.isPaid || pendiente <= 1) {
+        if (record.isPaid || pendiente <= 0) {
           return <Tag color="success">Pagado</Tag>;
-        } 
-        // Si tiene abonos pero no está completamente pagado
-        else if (paidAmount > 0 && pendiente > 1) {
+        } else if (isCredit && (record.paidAmount || 0) > 0) {
           return (
             <div>
               <Tag color="warning">Abonado</Tag>
@@ -406,9 +274,7 @@ const SaleList: React.FC = () => {
               </Text>
             </div>
           );
-        } 
-        // Si no tiene abonos
-        else {
+        } else {
           return <Tag color="error">Pendiente</Tag>;
         }
       },
@@ -418,11 +284,8 @@ const SaleList: React.FC = () => {
       key: 'actions',
       width: 200,
       render: (record: any) => {
-        // Usar Math.round para evitar problemas de decimales
-        const totalAmount = Math.round((record.totalAmount || 0) * 100) / 100;
-        const paidAmount = Math.round((record.paidAmount || 0) * 100) / 100;
-        const pendiente = Math.round((totalAmount - paidAmount) * 100) / 100;
-        const isCredit = record.paymentMethod === 'Crédito' || pendiente > 1;
+        const pendiente = (record.totalAmount || 0) - (record.paidAmount || 0);
+        const isCredit = record.paymentMethod === 'Crédito' || pendiente > 0;
         
         return (
           <Space size={4}>
@@ -464,8 +327,7 @@ const SaleList: React.FC = () => {
               title="Descargar PDF"
             />
             
-            {/* Solo mostrar botón de abono si hay saldo pendiente mayor a 1 peso */}
-            {pendiente > 1 && !record.isPaid && (
+            {pendiente > 0 && (
               <Button
                 type="link"
                 icon={<DollarOutlined />}
@@ -475,36 +337,15 @@ const SaleList: React.FC = () => {
                 title="Registrar Abono"
               />
             )}
-            
-            {/* Botón para saldar deudas pequeñas (menores a 1 peso) */}
-            {pendiente > 0 && pendiente <= 1 && !record.isPaid && (
-              <Button
-                type="link"
-                icon={<CheckCircleOutlined />}
-                onClick={() => handleSaldarDeudaPequena(record)}
-                size="small"
-                style={{ padding: '4px 8px', color: '#52c41a' }}
-                title={`Saldar $${pendiente.toLocaleString()} automáticamente`}
-              />
-            )}
           </Space>
         );
       },
     },
   ];
 
-  const totalVentas = Math.round(
-    items.reduce((sum: number, sale: any) => sum + (sale.totalAmount || 0), 0) * 100
-  ) / 100;
-  
-  const totalPagado = Math.round(
-    items.reduce((sum: number, sale: any) => sum + (sale.paidAmount || sale.totalAmount || 0), 0) * 100
-  ) / 100;
-  
-  const totalPendiente = Math.round((totalVentas - totalPagado) * 100) / 100;
-
-  // Ventas filtradas para la tabla
-  const filteredSales = getFilteredSales();
+  const totalVentas = items.reduce((sum, sale) => sum + (sale.totalAmount || 0), 0);
+  const totalPagado = items.reduce((sum, sale) => sum + (sale.paidAmount || sale.totalAmount || 0), 0);
+  const totalPendiente = totalVentas - totalPagado;
 
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)' }}>
@@ -540,40 +381,23 @@ const SaleList: React.FC = () => {
                     border: '2px solid #e6f7ff'
                   }}
                 />
-                <Button
-                  type="primary"
-                  icon={<PlusOutlined />}
-                  size="large"
-                  onClick={handleGoToPOS}
-                  style={{
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    border: 'none',
-                    borderRadius: '12px',
-                    height: '48px',
-                    fontWeight: 600,
-                    boxShadow: '0 8px 25px rgba(102, 126, 234, 0.3)',
-                  }}
-                >
-                  Ir al POS
-                </Button>
-                
-                <Button
-                  icon={<CheckCircleOutlined />}
-                  size="large"
-                  onClick={handleSaldarTodasDeudasPequenas}
-                  style={{
-                    background: 'linear-gradient(135deg, #52c41a 0%, #73d13d 100%)',
-                    border: 'none',
-                    borderRadius: '12px',
-                    height: '48px',
-                    fontWeight: 600,
-                    color: 'white',
-                    boxShadow: '0 8px 25px rgba(82, 196, 26, 0.3)',
-                  }}
-                  title="Saldar todas las deudas menores a $1"
-                >
-                  Saldar Centavos
-                </Button>
+                <Link to="/sales/new">
+                  <Button
+                    type="primary"
+                    icon={<PlusOutlined />}
+                    size="large"
+                    style={{
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      border: 'none',
+                      borderRadius: '12px',
+                      height: '48px',
+                      fontWeight: 600,
+                      boxShadow: '0 8px 25px rgba(102, 126, 234, 0.3)',
+                    }}
+                  >
+                    Nueva Venta
+                  </Button>
+                </Link>
               </Space>
             </Col>
           </Row>
@@ -633,7 +457,7 @@ const SaleList: React.FC = () => {
                 <Statistic
                   title={<span style={{ color: 'rgba(255,255,255,0.8)', fontSize: '16px', fontWeight: 500 }}>Pagado</span>}
                   value={totalPagado}
-                  prefix={<RiseOutlined style={{ color: 'white', fontSize: '24px' }} />}
+                  prefix={<TrendingUpOutlined style={{ color: 'white', fontSize: '24px' }} />}
                   valueStyle={{ color: 'white', fontSize: '28px', fontWeight: 'bold' }}
                   formatter={(value) => `$${Number(value).toLocaleString()}`}
                 />
@@ -662,43 +486,6 @@ const SaleList: React.FC = () => {
           </Row>
         </div>
 
-        {/* Filtros de estado */}
-        <Card
-          style={{
-            borderRadius: '16px',
-            boxShadow: '0 8px 24px rgba(0,0,0,0.06)',
-            border: 'none',
-            marginBottom: '24px',
-            background: 'rgba(255,255,255,0.9)',
-          }}
-          bodyStyle={{ padding: '20px' }}
-        >
-          <Row justify="space-between" align="middle">
-            <Col>
-              <Space align="center">
-                <FilterOutlined style={{ color: '#667eea', fontSize: '16px' }} />
-                <Text strong style={{ color: '#667eea' }}>Filtrar por estado:</Text>
-                <Radio.Group
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  buttonStyle="solid"
-                  size="small"
-                >
-                  <Radio.Button value="all">Todas</Radio.Button>
-                  <Radio.Button value="paid">Pagadas</Radio.Button>
-                  <Radio.Button value="pending">Pendientes</Radio.Button>
-                  <Radio.Button value="partial">Con Abonos</Radio.Button>
-                </Radio.Group>
-              </Space>
-            </Col>
-            <Col>
-              <Text type="secondary" style={{ fontSize: '14px' }}>
-                {getFilteredSales().length} de {items.length} ventas
-              </Text>
-            </Col>
-          </Row>
-        </Card>
-
         {/* Tabla con diseño mejorado */}
         <Card
           style={{
@@ -712,7 +499,7 @@ const SaleList: React.FC = () => {
         >
           <Table
             columns={columns}
-            dataSource={filteredSales}
+            dataSource={items}
             rowKey="id"
             loading={loading}
             pagination={{
@@ -735,6 +522,7 @@ const SaleList: React.FC = () => {
           sale={selectedSale}
           open={isDetailModalOpen}
           onClose={handleCloseDetailModal}
+          onAfterSave={handleAfterSave}
         />
 
         {/* Modal de ticket POS */}
@@ -875,5 +663,3 @@ const SaleList: React.FC = () => {
 };
 
 export default SaleList;
-
-

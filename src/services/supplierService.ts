@@ -4,19 +4,21 @@ import api from './api';
 export interface Supplier {
   id: number;
   name: string;
+  nit?: string;
   email?: string;
   phone?: string;
   address?: string;
-  city?: string;
-  country?: string;
+  contactPerson?: string;
+  website?: string;
   supplierType?: string;
   paymentTerms?: string;
+  creditLimit?: number;
+  currentDebt?: number;
   isPreferred: boolean;
-  currentDebt: number;
   isActive: boolean;
-  contactPerson?: string;
-  taxId?: string;
-  website?: string;
+  minOrderAmount?: number;
+  leadTimeDays?: number;
+  rating?: number;
   notes?: string;
   createdAt: string;
   updatedAt: string;
@@ -72,6 +74,11 @@ export const getSuppliers = async (params?: {
 
 export const getSupplierStatistics = async (): Promise<SupplierStatistics> => {
   const response = await api.get('/suppliers/statistics');
+  return response.data;
+};
+
+export const getSupplierFinancialSummary = async () => {
+  const response = await api.get('/suppliers/financial/summary');
   return response.data;
 };
 

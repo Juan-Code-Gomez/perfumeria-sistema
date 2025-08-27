@@ -3,14 +3,29 @@ import { Button, Form, Input, Typography, message } from "antd";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../store";
 import { login } from "../features/auth/authSlice";
+import { fetchPublicCompanyConfig } from "../features/company-config/companyConfigSlice";
 import "./Login.css"; // archivo de estilos personalizado
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const Login = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const { token, user } = useAppSelector((state) => state.auth);
+  const { config, loading: configLoading } = useAppSelector((state) => state.companyConfig);
+  
+  // Cargar configuración de la empresa al montar el componente
+  useEffect(() => {
+    dispatch(fetchPublicCompanyConfig());
+  }, [dispatch]);
+
+  // Debug temporal: ver qué datos estamos recibiendo
+  console.log('Config state:', config);
+  console.log('Logo URL:', config?.logo);
+  console.log('Config loading:', configLoading);
+  
+  const logoSrc = config?.logo || "/logo-milan.png";
+  console.log('Using logo src:', logoSrc);
   
   // Solo verificar el token del Redux, no ambos lugares
   if (token && user) {
@@ -41,8 +56,8 @@ const Login = () => {
     <div className="login-container">
       <div className="login-left">
         <img
-          src="/logo-milan.png"
-          alt="Login Illustration"
+          src={logoSrc}
+          alt="Company Logo"
           className="login-illustration"
         />
       </div>

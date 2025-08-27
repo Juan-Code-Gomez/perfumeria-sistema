@@ -14,18 +14,25 @@ import {
   Select,
   Tag,
   Divider,
+  Modal,
 } from 'antd';
 import {
   DeleteOutlined,
   DollarOutlined,
   SearchOutlined,
   ClearOutlined,
+  PrinterOutlined,
+  UserOutlined,
 } from '@ant-design/icons';
 import { useAppDispatch } from '../../store';
 import { createSale } from '../../features/sales/salesSlice';
 import debounce from 'lodash.debounce';
 import * as productService from '../../services/productService';
 import type { Product } from '../../features/products/types';
+import POSTicket from '../pos/POSTicket';
+import { usePOSPrint } from '../../hooks/usePOSPrint';
+import ClientSelector from '../clients/ClientSelector';
+import type { Client } from '../../features/clients/types';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -55,12 +62,24 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
   const [items, setItems] = useState<POSItem[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<Product[]>([]);
-  const [selectedClient, setSelectedClient] = useState<{ id: number | null; name: string } | null>(null);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   
   // Estados para el checkout
   const [paymentMethod, setPaymentMethod] = useState('Efectivo');
   const [amountReceived, setAmountReceived] = useState<number>(0);
   const [customerName, setCustomerName] = useState('Cliente Ocasional');
+
+  // Estados para impresión
+  const [lastSale, setLastSale] = useState<any>(null);
+  const [showPrintModal, setShowPrintModal] = useState(false);
+  
+  // Hook de impresión
+  const { printRef, printTicket } = usePOSPrint({
+    onAfterPrint: () => {
+      setShowPrintModal(false);
+      setLastSale(null);
+    }
+  });
 
   // Búsqueda con debounce
   const debouncedSearch = useCallback(
@@ -99,6 +118,11 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
 
   // Agregar producto al carrito
   const addToCart = (product: Product) => {
+    // Verificar el tipo de producto
+    if (product.salesType === 'INSUMO' || product.salesType === 'COMBO') {
+      message.info(`${product.name} agregado como ${product.salesType.toLowerCase()} - No se cobrará`);
+    }
+
     const existingItem = items.find(item => item.productId === product.id);
     
     if (existingItem) {
@@ -108,7 +132,12 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
       // Agregar nuevo item
       const key = Date.now().toString();
       const quantity = 1;
-      const unitPrice = product.salePrice;
+      
+      // Para INSUMOS y COMBOS, el precio de venta es 0
+      const unitPrice = (product.salesType === 'INSUMO' || product.salesType === 'COMBO') 
+        ? 0 
+        : product.salePrice;
+      
       const totalPrice = quantity * unitPrice;
       const profit = unitPrice - product.purchasePrice;
       const profitMargin = product.purchasePrice > 0 ? (profit / product.purchasePrice) * 100 : 0;
@@ -163,6 +192,12 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
   const updateUnitPrice = (key: string, newPrice: number) => {
     setItems(prev => prev.map(item => {
       if (item.key === key) {
+        // No permitir cambiar precio de insumos y combos
+        if (item.product.salesType === 'INSUMO' || item.product.salesType === 'COMBO') {
+          message.warning(`No se puede cambiar el precio de ${item.product.salesType.toLowerCase()}s`);
+          return item;
+        }
+        
         const totalPrice = item.quantity * newPrice;
         const profit = newPrice - item.purchasePrice;
         const profitMargin = item.purchasePrice > 0 ? (profit / item.purchasePrice) * 100 : 0;
@@ -251,11 +286,34 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
       
       console.log('Venta creada exitosamente:', result);
       
+      // Preparar datos para impresión
+      const saleForPrint = {
+        id: result.id || Date.now(),
+        date: saleData.date,
+        customerName: saleData.customerName,
+        totalAmount: saleData.totalAmount,
+        paidAmount: saleData.paidAmount,
+        paymentMethod: saleData.paymentMethod,
+        details: items.map(item => ({
+          product: {
+            name: item.product.name,
+            category: item.product.category,
+          },
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          totalPrice: item.totalPrice,
+        })),
+      };
+      
       if (isCredit) {
         message.success(`¡Venta a crédito registrada! Pendiente: $${totals.subtotal.toLocaleString()}`);
       } else {
         message.success('¡Venta procesada exitosamente!');
       }
+
+      // Configurar para impresión
+      setLastSale(saleForPrint);
+      setShowPrintModal(true);
       
       // Limpiar carrito
       clearCart();
@@ -289,8 +347,13 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
           <div>
             <Text strong>{product.name}</Text>
             {product.category && (
-              <div>
+              <div style={{ marginTop: 4 }}>
                 <Tag color="blue">{product.category.name}</Tag>
+                {(product.salesType === 'INSUMO' || product.salesType === 'COMBO') && (
+                  <Tag color="orange">
+                    {product.salesType === 'INSUMO' ? '🔧 Insumo' : '📦 Combo'}
+                  </Tag>
+                )}
               </div>
             )}
           </div>
@@ -315,25 +378,37 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
       dataIndex: 'unitPrice',
       key: 'unitPrice',
       width: 120,
-      render: (price: number, record: POSItem) => (
-        <div>
-          <InputNumber
-            prefix="$"
-            value={price}
-            onChange={(value) => updateUnitPrice(record.key, value || 0)}
-            formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-            parser={(value) => parseFloat(value!.replace(/\$\s?|(,*)/g, '')) || 0}
-            style={{ width: '100px' }}
-          />
-          {price !== record.suggestedPrice && (
-            <div>
-              <Text type="secondary" style={{ fontSize: '11px' }}>
-                Sugerido: ${record.suggestedPrice.toLocaleString()}
-              </Text>
-            </div>
-          )}
-        </div>
-      ),
+      render: (price: number, record: POSItem) => {
+        const isInsumoOrCombo = record.product.salesType === 'INSUMO' || record.product.salesType === 'COMBO';
+        
+        return (
+          <div>
+            <InputNumber
+              prefix="$"
+              value={price}
+              onChange={(value) => updateUnitPrice(record.key, value || 0)}
+              formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+              parser={(value) => parseFloat(value!.replace(/\$\s?|(,*)/g, '')) || 0}
+              style={{ width: '100px' }}
+              disabled={isInsumoOrCombo}
+            />
+            {isInsumoOrCombo && (
+              <div>
+                <Text type="secondary" style={{ fontSize: '11px' }}>
+                  Sin costo
+                </Text>
+              </div>
+            )}
+            {!isInsumoOrCombo && price !== record.suggestedPrice && (
+              <div>
+                <Text type="secondary" style={{ fontSize: '11px' }}>
+                  Sugerido: ${record.suggestedPrice.toLocaleString()}
+                </Text>
+              </div>
+            )}
+          </div>
+        );
+      },
     },
     {
       title: 'Total',
@@ -479,32 +554,27 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
             {/* Cliente */}
             <div style={{ marginBottom: 16 }}>
               <Text strong>Cliente:</Text>
-              <Select
-                placeholder={paymentMethod === 'Crédito' ? 'Seleccione un cliente registrado (requerido)' : 'Cliente ocasional'}
-                allowClear={paymentMethod !== 'Crédito'} // No permitir limpiar si es crédito
-                style={{ width: '100%', marginTop: 4 }}
-                value={selectedClient?.name}
-                onChange={(value) => {
-                  if (value) {
-                    // Por ahora, no asignamos ID hasta integrar con API de clientes
-                    setSelectedClient({ id: null, name: value });
-                  } else {
-                    setSelectedClient(null);
+              <div style={{ marginTop: 4 }}>
+                <ClientSelector
+                  onSelectClient={setSelectedClient}
+                  value={selectedClient}
+                  placeholder={
+                    paymentMethod === 'Crédito' 
+                      ? 'Seleccione un cliente registrado (requerido)' 
+                      : 'Buscar cliente o dejar vacío para cliente ocasional'
                   }
-                }}
-              >
-                <Option value="Cliente Frecuente 1">Cliente Frecuente 1</Option>
-                <Option value="Cliente Frecuente 2">Cliente Frecuente 2</Option>
-                <Option value="Cliente VIP">Cliente VIP</Option>
-              </Select>
+                  allowClear={paymentMethod !== 'Crédito'}
+                />
+              </div>
               
-              {/* Solo mostrar campo de texto si NO es venta a crédito */}
+              {/* Campo para cliente ocasional solo si NO es crédito y NO hay cliente seleccionado */}
               {!selectedClient && paymentMethod !== 'Crédito' && (
                 <Input
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
                   placeholder="Nombre del cliente ocasional"
                   style={{ marginTop: 8 }}
+                  prefix={<UserOutlined />}
                 />
               )}
 
@@ -512,7 +582,7 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
               {paymentMethod === 'Crédito' && !selectedClient && (
                 <div style={{ marginTop: 8, padding: 8, background: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: 4 }}>
                   <Text type="secondary" style={{ fontSize: '12px' }}>
-                    💡 Para ventas a crédito debe seleccionar un cliente registrado del desplegable
+                    💡 Para ventas a crédito debe seleccionar un cliente registrado
                   </Text>
                 </div>
               )}
@@ -653,6 +723,60 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
           </Card>
         </Col>
       </Row>
+
+      {/* Modal de impresión */}
+      <Modal
+        title="Imprimir Ticket"
+        open={showPrintModal}
+        onCancel={() => setShowPrintModal(false)}
+        footer={[
+          <Button key="cancel" onClick={() => setShowPrintModal(false)}>
+            Cerrar
+          </Button>,
+          <Button 
+            key="print" 
+            type="primary" 
+            icon={<PrinterOutlined />}
+            onClick={printTicket}
+          >
+            Imprimir Ticket
+          </Button>,
+        ]}
+        width={400}
+        centered
+      >
+        <div style={{ textAlign: 'center', marginBottom: 16 }}>
+          <p>¿Desea imprimir el ticket de la venta?</p>
+        </div>
+        
+        {/* Vista previa del ticket (oculta) */}
+        <div style={{ display: 'none' }}>
+          {lastSale && (
+            <POSTicket 
+              ref={printRef}
+              sale={lastSale}
+              change={paymentMethod === 'Efectivo' ? change : 0}
+            />
+          )}
+        </div>
+        
+        {/* Vista previa visible para el usuario */}
+        {lastSale && (
+          <div style={{ 
+            border: '1px solid #d9d9d9', 
+            borderRadius: '6px',
+            padding: '16px',
+            backgroundColor: '#fafafa',
+            maxHeight: '300px',
+            overflowY: 'auto'
+          }}>
+            <POSTicket 
+              sale={lastSale}
+              change={paymentMethod === 'Efectivo' ? change : 0}
+            />
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

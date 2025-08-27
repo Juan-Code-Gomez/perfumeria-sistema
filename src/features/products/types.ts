@@ -11,12 +11,15 @@ export interface Category {
   description?: string;
 }
 
+export type SalesType = 'VENTA' | 'INSUMO' | 'COMBO';
+
 export interface Product {
   id: number;
   name: string;
   description?: string;
   categoryId: number;
   unitId: number;
+  salesType: SalesType;
   stock: number;
   minStock?: number;
   purchasePrice: number;

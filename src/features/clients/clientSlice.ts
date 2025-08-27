@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import * as clientAPI from "../../services/clientService";
+import type { Client } from "./types";
 
 export const addClient = createAsyncThunk(
   "clients/addClient",
@@ -36,7 +37,7 @@ export const updateClient = createAsyncThunk(
 );
 
 interface ClientState {
-  clients: Array<{ id: number; name: string; document?: string }>;
+  clients: Client[];
   loading: boolean;
   error: string | null;
 }
@@ -63,7 +64,10 @@ const clientSlice = createSlice({
       })
       .addCase(searchClients.fulfilled, (state, { payload }) => {
         state.loading = false;
-        state.clients = payload;
+        // Manejar respuesta estructurada del backend
+        const responseData = (payload as any)?.data || payload;
+        // Asegurar que sea un array
+        state.clients = Array.isArray(responseData) ? responseData : [];
       })
       .addCase(searchClients.rejected, (state, action) => {
         state.loading = false;
@@ -75,7 +79,9 @@ const clientSlice = createSlice({
       })
       .addCase(addClient.fulfilled, (state, { payload }) => {
         state.loading = false;
-        state.clients.unshift(payload);
+        // Agregar el nuevo cliente al inicio de la lista
+        const newClient = (payload as any)?.data || payload;
+        state.clients.unshift(newClient);
       })
       .addCase(addClient.rejected, (state, action) => {
         state.loading = false;
@@ -88,8 +94,9 @@ const clientSlice = createSlice({
       })
       .addCase(updateClient.fulfilled, (state, { payload }) => {
         state.loading = false;
+        const updatedClient = (payload as any)?.data || payload;
         state.clients = state.clients.map((c) =>
-          c.id === payload.id ? payload : c
+          c.id === updatedClient.id ? updatedClient : c
         );
       })
       .addCase(updateClient.rejected, (state, action) => {

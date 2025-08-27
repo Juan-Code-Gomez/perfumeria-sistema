@@ -44,11 +44,26 @@ const ProductForm: React.FC<Props> = ({ product, onSaved }) => {
       });
     } else {
       form.resetFields();
+      // Establecer valores por defecto para productos nuevos
+      form.setFieldsValue({
+        salesType: 'VENTA'
+      });
     }
   }, [product, form, dispatch]);
 
   // Vista previa de imagen en tiempo real
   const imageUrl = Form.useWatch("imageUrl", form);
+  
+  // Observar el tipo de producto para validaciones condicionales
+  const salesType = Form.useWatch("salesType", form);
+
+  // Efecto para manejar cambios en el tipo de producto
+  useEffect(() => {
+    if (salesType === 'INSUMO' || salesType === 'COMBO') {
+      // Si cambia a insumo o combo, establecer precio de venta en 0
+      form.setFieldsValue({ salePrice: 0 });
+    }
+  }, [salesType, form]);
 
   const onFinish = async (values: any) => {
     setLoading(true);
@@ -57,7 +72,10 @@ const ProductForm: React.FC<Props> = ({ product, onSaved }) => {
       const processedValues = {
         ...values,
         purchasePrice: parseFloat(values.purchasePrice) || 0,
-        salePrice: parseFloat(values.salePrice) || 0,
+        // Si es insumo o combo, forzar precio de venta a 0
+        salePrice: (values.salesType === 'INSUMO' || values.salesType === 'COMBO') 
+          ? 0 
+          : parseFloat(values.salePrice) || 0,
         stock: parseInt(values.stock) || 0,
         minStock: values.minStock ? parseInt(values.minStock) : 0, // Si está vacío, enviar 0
       };
@@ -155,6 +173,21 @@ const ProductForm: React.FC<Props> = ({ product, onSaved }) => {
           </Col>
         </Row>
 
+        {/* Tipo de Producto */}
+        <Form.Item
+          label="Tipo de Producto"
+          name="salesType"
+          hasFeedback
+          rules={[{ required: true, message: "Selecciona el tipo de producto" }]}
+          tooltip="Determina cómo se maneja el producto en las ventas"
+        >
+          <Select placeholder="Selecciona tipo">
+            <Option value="VENTA">🛍️ Venta - Producto normal para vender</Option>
+            <Option value="INSUMO">🔧 Insumo - Material que no se cobra</Option>
+            <Option value="COMBO">📦 Combo - Conjunto de insumos</Option>
+          </Select>
+        </Form.Item>
+
         {/* Imagen */}
         <Form.Item
           label="Imagen (URL)"
@@ -221,12 +254,42 @@ const ProductForm: React.FC<Props> = ({ product, onSaved }) => {
               name="salePrice"
               hasFeedback
               rules={[
-                { required: true, message: "El precio de venta es obligatorio" },
-                { pattern: /^\d+(\.\d{1,2})?$/, message: "Formato inválido (ej: 123.45)" },
+                // Solo requerido si NO es insumo o combo
                 ({ getFieldValue }) => ({
                   validator(_, value) {
+                    const currentSalesType = getFieldValue("salesType");
+                    const isInsumoOrCombo = currentSalesType === 'INSUMO' || currentSalesType === 'COMBO';
+                    
+                    // Si es insumo o combo, no es obligatorio
+                    if (isInsumoOrCombo) {
+                      return Promise.resolve();
+                    }
+                    
+                    // Si es producto de venta, sí es obligatorio
+                    if (!value) {
+                      return Promise.reject(new Error("El precio de venta es obligatorio para productos de venta"));
+                    }
+                    
+                    return Promise.resolve();
+                  },
+                }),
+                { 
+                  pattern: /^\d+(\.\d{1,2})?$/, 
+                  message: "Formato inválido (ej: 123.45)" 
+                },
+                ({ getFieldValue }) => ({
+                  validator(_, value) {
+                    const currentSalesType = getFieldValue("salesType");
+                    const isInsumoOrCombo = currentSalesType === 'INSUMO' || currentSalesType === 'COMBO';
+                    
+                    // Si es insumo o combo, puede estar vacío o ser 0
+                    if (isInsumoOrCombo && (!value || parseFloat(value) === 0)) {
+                      return Promise.resolve();
+                    }
+                    
                     const purchasePrice = parseFloat(getFieldValue("purchasePrice"));
                     const salePrice = parseFloat(value);
+                    
                     if (!value || !purchasePrice || salePrice >= purchasePrice) {
                       return Promise.resolve();
                     }
@@ -238,8 +301,13 @@ const ProductForm: React.FC<Props> = ({ product, onSaved }) => {
               ]}
             >
               <Input
-                placeholder="0.00"
+                placeholder={
+                  (salesType === 'INSUMO' || salesType === 'COMBO') 
+                    ? "0.00 (Sin costo)" 
+                    : "0.00"
+                }
                 prefix="$"
+                disabled={salesType === 'INSUMO' || salesType === 'COMBO'}
                 onKeyDown={(e) => {
                   if (
                     !/[0-9.]/.test(e.key) &&

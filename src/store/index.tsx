@@ -17,6 +17,8 @@ import dashboardReducer from '../features/dashboard/dashboardSlice'
 import clienstReducer from '../features/clients/clientSlice'
 import capitalReducer from '../features/capital/capitalSlice'
 import invoiceReducer from '../features/invoices/invoiceSlice'
+import companyConfigReducer from '../features/company-config/companyConfigSlice'
+import permissionsReducer from '../features/permissions/permissionsSlice'
 
 export const store = configureStore({
   reducer: {
@@ -35,7 +37,9 @@ export const store = configureStore({
     dashboard: dashboardReducer,
     clients: clienstReducer,
     capital: capitalReducer,
-    invoices: invoiceReducer
+    invoices: invoiceReducer,
+    companyConfig: companyConfigReducer,
+    permissions: permissionsReducer
   },
 })
 

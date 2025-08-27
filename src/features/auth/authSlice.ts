@@ -1,6 +1,7 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 import { loginService } from "../../services/authService";
+import { fetchUserModules, fetchUserPermissions } from "../permissions/permissionsSlice";
 
 //
 // 1. Definimos las interfaces de nuestro estado
@@ -52,15 +53,20 @@ export const login = createAsyncThunk<
     console.log("🔥 Login thunk iniciado con credenciales:", credentials);
     const data = await loginService(credentials);
     console.log("🔥 Datos recibidos del loginService:", data);
-    console.log("🔥 data.user:", data.user);
-    console.log("🔥 data.token:", data.token);
     
-    // suponemos que data tiene la forma: { user: User; token: string }
+    // Primero guardamos el token en localStorage antes de hacer otras peticiones
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("user", JSON.stringify(data.user));
+    
+    // Después del login exitoso y guardar el token, cargar permisos del usuario
+    thunkAPI.dispatch(fetchUserModules());
+    thunkAPI.dispatch(fetchUserPermissions());
+    
     return data;
   } catch (error: any) {
-    console.error("🔥 Error en login thunk:", error);
+    console.error("❌ Error en login:", error);
     return thunkAPI.rejectWithValue(
-      error.response?.data?.message || "Error al iniciar sesión"
+      error.response?.data?.message || "Credenciales inválidas"
     );
   }
 });

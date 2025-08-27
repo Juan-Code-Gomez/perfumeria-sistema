@@ -8,12 +8,16 @@ export const createClient = async (data: {
   address?: string;
 }) => {
   const res = await api.post("/clients", data);
-  return res.data;
+  // Si el backend devuelve { success: true, data: cliente }
+  return res.data.data || res.data;
 };
 
 export const findClients = async (name = "") => {
   const res = await api.get("/clients", { params: { name } });
-  return res.data;
+  // Manejar respuesta estructurada del backend
+  const responseData = res.data.data || res.data;
+  // Asegurar que siempre devuelva un array
+  return Array.isArray(responseData) ? responseData : [];
 };
 
 export const deleteClient = async (id: number) => {
@@ -32,5 +36,6 @@ export const updateClient = async (
   }
 ) => {
   const res = await api.put(`/clients/${id}`, data);
-  return res.data;
+  // Si el backend devuelve { success: true, data: cliente }
+  return res.data.data || res.data;
 };
