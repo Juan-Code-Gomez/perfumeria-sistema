@@ -4,7 +4,6 @@ import {
   Card,
   Row,
   Col,
-  Statistic,
   Spin,
   Alert,
   Typography,
@@ -13,27 +12,19 @@ import {
   Button,
   Space,
   Avatar,
-  Progress,
-  Tag,
-  Divider,
-  Tooltip
+  Tag
 } from "antd";
 import {
   ArrowUpOutlined,
   ArrowDownOutlined,
-  ExclamationCircleOutlined,
   WarningOutlined,
-  TrophyOutlined,
   ShoppingCartOutlined,
   DollarOutlined,
   TeamOutlined,
-  StockOutlined,
   ReloadOutlined,
   BankOutlined,
   CalendarOutlined,
   RiseOutlined,
-  EyeOutlined,
-  FireOutlined,
   ThunderboltOutlined,
   CrownOutlined
 } from "@ant-design/icons";
@@ -43,15 +34,11 @@ import {
   PieChart,
   Pie,
   Cell,
-  BarChart,
-  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip as RechartsTooltip,
-  ResponsiveContainer,
-  LineChart,
-  Line
+  ResponsiveContainer
 } from "recharts";
 import api from "../services/api";
 import dayjs from "dayjs";
@@ -486,7 +473,7 @@ const ExecutiveDashboard: React.FC = () => {
                         paddingAngle={5}
                         dataKey="value"
                       >
-                        {paymentMethodsData.map((entry, index) => (
+                        {paymentMethodsData.map((_, index) => (
                           <Cell 
                             key={`cell-${index}`} 
                             fill={COLORS.chart[index % COLORS.chart.length]} 

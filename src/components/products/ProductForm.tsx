@@ -7,7 +7,8 @@ import {
   fetchProducts,
   updateProduct,
 } from "../../features/products/productSlice";
-import type { Category, Product } from "../../features/products/types";
+import type { Category } from "../../features/products/types";
+import type { Product } from "../../services/productService";
 import { getUnits } from "../../features/units/unitsSlice";
 import { getCategories } from "../../features/categories/categoriesSlice";
 

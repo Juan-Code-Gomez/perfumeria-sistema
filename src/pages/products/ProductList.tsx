@@ -29,7 +29,8 @@ import {
 //   updateProduct,
 //   addProduct,
 // } from "@/features/products/productSlice";
-import type { Category, Product, Unit } from "../../features/products/types";
+import type { Category, Unit } from "../../features/products/types";
+import type { Product } from "../../services/productService";
 import type { RootState } from "../../store";
 import ProductForm from "../../components/products/ProductForm"; // extrae el formulario a su propio componente
 import { getCategories } from "../../features/categories/categoriesSlice";

@@ -17,7 +17,7 @@ import dayjs from "dayjs";
 import { useAppDispatch } from "../../store";
 import { createSale } from "../../features/sales/salesSlice";
 import * as productService from "../../services/productService";
-import type { Product } from "../../features/products/types";
+import type { Product } from "../../services/productService";
 import debounce from "lodash.debounce";
 import ClientSelector from "../clients/ClientSelector";
 
@@ -403,7 +403,9 @@ const SaleForm: React.FC<Props> = ({ open, onClose, onSaved }) => {
                   <ClientSelector
                     onSelectClient={(client) => {
                       setSelectedClient(client);
-                      form.setFieldsValue({ clientId: client.id });
+                      if (client) {
+                        form.setFieldsValue({ clientId: client.id });
+                      }
                     }}
                   />
                 </Form.Item>

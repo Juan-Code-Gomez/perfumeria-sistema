@@ -1,6 +1,6 @@
 // src/components/dashboard/MetricsCard.tsx
 import React from 'react';
-import { Card, Statistic, Typography, Progress, Tag } from 'antd';
+import { Card, Typography, Progress, Tag } from 'antd';
 import { ArrowUpOutlined, ArrowDownOutlined } from '@ant-design/icons';
 
 const { Text } = Typography;
@@ -39,11 +39,6 @@ export const MetricsCard: React.FC<MetricsCardProps> = ({
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);
-  };
-
-  const getTrendColor = (trend?: number) => {
-    if (!trend) return '#666';
-    return trend >= 0 ? '#52c41a' : '#ff4d4f';
   };
 
   const getProgressStatus = (progress?: number, target?: number) => {

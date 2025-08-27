@@ -1,8 +1,10 @@
 // src/features/products/productSlice.ts
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
-import type { Product } from "./types";
 import * as productService from "../../services/productService";
+
+// Usar el tipo Product del servicio
+type Product = productService.Product;
 
 export interface ProductFilters {
   name?: string;
@@ -200,7 +202,7 @@ const productSlice = createSlice({
       })
       .addCase(fetchProductById.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload || "Error desconocido al cargar producto";
+        state.error = action.payload as string || "Error desconocido al cargar producto";
       })
       .addCase(createProduct.pending, (state) => {
         state.loading = true;

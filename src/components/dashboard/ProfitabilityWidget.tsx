@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, Table, Tag, Typography, Space, Avatar, Progress } from 'antd';
 import { TrophyOutlined, RiseOutlined, FallOutlined, FireOutlined } from '@ant-design/icons';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 interface ProfitabilityData {
   productId: string;

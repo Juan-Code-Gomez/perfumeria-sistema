@@ -21,18 +21,17 @@ import {
   CalendarOutlined,
   DollarOutlined,
   ShoppingCartOutlined,
-  TrendingUpOutlined,
   EyeOutlined,
   FileTextOutlined,
   PrinterOutlined,
   PlusOutlined,
   DownloadOutlined,
 } from '@ant-design/icons';
-import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import { useAppDispatch, useAppSelector } from '../../store';
 import {
   fetchSales,
   addSalePayment,
-  setSalesFilters,
+  setFilters as setSalesFilters,
 } from '../../features/sales/salesSlice';
 import SaleDetailModal from '../../components/sales/SaleDetailModal';
 import { Link } from 'react-router-dom';
@@ -52,8 +51,8 @@ const paymentMethodsForPayments = ["Efectivo", "Transferencia", "Tarjeta", "Otro
 
 const SaleList: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { items, loading, error, filters } = useAppSelector(
-    (state) => state.sales
+  const { items, loading, filters } = useAppSelector(
+    (state: any) => state.sales
   );
 
   const [selectedSale, setSelectedSale] = useState<any>(null);
@@ -90,10 +89,6 @@ const SaleList: React.FC = () => {
   const handleCloseDetailModal = () => {
     setSelectedSale(null);
     setIsDetailModalOpen(false);
-  };
-
-  const handleAfterSave = () => {
-    dispatch(fetchSales(filters));
   };
 
   const handleDateChange = (dates: any, dateStrings: [string, string]) => {
@@ -343,8 +338,8 @@ const SaleList: React.FC = () => {
     },
   ];
 
-  const totalVentas = items.reduce((sum, sale) => sum + (sale.totalAmount || 0), 0);
-  const totalPagado = items.reduce((sum, sale) => sum + (sale.paidAmount || sale.totalAmount || 0), 0);
+  const totalVentas = items.reduce((sum: number, sale: any) => sum + (sale.totalAmount || 0), 0);
+  const totalPagado = items.reduce((sum: number, sale: any) => sum + (sale.paidAmount || sale.totalAmount || 0), 0);
   const totalPendiente = totalVentas - totalPagado;
 
   return (
@@ -457,7 +452,7 @@ const SaleList: React.FC = () => {
                 <Statistic
                   title={<span style={{ color: 'rgba(255,255,255,0.8)', fontSize: '16px', fontWeight: 500 }}>Pagado</span>}
                   value={totalPagado}
-                  prefix={<TrendingUpOutlined style={{ color: 'white', fontSize: '24px' }} />}
+                  prefix={<DollarOutlined style={{ color: 'white', fontSize: '24px' }} />}
                   valueStyle={{ color: 'white', fontSize: '28px', fontWeight: 'bold' }}
                   formatter={(value) => `$${Number(value).toLocaleString()}`}
                 />
@@ -522,7 +517,6 @@ const SaleList: React.FC = () => {
           sale={selectedSale}
           open={isDetailModalOpen}
           onClose={handleCloseDetailModal}
-          onAfterSave={handleAfterSave}
         />
 
         {/* Modal de ticket POS */}

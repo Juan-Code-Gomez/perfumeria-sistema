@@ -33,7 +33,7 @@ import {
   type CreateCompanyConfigData,
 } from '../../features/company-config/companyConfigSlice';
 
-const { Title, Text } = Typography;
+const { Title } = Typography;
 const { TextArea } = Input;
 const { Option } = Select;
 

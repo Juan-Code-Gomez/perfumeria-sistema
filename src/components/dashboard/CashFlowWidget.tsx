@@ -4,7 +4,6 @@ import { Card, Row, Col, Typography, Progress, Statistic, Space, Tag, Alert } fr
 import { 
   DollarOutlined, 
   RiseOutlined, 
-  FallOutlined,
   WalletOutlined,
   ClockCircleOutlined
 } from '@ant-design/icons';
@@ -38,8 +37,7 @@ interface CashFlowWidgetProps {
 
 export const CashFlowWidget: React.FC<CashFlowWidgetProps> = ({ 
   cashFlowData = [], 
-  liquidityMetrics,
-  loading = false 
+  liquidityMetrics 
 }) => {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-CO', {
