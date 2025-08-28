@@ -66,7 +66,7 @@ const CategoryList = () => {
     form.setFieldsValue({ name: record.name });
     setEditingKey(record.id.toString());
   };
-
+//hola
   const cancel = () => {
     setEditingKey("");
     form.resetFields();
