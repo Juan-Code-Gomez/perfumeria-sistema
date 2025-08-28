@@ -1,5 +1,5 @@
 // src/components/DynamicSidebarMenu.tsx
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Menu } from 'antd';
 import {
   DashboardOutlined,
@@ -26,9 +26,7 @@ import {
   GiftOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import { useAppDispatch } from '../store';
 import { usePermissions } from '../hooks/usePermissions';
-import { fetchUserModules } from '../features/permissions/permissionsSlice';
 
 const iconMap: Record<string, React.ReactNode> = {
   DashboardOutlined: <DashboardOutlined />,
@@ -60,14 +58,14 @@ interface DynamicSidebarMenuProps {
 
 const DynamicSidebarMenu: React.FC<DynamicSidebarMenuProps> = ({ onLogout }) => {
   const navigate = useNavigate();
-  const dispatch = useAppDispatch();
   const { getAccessibleModules, isSuperAdmin, userModules } = usePermissions();
 
-  useEffect(() => {
-    // Cargar módulos del usuario al montar el componente
-    console.log('🔥 DynamicSidebarMenu: Cargando módulos del usuario...');
-    dispatch(fetchUserModules());
-  }, [dispatch]);
+  // Ya no cargamos módulos aquí, se hace en AppLayout
+  // useEffect(() => {
+  //   // Cargar módulos del usuario al montar el componente
+  //   console.log('🔥 DynamicSidebarMenu: Cargando módulos del usuario...');
+  //   dispatch(fetchUserModules());
+  // }, [dispatch]);
 
   const accessibleModules = getAccessibleModules();
   

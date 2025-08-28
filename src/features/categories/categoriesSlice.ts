@@ -107,7 +107,10 @@ const categoriesSlice = createSlice({
       })
       .addCase(createCategory.fulfilled, (state, action) => {
         state.loading = false;
-        state.listCategories.push(action.payload);
+        // Solo agregamos la nueva categoría si tiene un ID válido
+        if (action.payload && action.payload.id) {
+          state.listCategories.push(action.payload);
+        }
       })
       .addCase(createCategory.rejected, (state, action) => {
         state.loading = false;

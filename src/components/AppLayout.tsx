@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Layout, Dropdown, Avatar, Typography } from "antd";
 import { UserOutlined } from "@ant-design/icons";
 import { Outlet, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../store";
-import { logout } from "../features/auth/authSlice";
+import { logoutWithPermissions } from "../features/auth/authSlice";
+import { fetchUserModules, fetchUserPermissions } from "../features/permissions/permissionsSlice";
 import DynamicSidebarMenu from "./DynamicSidebarMenu";
 
 const { Header, Sider, Content } = Layout;
@@ -12,10 +13,21 @@ const { Text } = Typography;
 const AppLayout: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { user } = useAppSelector((state: any) => state.auth);
+  const { user, token } = useAppSelector((state: any) => state.auth);
+  const { userModules } = useAppSelector((state: any) => state.permissions);
+
+  // Efecto para cargar módulos cuando la aplicación se inicializa con un usuario ya autenticado
+  useEffect(() => {
+    // Si hay un usuario autenticado pero no hay módulos cargados, cargarlos
+    if (user && token && (!userModules || userModules.length === 0)) {
+      console.log('🔥 AppLayout: Usuario autenticado detectado sin módulos, cargando...');
+      dispatch(fetchUserModules());
+      dispatch(fetchUserPermissions());
+    }
+  }, [dispatch, user, token, userModules]);
 
   const handleLogout = () => {
-    dispatch(logout());
+    dispatch(logoutWithPermissions());
     navigate("/login");
   };
 

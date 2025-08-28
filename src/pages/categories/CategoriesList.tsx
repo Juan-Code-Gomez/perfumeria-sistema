@@ -51,15 +51,25 @@ const CategoryList = () => {
   const [editingKey, setEditingKey] = useState("");
   const [form] = Form.useForm();
 
-  const isEditing = (record: any) => record.id.toString() === editingKey;
+  const isEditing = (record: any) => {
+    if (!record || record.id === undefined || record.id === null) {
+      return false;
+    }
+    return record.id.toString() === editingKey;
+  };
 
   const edit = (record: any) => {
+    if (!record || record.id === undefined || record.id === null) {
+      message.error("Error: ID de categoría no válido");
+      return;
+    }
     form.setFieldsValue({ name: record.name });
     setEditingKey(record.id.toString());
   };
 
   const cancel = () => {
     setEditingKey("");
+    form.resetFields();
   };
 
   const save = async (id: string) => {
@@ -70,17 +80,22 @@ const CategoryList = () => {
         // Crear nueva categoría
         await dispatch(createCategory({ name: row.name })).unwrap();
         message.success("Categoría creada exitosamente");
+        // Limpiar estado de edición antes de recargar
+        setEditingKey("");
+        form.resetFields();
+        // Recargar la lista completa para asegurar consistencia
+        await dispatch(getCategories({ search: searchText, includeInactive }));
       } else {
         // Editar categoría existente
         await dispatch(
           updateCategory({ id: parseInt(id), name: row.name })
         ).unwrap();
         message.success("Categoría actualizada exitosamente");
+        setEditingKey("");
+        form.resetFields();
+        // Recargar la lista completa para asegurar consistencia
+        await dispatch(getCategories({ search: searchText, includeInactive }));
       }
-
-      setEditingKey("");
-      form.resetFields();
-      dispatch(getCategories({ search: searchText, includeInactive }));
     } catch (error: any) {
       console.log("Error:", error);
       message.error(error.message || "Error al guardar la categoría");
@@ -93,6 +108,10 @@ const CategoryList = () => {
   };
 
   const handleDelete = async (id: number) => {
+    if (!id) {
+      message.error("Error: ID de categoría no válido");
+      return;
+    }
     try {
       await dispatch(deleteCategory(id)).unwrap();
       message.success("Categoría eliminada exitosamente");
@@ -104,6 +123,10 @@ const CategoryList = () => {
   };
 
   const handleToggleStatus = async (id: number) => {
+    if (!id) {
+      message.error("Error: ID de categoría no válido");
+      return;
+    }
     try {
       await dispatch(toggleCategoryStatus(id)).unwrap();
       message.success("Estado de categoría actualizado");
@@ -119,7 +142,17 @@ const CategoryList = () => {
 
   const dataSource =
     editingKey === "new"
-      ? [{ id: "new", name: "" }, ...(listCategories || [])]
+      ? [
+          { 
+            id: "new", 
+            name: "", 
+            isActive: true, 
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            _count: { products: 0 }
+          }, 
+          ...(listCategories || [])
+        ]
       : listCategories || [];
 
   const columns = [
@@ -194,23 +227,32 @@ const CategoryList = () => {
               type="link"
               size="small"
               onClick={() => edit(record)}
+              disabled={!record || record.id === undefined || record.id === null}
             >
               Editar
             </Button>
             <Switch
               size="small"
               checked={record.isActive}
-              onChange={() => handleToggleStatus(record.id)}
+              onChange={() => record.id && handleToggleStatus(record.id)}
               checkedChildren="Activo"
               unCheckedChildren="Inactivo"
+              disabled={!record || record.id === undefined || record.id === null}
             />
             <Popconfirm
               title="¿Eliminar categoría?"
               onConfirm={() => {
-                handleDelete(record.id);
+                if (record.id) handleDelete(record.id);
               }}
+              disabled={!record || record.id === undefined || record.id === null}
             >
-              <Button icon={<DeleteOutlined />} type="link" danger size="small">
+              <Button 
+                icon={<DeleteOutlined />} 
+                type="link" 
+                danger 
+                size="small"
+                disabled={!record || record.id === undefined || record.id === null}
+              >
                 Eliminar
               </Button>
             </Popconfirm>

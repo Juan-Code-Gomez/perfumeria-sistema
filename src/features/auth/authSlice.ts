@@ -1,7 +1,7 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 import { loginService } from "../../services/authService";
-import { fetchUserModules, fetchUserPermissions } from "../permissions/permissionsSlice";
+import { fetchUserModules, fetchUserPermissions, clearPermissions } from "../permissions/permissionsSlice";
 
 //
 // 1. Definimos las interfaces de nuestro estado
@@ -84,6 +84,13 @@ const authSlice = createSlice({
       localStorage.removeItem("token");
       localStorage.removeItem("user");
     },
+    clearAuth(state) {
+      // Acción que también limpia permisos, se debe usar con dispatch múltiple
+      state.user = null;
+      state.token = null;
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -122,5 +129,17 @@ const authSlice = createSlice({
   },
 });
 
-export const { logout } = authSlice.actions;
+export const { logout, clearAuth } = authSlice.actions;
+
+// Thunk para logout completo que también limpia permisos
+export const logoutWithPermissions = createAsyncThunk(
+  "auth/logoutWithPermissions",
+  async (_, thunkAPI) => {
+    // Limpiar auth
+    thunkAPI.dispatch(clearAuth());
+    // Limpiar permisos
+    thunkAPI.dispatch(clearPermissions());
+  }
+);
+
 export default authSlice.reducer;
