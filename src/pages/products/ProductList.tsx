@@ -14,7 +14,16 @@ import {
   message,
   Card,
   Checkbox,
+  Space,
 } from "antd";
+import { 
+  TableOutlined, 
+  AppstoreOutlined, 
+  PlusOutlined,
+  UploadOutlined,
+  DownloadOutlined,
+  FileExcelOutlined,
+} from "@ant-design/icons";
 import { useAppDispatch, useAppSelector } from "../../store/index";
 import {
   fetchProducts,
@@ -24,15 +33,12 @@ import {
   deleteProduct,
   exportProducts,
 } from "../../features/products/productSlice";
-// import {
-//   deleteProduct,
-//   updateProduct,
-//   addProduct,
-// } from "@/features/products/productSlice";
 import type { Category, Unit } from "../../features/products/types";
 import type { Product } from "../../services/productService";
 import type { RootState } from "../../store";
-import ProductForm from "../../components/products/ProductForm"; // extrae el formulario a su propio componente
+import ProductForm from "../../components/products/ProductForm";
+import ProductCardView from "../../components/products/ProductCardView";
+import ProductStats from "../../components/products/ProductStats";
 import { getCategories } from "../../features/categories/categoriesSlice";
 import { getUnits } from "../../features/units/unitsSlice";
 import BulkUploadProducts from "../../components/products/BulkUploadProducts";
@@ -47,12 +53,13 @@ const ProductList: React.FC = () => {
     (state: RootState) => state.categories
   );
   const { listUnits } = useAppSelector((state: RootState) => state.units);
-  const FILTER_WIDTH = 160;
+  
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [editingProduct, setEditingProduct] = React.useState<Product | null>(
     null
   );
   const [openBulkModal, setOpenBulkModal] = useState(false);
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
 
   const [form] = Form.useForm();
 
@@ -255,39 +262,71 @@ const ProductList: React.FC = () => {
         <Col>
           <h1 className="text-2xl font-semibold">Gestión de Productos</h1>
           <p className="text-gray-600">
-            Administra tu inventario de perfumes y fragancias
+            Administra tu inventario de perfumes y fragancias ({total} productos)
           </p>
         </Col>
         <Col>
-          <Button
-            href="/plantilla-carga-masiva-productos.xlsx"
-            target="_blank"
-            style={{ marginRight: 8 }}
-          >
-            Descargar plantilla
-          </Button>
-          <Button
-            onClick={() => setOpenBulkModal(true)}
-            style={{ marginRight: 8 }}
-          >
-            Carga masiva
-          </Button>
-          <Button
-            onClick={handleExport}
-            style={{ marginRight: 8 }}
-            type="default"
-            loading={loading}
-          >
-            Exportar Excel
-          </Button>
-          <Button
-            style={{ marginLeft: "6px" }}
-            type="primary"
-            onClick={() => handleShowModal()}
-            size="small"
-          >
-            Agregar Producto
-          </Button>
+          <Space size="middle">
+            {/* Toggle de vista */}
+            <Space>
+              <span style={{ fontSize: 12, color: '#666' }}>Vista:</span>
+              <Button.Group>
+                <Button
+                  type={viewMode === 'table' ? 'primary' : 'default'}
+                  icon={<TableOutlined />}
+                  onClick={() => setViewMode('table')}
+                  size="small"
+                >
+                  Tabla
+                </Button>
+                <Button
+                  type={viewMode === 'cards' ? 'primary' : 'default'}
+                  icon={<AppstoreOutlined />}
+                  onClick={() => setViewMode('cards')}
+                  size="small"
+                >
+                  Tarjetas
+                </Button>
+              </Button.Group>
+            </Space>
+            
+            <Button
+              href="/plantilla-carga-masiva-productos.xlsx"
+              target="_blank"
+              icon={<FileExcelOutlined />}
+              size="small"
+            >
+              Plantilla
+            </Button>
+            
+            <Button
+              onClick={() => setOpenBulkModal(true)}
+              icon={<UploadOutlined />}
+              size="small"
+            >
+              Carga masiva
+            </Button>
+            
+            <Button
+              onClick={handleExport}
+              icon={<DownloadOutlined />}
+              type="default"
+              loading={loading}
+              size="small"
+            >
+              Exportar
+            </Button>
+            
+            <Button
+              type="primary"
+              onClick={() => handleShowModal()}
+              icon={<PlusOutlined />}
+              size="small"
+            >
+              Nuevo Producto
+            </Button>
+          </Space>
+          
           <BulkUploadProducts
             open={openBulkModal}
             onClose={() => setOpenBulkModal(false)}
@@ -296,112 +335,146 @@ const ProductList: React.FC = () => {
         </Col>
       </Row>
 
-      {/* Formulario de filtros */}
-      <Card className="mb-12 mt-1.5 shadow-sm">
-        <Card className="mb-12 mt-1.5 shadow-sm">
-          <Form
-            layout="inline"
-            initialValues={form}
-            onFinish={onFinishFilters}
-            className="mb-4 mt-2.5"
-          >
-            <Form.Item name="search">
-              <Input
-                placeholder="Buscar producto..."
-                allowClear
-                size="small"
-                style={{ width: FILTER_WIDTH }}
-              />
-            </Form.Item>
-            <Form.Item name="categoryId">
-              <Select
-                placeholder="Categoría"
-                allowClear
-                size="small"
-                style={{ width: FILTER_WIDTH }}
-              >
-                {listCategories?.map((cat) => (
-                  <Option key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </Option>
-                ))}
-              </Select>
-            </Form.Item>
-            <Form.Item name="unitId">
-              <Select
-                placeholder="Unidad"
-                allowClear
-                size="small"
-                style={{ width: FILTER_WIDTH }}
-              >
-                {listUnits?.map((unit) => (
-                  <Option key={unit.id} value={unit.id}>
-                    {unit.name}
-                  </Option>
-                ))}
-              </Select>
-            </Form.Item>
-            <Form.Item name="lowStock" valuePropName="checked">
-              <Checkbox>Stock bajo</Checkbox>
-            </Form.Item>
-            <Form.Item name="stockMin">
-              <Input
-                placeholder="Stock mín."
-                type="number"
-                min={0}
-                size="small"
-                style={{ width: FILTER_WIDTH }}
-                inputMode="numeric"
-                pattern="[0-9]*"
-              />
-            </Form.Item>
-            <Form.Item name="stockMax">
-              <Input
-                placeholder="Stock máx."
-                type="number"
-                min={0}
-                size="small"
-                style={{ width: FILTER_WIDTH }}
-                inputMode="numeric"
-                pattern="[0-9]*"
-              />
-            </Form.Item>
-            <Form.Item>
+      {/* Estadísticas rápidas */}
+      <ProductStats products={items} loading={loading} />
+
+      {/* Formulario de filtros mejorado */}
+      <Card className="mb-4 shadow-sm" size="small">
+        <Form
+          layout="inline"
+          form={form}
+          onFinish={onFinishFilters}
+          style={{ flexWrap: 'wrap', gap: '8px' }}
+        >
+          <Form.Item name="search" style={{ minWidth: 200 }}>
+            <Input
+              placeholder="🔍 Buscar por nombre..."
+              allowClear
+              size="small"
+            />
+          </Form.Item>
+          
+          <Form.Item name="categoryId" style={{ minWidth: 140 }}>
+            <Select
+              placeholder="📂 Categoría"
+              allowClear
+              size="small"
+            >
+              {listCategories?.map((cat) => (
+                <Option key={cat.id} value={cat.id}>
+                  {cat.name}
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
+          
+          <Form.Item name="unitId" style={{ minWidth: 120 }}>
+            <Select
+              placeholder="📏 Unidad"
+              allowClear
+              size="small"
+            >
+              {listUnits?.map((unit) => (
+                <Option key={unit.id} value={unit.id}>
+                  {unit.name}
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
+          
+          <Form.Item name="lowStock" valuePropName="checked">
+            <Checkbox style={{ fontSize: 12 }}>⚠️ Solo stock bajo</Checkbox>
+          </Form.Item>
+          
+          <Form.Item>
+            <Space size="small">
+              <Form.Item name="stockMin" style={{ margin: 0 }}>
+                <Input
+                  placeholder="Stock min"
+                  type="number"
+                  min={0}
+                  size="small"
+                  style={{ width: 80 }}
+                />
+              </Form.Item>
+              <span style={{ fontSize: 12, color: '#999' }}>-</span>
+              <Form.Item name="stockMax" style={{ margin: 0 }}>
+                <Input
+                  placeholder="Stock max"
+                  type="number"
+                  min={0}
+                  size="small"
+                  style={{ width: 80 }}
+                />
+              </Form.Item>
+            </Space>
+          </Form.Item>
+          
+          <Form.Item>
+            <Space>
               <Button htmlType="submit" type="primary" size="small">
-                Aplicar
+                Filtrar
               </Button>
-            </Form.Item>
-            <Form.Item>
               <Button onClick={onClearFilters} size="small">
                 Limpiar
               </Button>
-            </Form.Item>
-          </Form>
-        </Card>
+            </Space>
+          </Form.Item>
+        </Form>
       </Card>
 
-      {/* Tabla de productos */}
-      <Table
-        dataSource={items}
-        columns={columns}
-        rowKey="id"
-        loading={loading}
-        scroll={{ x: true }}
-        rowClassName={(record) =>
-          record.stock <= (record.minStock ?? 0) ? "bg-red-50" : ""
-        }
-        pagination={{
-          current: page,
-          pageSize,
-          total,
-          showSizeChanger: true,
-          pageSizeOptions: ["7", "10", "20", "50"],
-          size: "small",
-          onChange: (newPage, newPageSize) => {
-            dispatch(setPage({ page: newPage, pageSize: newPageSize || 7 }));
-          },
-        }}
-      />
+      {/* Vista de productos */}
+      {viewMode === 'table' ? (
+        <Table
+          dataSource={items}
+          columns={columns}
+          rowKey="id"
+          loading={loading}
+          scroll={{ x: true }}
+          rowClassName={(record) =>
+            record.stock <= (record.minStock ?? 0) ? "bg-red-50" : ""
+          }
+          pagination={{
+            current: page,
+            pageSize,
+            total,
+            showSizeChanger: true,
+            pageSizeOptions: ["7", "10", "20", "50"],
+            size: "small",
+            onChange: (newPage, newPageSize) => {
+              dispatch(setPage({ page: newPage, pageSize: newPageSize || 7 }));
+            },
+          }}
+        />
+      ) : (
+        <div>
+          <ProductCardView
+            products={items}
+            loading={loading}
+            onEdit={handleShowModal}
+            onDelete={handleDelete}
+          />
+          {/* Paginación para vista de tarjetas */}
+          <div style={{ marginTop: 24, textAlign: 'center' }}>
+            <Button
+              disabled={page === 1}
+              onClick={() => dispatch(setPage({ page: page - 1, pageSize }))}
+              style={{ marginRight: 8 }}
+            >
+              Anterior
+            </Button>
+            <span style={{ margin: '0 16px' }}>
+              Página {page} de {Math.ceil(total / pageSize)} ({total} productos)
+            </span>
+            <Button
+              disabled={page >= Math.ceil(total / pageSize)}
+              onClick={() => dispatch(setPage({ page: page + 1, pageSize }))}
+            >
+              Siguiente
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Modal genérico con el form */}
       <Modal
