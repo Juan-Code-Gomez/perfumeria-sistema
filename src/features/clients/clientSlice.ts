@@ -64,10 +64,21 @@ const clientSlice = createSlice({
       })
       .addCase(searchClients.fulfilled, (state, { payload }) => {
         state.loading = false;
-        // Manejar respuesta estructurada del backend
-        const responseData = (payload as any)?.data || payload;
+        // Manejar respuesta estructurada del backend con mejor lógica
+        let responseData = payload;
+        
+        // Si hay una estructura anidada { success: true, data: { success: true, data: [...] } }
+        if ((payload as any)?.data?.data) {
+          responseData = (payload as any).data.data;
+        }
+        // Si hay una estructura simple { success: true, data: [...] }
+        else if ((payload as any)?.data) {
+          responseData = (payload as any).data;
+        }
+        
         // Asegurar que sea un array
         state.clients = Array.isArray(responseData) ? responseData : [];
+        console.log('Clientes cargados:', state.clients); // Debug log
       })
       .addCase(searchClients.rejected, (state, action) => {
         state.loading = false;
@@ -79,9 +90,21 @@ const clientSlice = createSlice({
       })
       .addCase(addClient.fulfilled, (state, { payload }) => {
         state.loading = false;
+        // Manejar respuesta estructurada del backend con mejor lógica
+        let newClient = payload;
+        
+        // Si hay una estructura anidada { success: true, data: { success: true, data: cliente } }
+        if ((payload as any)?.data?.data) {
+          newClient = (payload as any).data.data;
+        }
+        // Si hay una estructura simple { success: true, data: cliente }
+        else if ((payload as any)?.data) {
+          newClient = (payload as any).data;
+        }
+        
         // Agregar el nuevo cliente al inicio de la lista
-        const newClient = (payload as any)?.data || payload;
         state.clients.unshift(newClient);
+        console.log('Cliente agregado:', newClient); // Debug log
       })
       .addCase(addClient.rejected, (state, action) => {
         state.loading = false;
@@ -94,10 +117,22 @@ const clientSlice = createSlice({
       })
       .addCase(updateClient.fulfilled, (state, { payload }) => {
         state.loading = false;
-        const updatedClient = (payload as any)?.data || payload;
+        // Manejar respuesta estructurada del backend con mejor lógica
+        let updatedClient = payload;
+        
+        // Si hay una estructura anidada { success: true, data: { success: true, data: cliente } }
+        if ((payload as any)?.data?.data) {
+          updatedClient = (payload as any).data.data;
+        }
+        // Si hay una estructura simple { success: true, data: cliente }
+        else if ((payload as any)?.data) {
+          updatedClient = (payload as any).data;
+        }
+        
         state.clients = state.clients.map((c) =>
           c.id === updatedClient.id ? updatedClient : c
         );
+        console.log('Cliente actualizado:', updatedClient); // Debug log
       })
       .addCase(updateClient.rejected, (state, action) => {
         state.loading = false;

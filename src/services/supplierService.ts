@@ -11,6 +11,7 @@ export interface Supplier {
   contactPerson?: string;
   website?: string;
   supplierType?: string;
+  specializedCategories?: string[];
   paymentTerms?: string;
   creditLimit?: number;
   currentDebt?: number;
@@ -123,5 +124,33 @@ export const toggleSupplierPreferred = async (id: number) => {
 
 export const updateSupplierDebt = async (id: number, amount: number, operation: 'ADD' | 'SUBTRACT') => {
   const response = await api.put(`/suppliers/${id}/debt`, { amount, operation });
+  return response.data;
+};
+
+export interface SupplierAnalytics {
+  totalSuppliers: number;
+  activeSuppliers: number;
+  preferredSuppliers: number;
+  suppliersWithDebt: number;
+  totalDebt: number;
+  totalCreditLimit: number;
+  typeDistribution: Record<string, number>;
+  topDebtors: {
+    id: string;
+    name: string;
+    currentDebt: number;
+    creditLimit?: number;
+    debtPercentage: number;
+  }[];
+  metrics: {
+    activePercentage: number;
+    preferredPercentage: number;
+    creditUtilization: number;
+    riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
+  };
+}
+
+export const getSupplierAnalytics = async (): Promise<SupplierAnalytics> => {
+  const response = await api.get('/suppliers/analytics');
   return response.data;
 };

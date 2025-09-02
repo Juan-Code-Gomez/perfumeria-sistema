@@ -15,6 +15,7 @@ export interface Supplier {
   creditLimit?: number;
   currentDebt?: number;
   supplierType?: string;
+  specializedCategories?: string[];
   isActive?: boolean;
   isPreferred?: boolean;
   minOrderAmount?: number;
@@ -36,6 +37,7 @@ export interface CreateSupplierData {
   paymentTerms?: string;
   creditLimit?: number;
   supplierType?: string;
+  specializedCategories?: string[];
   isActive?: boolean;
   isPreferred?: boolean;
   minOrderAmount?: number;

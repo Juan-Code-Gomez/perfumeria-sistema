@@ -23,6 +23,7 @@ import {
   ClearOutlined,
   PrinterOutlined,
   UserOutlined,
+  CreditCardOutlined,
 } from '@ant-design/icons';
 import { useAppDispatch } from '../../store';
 import { createSale } from '../../features/sales/salesSlice';
@@ -33,6 +34,9 @@ import POSTicket from '../pos/POSTicket';
 import { usePOSPrint } from '../../hooks/usePOSPrint';
 import ClientSelector from '../clients/ClientSelector';
 import type { Client } from '../../features/clients/types';
+import MultiplePaymentModal from './MultiplePaymentModal';
+import type { PaymentMethod } from './MultiplePaymentModal';
+import { usePOSPersistence } from '../../hooks/usePOSPersistence';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -58,20 +62,43 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
   const dispatch = useAppDispatch();
   const searchInputRef = useRef<any>(null);
 
-  // Estados principales
-  const [items, setItems] = useState<POSItem[]>([]);
+  // Hook de persistencia del carrito
+  const {
+    state: persistentState,
+    updateField,
+    clearCart: clearPersistentCart,
+    addItem: addPersistentItem,
+    updateItem: updatePersistentItem,
+    removeItem: removePersistentItem,
+  } = usePOSPersistence();
+
+  // Estados que NO necesitan persistir (búsqueda y UI)
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<Product[]>([]);
-  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  
-  // Estados para el checkout
-  const [paymentMethod, setPaymentMethod] = useState('Efectivo');
-  const [amountReceived, setAmountReceived] = useState<number>(0);
-  const [customerName, setCustomerName] = useState('Cliente Ocasional');
+
+  // Estados para pagos múltiples
+  const [showMultiplePaymentModal, setShowMultiplePaymentModal] = useState(false);
 
   // Estados para impresión
   const [lastSale, setLastSale] = useState<any>(null);
   const [showPrintModal, setShowPrintModal] = useState(false);
+
+  // Extraer valores del estado persistente para fácil acceso
+  const items = persistentState.items;
+  const selectedClient = persistentState.selectedClient;
+  const customerName = persistentState.customerName;
+  const paymentMethod = persistentState.paymentMethod;
+  const amountReceived = persistentState.amountReceived;
+  const generalDiscountType = persistentState.generalDiscountType;
+  const generalDiscountValue = persistentState.generalDiscountValue;
+
+  // Setters para campos específicos usando el hook de persistencia
+  const setSelectedClient = (client: Client | null) => updateField('selectedClient', client);
+  const setCustomerName = (name: string) => updateField('customerName', name);
+  const setPaymentMethod = (method: string) => updateField('paymentMethod', method);
+  const setAmountReceived = (amount: number) => updateField('amountReceived', amount);
+  const setGeneralDiscountType = (type: 'percentage' | 'fixed') => updateField('generalDiscountType', type);
+  const setGeneralDiscountValue = (value: number) => updateField('generalDiscountValue', value);
   
   // Hook de impresión
   const { printRef, printTicket } = usePOSPrint({
@@ -155,7 +182,7 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
         profitMargin,
       };
 
-      setItems(prev => [...prev, newItem]);
+      addPersistentItem(newItem);
     }
 
     // Limpiar búsqueda
@@ -171,60 +198,51 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
   // Actualizar cantidad
   const updateQuantity = (key: string, newQuantity: number) => {
     if (newQuantity <= 0) {
-      removeItem(key);
+      removePersistentItem(key);
       return;
     }
 
-    setItems(prev => prev.map(item => {
-      if (item.key === key) {
-        const totalPrice = newQuantity * item.unitPrice;
-        return {
-          ...item,
-          quantity: newQuantity,
-          totalPrice,
-        };
-      }
-      return item;
-    }));
+    const currentItem = items.find(item => item.key === key);
+    if (currentItem) {
+      const totalPrice = newQuantity * currentItem.unitPrice;
+      updatePersistentItem(key, {
+        quantity: newQuantity,
+        totalPrice,
+      });
+    }
   };
 
   // Actualizar precio unitario
   const updateUnitPrice = (key: string, newPrice: number) => {
-    setItems(prev => prev.map(item => {
-      if (item.key === key) {
-        // No permitir cambiar precio de insumos y combos
-        if (item.product.salesType === 'INSUMO' || item.product.salesType === 'COMBO') {
-          message.warning(`No se puede cambiar el precio de ${item.product.salesType.toLowerCase()}s`);
-          return item;
-        }
-        
-        const totalPrice = item.quantity * newPrice;
-        const profit = newPrice - item.purchasePrice;
-        const profitMargin = item.purchasePrice > 0 ? (profit / item.purchasePrice) * 100 : 0;
-        
-        return {
-          ...item,
-          unitPrice: newPrice,
-          totalPrice,
-          profit,
-          profitMargin,
-        };
-      }
-      return item;
-    }));
+    const currentItem = items.find(item => item.key === key);
+    if (!currentItem) return;
+
+    // No permitir cambiar precio de insumos y combos
+    if (currentItem.product.salesType === 'INSUMO' || currentItem.product.salesType === 'COMBO') {
+      message.warning(`No se puede cambiar el precio de ${currentItem.product.salesType.toLowerCase()}s`);
+      return;
+    }
+    
+    const totalPrice = currentItem.quantity * newPrice;
+    const profit = newPrice - currentItem.purchasePrice;
+    const profitMargin = currentItem.purchasePrice > 0 ? (profit / currentItem.purchasePrice) * 100 : 0;
+    
+    updatePersistentItem(key, {
+      unitPrice: newPrice,
+      totalPrice,
+      profit,
+      profitMargin,
+    });
   };
 
   // Remover item
   const removeItem = (key: string) => {
-    setItems(prev => prev.filter(item => item.key !== key));
+    removePersistentItem(key);
   };
 
-  // Limpiar carrito
+  // Limpiar carrito (función local que usa el hook)
   const clearCart = () => {
-    setItems([]);
-    setSelectedClient(null);
-    setCustomerName('Cliente Ocasional');
-    setAmountReceived(0);
+    clearPersistentCart();
   };
 
   // Calcular totales
@@ -235,10 +253,96 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
     itemCount: items.reduce((sum, item) => sum + item.quantity, 0),
   };
 
-  const overallMargin = totals.totalCost > 0 ? (totals.totalProfit / totals.totalCost) * 100 : 0;
-  const change = amountReceived - totals.subtotal;
+  // Calcular descuento general
+  const discountAmount = generalDiscountType === 'percentage' 
+    ? (totals.subtotal * (generalDiscountValue || 0) / 100)
+    : (generalDiscountValue || 0);
 
-  // Procesar venta
+  // Total final con descuento
+  const finalTotal = Math.max(0, totals.subtotal - discountAmount);
+
+  const overallMargin = totals.totalCost > 0 ? (totals.totalProfit / totals.totalCost) * 100 : 0;
+  const change = amountReceived - finalTotal;
+
+  // Procesar venta con múltiples métodos de pago
+  const processSaleWithMultiplePayments = async (payments: PaymentMethod[]) => {
+    if (items.length === 0) {
+      message.error('Agregue productos al carrito');
+      return;
+    }
+
+    try {
+      const saleData = {
+        date: new Date().toISOString(),
+        clientId: selectedClient?.id || undefined,
+        customerName: selectedClient?.name || customerName,
+        totalAmount: finalTotal,
+        paidAmount: finalTotal,
+        isPaid: true,
+        paymentMethod: payments.map(p => p.method).join(', '), // Para compatibilidad
+        payments: payments.map(p => ({
+          amount: p.amount,
+          method: p.method,
+          note: p.note,
+        })),
+        details: items.map(item => ({
+          productId: item.productId,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          totalPrice: item.totalPrice,
+          purchasePrice: item.purchasePrice,
+          suggestedPrice: item.suggestedPrice,
+        })),
+      };
+
+      console.log('Creando venta con múltiples pagos:', saleData);
+      
+      const result = await dispatch(createSale(saleData)).unwrap();
+      
+      console.log('Venta creada exitosamente:', result);
+      
+      // Preparar datos para impresión
+      const saleForPrint = {
+        id: result.id || Date.now(),
+        date: saleData.date,
+        customerName: saleData.customerName,
+        totalAmount: saleData.totalAmount,
+        paidAmount: saleData.paidAmount,
+        paymentMethod: saleData.paymentMethod,
+        payments: payments, // Incluir los pagos múltiples
+        details: items.map(item => ({
+          product: {
+            name: item.product.name,
+            category: item.product.category,
+          },
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          totalPrice: item.totalPrice,
+        })),
+      };
+      
+      message.success('¡Venta procesada exitosamente con múltiples métodos de pago!');
+
+      // Configurar para impresión
+      setLastSale(saleForPrint);
+      setShowPrintModal(true);
+
+      // Limpiar carrito
+      clearCart();
+      setShowMultiplePaymentModal(false);
+
+      // Callback externo
+      if (onSaleCompleted) {
+        onSaleCompleted();
+      }
+
+    } catch (error) {
+      console.error('Error procesando venta:', error);
+      message.error('Error al procesar la venta');
+    }
+  };
+
+  // Procesar venta (método original actualizado)
   const processSale = async () => {
     if (items.length === 0) {
       message.error('Agregue productos al carrito');
@@ -253,7 +357,7 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
       }
     }
 
-    if (paymentMethod === 'Efectivo' && amountReceived < totals.subtotal) {
+    if (paymentMethod === 'Efectivo' && amountReceived < finalTotal) {
       message.error('El monto recibido es insuficiente');
       return;
     }
@@ -266,8 +370,8 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
         date: new Date().toISOString(),
         clientId: selectedClient?.id || undefined, // Solo enviar si existe y no es null
         customerName: selectedClient?.name || customerName,
-        totalAmount: totals.subtotal,
-        paidAmount: isCredit ? 0 : totals.subtotal, // Si es crédito, monto pagado = 0
+        totalAmount: finalTotal,
+        paidAmount: isCredit ? 0 : finalTotal, // Si es crédito, monto pagado = 0
         isPaid: !isCredit, // Si es crédito, no está pagada
         paymentMethod,
         details: items.map(item => ({
@@ -306,7 +410,7 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
       };
       
       if (isCredit) {
-        message.success(`¡Venta a crédito registrada! Pendiente: $${totals.subtotal.toLocaleString()}`);
+        message.success(`¡Venta a crédito registrada! Pendiente: $${finalTotal.toLocaleString()}`);
       } else {
         message.success('¡Venta procesada exitosamente!');
       }
@@ -467,7 +571,16 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
         {/* Columna izquierda - Búsqueda y productos */}
         <Col span={16}>
           <Card 
-            title="🛒 Punto de Venta" 
+            title={
+              <Space>
+                <span>🛒 Punto de Venta</span>
+                {items.length > 0 && (
+                  <Tag color="green" style={{ fontSize: '11px' }}>
+                    💾 {items.length} productos guardados
+                  </Tag>
+                )}
+              </Space>
+            } 
             style={{ height: '100%' }}
             extra={
               <Space>
@@ -593,7 +706,7 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
             {/* Totales */}
             <Space direction="vertical" style={{ width: '100%' }} size="middle">
               <Row justify="space-between">
-                <Text>Items ({totals.itemCount}):</Text>
+                <Text>Subtotal ({totals.itemCount}):</Text>
                 <Text>${totals.subtotal.toLocaleString()}</Text>
               </Row>
               
@@ -622,11 +735,47 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
 
             <Divider />
 
+            {/* Descuento */}
+            <div style={{ marginBottom: 16 }}>
+              <Text strong>Descuento:</Text>
+              <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                <Select
+                  value={generalDiscountType}
+                  onChange={setGeneralDiscountType}
+                  style={{ width: 120 }}
+                  size="small"
+                >
+                  <Option value="percentage">%</Option>
+                  <Option value="fixed">$</Option>
+                </Select>
+                <InputNumber
+                  value={generalDiscountValue}
+                  onChange={(value) => setGeneralDiscountValue(value || 0)}
+                  style={{ flex: 1 }}
+                  size="small"
+                  min={0}
+                  max={generalDiscountType === 'percentage' ? 100 : totals.subtotal}
+                  placeholder={generalDiscountType === 'percentage' ? '0' : '0'}
+                  formatter={(value) => generalDiscountType === 'fixed' ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',') : `${value}`}
+                  parser={(value) => parseFloat(value!.replace(/\$\s?|(,*)/g, '')) || 0}
+                />
+              </div>
+              {discountAmount > 0 && (
+                <div style={{ marginTop: 4, textAlign: 'right' }}>
+                  <Text type="secondary" style={{ fontSize: '12px' }}>
+                    Descuento aplicado: ${discountAmount.toLocaleString()}
+                  </Text>
+                </div>
+              )}
+            </div>
+
+            <Divider />
+
             {/* Total final */}
             <Row justify="space-between" style={{ marginBottom: 20 }}>
               <Title level={3} style={{ margin: 0 }}>TOTAL:</Title>
               <Title level={3} style={{ margin: 0, color: '#1890ff' }}>
-                ${totals.subtotal.toLocaleString()}
+                ${finalTotal.toLocaleString()}
               </Title>
             </Row>
 
@@ -678,7 +827,7 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
                 <br />
                 <Text type="secondary" style={{ fontSize: '12px' }}>
                   {selectedClient?.name ? 
-                    `${selectedClient.name} deberá pagar ${totals.subtotal.toLocaleString()}` :
+                    `${selectedClient.name} deberá pagar ${finalTotal.toLocaleString()}` :
                     'Debe seleccionar un cliente registrado'
                   }
                 </Text>
@@ -703,12 +852,27 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
                 disabled={
                   items.length === 0 || 
                   (paymentMethod === 'Crédito' && !selectedClient?.name) || // Solo cliente registrado para crédito
-                  (paymentMethod === 'Efectivo' && amountReceived < totals.subtotal)
+                  (paymentMethod === 'Efectivo' && amountReceived < finalTotal)
                 }
                 style={{ height: '50px', fontSize: '16px', fontWeight: 'bold' }}
               >
                 {paymentMethod === 'Crédito' ? 'REGISTRAR VENTA A CRÉDITO' : 'PROCESAR VENTA'}
               </Button>
+
+              {/* Botón para pagos múltiples */}
+              {paymentMethod !== 'Crédito' && (
+                <Button
+                  type="default"
+                  size="large"
+                  block
+                  icon={<CreditCardOutlined />}
+                  onClick={() => setShowMultiplePaymentModal(true)}
+                  disabled={items.length === 0}
+                  style={{ height: '40px', fontSize: '14px' }}
+                >
+                  💳 PAGOS MÚLTIPLES
+                </Button>
+              )}
               
               <Button 
                 block 
@@ -777,6 +941,14 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
           </div>
         )}
       </Modal>
+
+      {/* Modal de pagos múltiples */}
+      <MultiplePaymentModal
+        visible={showMultiplePaymentModal}
+        totalAmount={finalTotal}
+        onConfirm={processSaleWithMultiplePayments}
+        onCancel={() => setShowMultiplePaymentModal(false)}
+      />
     </div>
   );
 };

@@ -17,6 +17,7 @@ import {
   Typography,
   Select,
   Avatar,
+  Tabs,
 } from 'antd';
 import {
   PlusOutlined,
@@ -41,9 +42,11 @@ import {
 } from '../../features/suppliers/supplierSlice';
 import SupplierForm from '../../components/suppliers/SupplierForm';
 import SupplierDetail from '../../components/suppliers/SupplierDetail';
+import SupplierAnalytics from '../../components/suppliers/SupplierAnalytics';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
+const { TabPane } = Tabs;
 
 const SupplierList: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -184,10 +187,16 @@ const SupplierList: React.FC = () => {
       key: 'supplierType',
       render: (type: string) => type ? <Tag>{type}</Tag> : '-',
       filters: [
-        { text: 'DISTRIBUIDOR', value: 'DISTRIBUIDOR' },
-        { text: 'FABRICANTE', value: 'FABRICANTE' },
-        { text: 'IMPORTADOR', value: 'IMPORTADOR' },
-        { text: 'LOCAL', value: 'LOCAL' },
+        { text: '🌸 Esencias', value: 'ESENCIAS' },
+        { text: '🍶 Frascos', value: 'FRASCOS' },
+        { text: '💎 Originales', value: 'ORIGINALES' },
+        { text: '🧴 Lociones', value: 'LOCIONES' },
+        { text: '🧴 Cremas', value: 'CREMAS' },
+        { text: '🔄 Mixto', value: 'MIXTO' },
+        { text: '🚛 Distribuidor', value: 'DISTRIBUIDOR' },
+        { text: '🏭 Fabricante', value: 'FABRICANTE' },
+        { text: '🌍 Importador', value: 'IMPORTADOR' },
+        { text: '🏪 Local', value: 'LOCAL' },
       ],
       onFilter: (value: any, record: Supplier) => record.supplierType === value,
     },
@@ -325,71 +334,87 @@ const SupplierList: React.FC = () => {
       </Row>
 
       <Card>
-        {/* Filtros y búsqueda */}
-        <Row gutter={16} style={{ marginBottom: 16 }}>
-          <Col xs={24} sm={8}>
-            <Input
-              placeholder="Buscar por nombre, NIT o contacto..."
-              prefix={<SearchOutlined />}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              allowClear
-            />
-          </Col>
-          <Col xs={24} sm={6}>
-            <Select
-              placeholder="Filtrar por tipo"
-              value={selectedSupplierType}
-              onChange={setSelectedSupplierType}
-              allowClear
-              style={{ width: '100%' }}
-            >
-              <Option value="DISTRIBUIDOR">Distribuidor</Option>
-              <Option value="FABRICANTE">Fabricante</Option>
-              <Option value="IMPORTADOR">Importador</Option>
-              <Option value="LOCAL">Local</Option>
-            </Select>
-          </Col>
-          <Col xs={24} sm={4}>
-            <Button
-              type={showWithDebtOnly ? 'primary' : 'default'}
-              onClick={() => setShowWithDebtOnly(!showWithDebtOnly)}
-              icon={<CreditCardOutlined />}
-            >
-              Con Deuda
-            </Button>
-          </Col>
-          <Col xs={24} sm={6} style={{ textAlign: 'right' }}>
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={openCreateModal}
-            >
-              Nuevo Proveedor
-            </Button>
-          </Col>
-        </Row>
+        <Tabs defaultActiveKey="list" tabPosition="top">
+          <TabPane tab="📋 Lista de Proveedores" key="list">
+            <div>
+              {/* Filtros y búsqueda */}
+              <Row gutter={16} style={{ marginBottom: 16 }}>
+                <Col xs={24} sm={8}>
+                  <Input
+                    placeholder="Buscar por nombre, NIT o contacto..."
+                    prefix={<SearchOutlined />}
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    allowClear
+                  />
+                </Col>
+                <Col xs={24} sm={6}>
+                  <Select
+                    placeholder="Filtrar por tipo"
+                    value={selectedSupplierType}
+                    onChange={setSelectedSupplierType}
+                    allowClear
+                    style={{ width: '100%' }}
+                  >
+                    <Option value="ESENCIAS">🌸 Esencias</Option>
+                    <Option value="FRASCOS">🍶 Frascos y Envases</Option>
+                    <Option value="ORIGINALES">💎 Perfumes Originales</Option>
+                    <Option value="LOCIONES">🧴 Lociones y Splash</Option>
+                    <Option value="CREMAS">🧴 Cremas y Cosméticos</Option>
+                    <Option value="MIXTO">🔄 Mixto (Varios productos)</Option>
+                    <Option value="DISTRIBUIDOR">🚛 Distribuidor General</Option>
+                    <Option value="FABRICANTE">🏭 Fabricante</Option>
+                    <Option value="IMPORTADOR">🌍 Importador</Option>
+                    <Option value="LOCAL">🏪 Proveedor Local</Option>
+                  </Select>
+                </Col>
+                <Col xs={24} sm={4}>
+                  <Button
+                    type={showWithDebtOnly ? 'primary' : 'default'}
+                    onClick={() => setShowWithDebtOnly(!showWithDebtOnly)}
+                    icon={<CreditCardOutlined />}
+                  >
+                    Con Deuda
+                  </Button>
+                </Col>
+                <Col xs={24} sm={6} style={{ textAlign: 'right' }}>
+                  <Button
+                    type="primary"
+                    icon={<PlusOutlined />}
+                    onClick={openCreateModal}
+                  >
+                    Nuevo Proveedor
+                  </Button>
+                </Col>
+              </Row>
 
-        {error && (
-          <div style={{ marginBottom: 16 }}>
-            <Text type="danger">{error}</Text>
-          </div>
-        )}
+              {error && (
+                <div style={{ marginBottom: 16 }}>
+                  <Text type="danger">{error}</Text>
+                </div>
+              )}
 
-        <Table
-          columns={columns}
-          dataSource={filteredSuppliers}
-          loading={loading}
-          rowKey="id"
-          scroll={{ x: 1200 }}
-          pagination={{
-            pageSize: 10,
-            showSizeChanger: true,
-            showQuickJumper: true,
-            showTotal: (total, range) =>
-              `${range[0]}-${range[1]} de ${total} proveedores`,
-          }}
-        />
+              <Table
+                columns={columns}
+                dataSource={filteredSuppliers}
+                loading={loading}
+                rowKey="id"
+                scroll={{ x: 1200 }}
+                pagination={{
+                  pageSize: 10,
+                  showSizeChanger: true,
+                  showQuickJumper: true,
+                  showTotal: (total, range) =>
+                    `${range[0]}-${range[1]} de ${total} proveedores`,
+                }}
+              />
+            </div>
+          </TabPane>
+          
+          <TabPane tab="📊 Análisis y Reportes" key="analytics">
+            <SupplierAnalytics suppliers={suppliers} />
+          </TabPane>
+        </Tabs>
       </Card>
 
       {/* Modal de formulario */}

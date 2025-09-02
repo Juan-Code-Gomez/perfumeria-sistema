@@ -41,9 +41,12 @@ const SupplierForm: React.FC<SupplierFormProps> = ({
       phone: values.phone || null,
       email: values.email || null,
       address: values.address || null,
+      website: values.website || null,
       supplierType: values.supplierType || null,
+      specializedCategories: values.specializedCategories || [],
       paymentTerms: values.paymentTerms || null,
       creditLimit: values.creditLimit || null,
+      minOrderAmount: values.minOrderAmount || null,
       leadTimeDays: values.leadTimeDays || null,
       rating: values.rating || null,
       notes: values.notes || null,
@@ -108,13 +111,52 @@ const SupplierForm: React.FC<SupplierFormProps> = ({
           <Form.Item
             name="supplierType"
             label="Tipo de Proveedor"
+            rules={[
+              { required: true, message: 'Selecciona el tipo de proveedor' },
+            ]}
           >
             <Select placeholder="Seleccionar tipo">
-              <Option value="DISTRIBUIDOR">Distribuidor</Option>
-              <Option value="FABRICANTE">Fabricante</Option>
-              <Option value="IMPORTADOR">Importador</Option>
-              <Option value="LOCAL">Local</Option>
+              <Option value="ESENCIAS">🌸 Esencias</Option>
+              <Option value="FRASCOS">🍶 Frascos y Envases</Option>
+              <Option value="ORIGINALES">💎 Perfumes Originales</Option>
+              <Option value="LOCIONES">🧴 Lociones y Splash</Option>
+              <Option value="CREMAS">🧴 Cremas y Cosméticos</Option>
+              <Option value="MIXTO">🔄 Mixto (Varios productos)</Option>
+              <Option value="DISTRIBUIDOR">🚛 Distribuidor General</Option>
+              <Option value="FABRICANTE">🏭 Fabricante</Option>
+              <Option value="IMPORTADOR">🌍 Importador</Option>
+              <Option value="LOCAL">🏪 Proveedor Local</Option>
             </Select>
+          </Form.Item>
+        </Col>
+      </Row>
+
+      <Row gutter={16}>
+        <Col xs={24}>
+          <Form.Item
+            name="specializedCategories"
+            label="Categorías Especializadas"
+            tooltip="Especifica en qué tipo de productos se especializa este proveedor"
+          >
+            <Select
+              mode="tags"
+              placeholder="Ej: Esencias, Frascos, Perfumes Originales..."
+              style={{ width: '100%' }}
+              options={[
+                { label: '🌸 Esencias', value: 'Esencias' },
+                { label: '🔧 Fijador', value: 'Fijador' },
+                { label: '🍶 Frascos', value: 'Frascos' },
+                { label: '📦 Envases', value: 'Envases' },
+                { label: '💎 Perfumes Originales', value: 'Perfumes Originales' },
+                { label: '🧴 Lociones', value: 'Lociones' },
+                { label: '🌊 Splash', value: 'Splash' },
+                { label: '🧴 Cremas', value: 'Cremas' },
+                { label: '💄 Cosméticos', value: 'Cosméticos' },
+                { label: '🎁 Estuches', value: 'Estuches' },
+                { label: '⚙️ Atomizadores', value: 'Atomizadores' },
+                { label: '🌿 Productos Naturales', value: 'Productos Naturales' },
+              ]}
+            />
           </Form.Item>
         </Col>
       </Row>

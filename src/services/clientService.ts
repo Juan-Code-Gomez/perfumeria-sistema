@@ -8,14 +8,37 @@ export const createClient = async (data: {
   address?: string;
 }) => {
   const res = await api.post("/clients", data);
-  // Si el backend devuelve { success: true, data: cliente }
-  return res.data.data || res.data;
+  
+  // Manejar respuesta anidada del backend
+  let responseData = res.data;
+  
+  // Si hay una estructura anidada { success: true, data: { success: true, data: cliente } }
+  if (responseData?.data?.data) {
+    responseData = responseData.data.data;
+  }
+  // Si hay una estructura simple { success: true, data: cliente }
+  else if (responseData?.data) {
+    responseData = responseData.data;
+  }
+  
+  return responseData;
 };
 
 export const findClients = async (name = "") => {
   const res = await api.get("/clients", { params: { name } });
-  // Manejar respuesta estructurada del backend
-  const responseData = res.data.data || res.data;
+  
+  // Manejar respuesta anidada del backend
+  let responseData = res.data;
+  
+  // Si hay una estructura anidada { success: true, data: { success: true, data: [...] } }
+  if (responseData?.data?.data) {
+    responseData = responseData.data.data;
+  }
+  // Si hay una estructura simple { success: true, data: [...] }
+  else if (responseData?.data) {
+    responseData = responseData.data;
+  }
+  
   // Asegurar que siempre devuelva un array
   return Array.isArray(responseData) ? responseData : [];
 };
@@ -36,6 +59,18 @@ export const updateClient = async (
   }
 ) => {
   const res = await api.put(`/clients/${id}`, data);
-  // Si el backend devuelve { success: true, data: cliente }
-  return res.data.data || res.data;
+  
+  // Manejar respuesta anidada del backend
+  let responseData = res.data;
+  
+  // Si hay una estructura anidada { success: true, data: { success: true, data: cliente } }
+  if (responseData?.data?.data) {
+    responseData = responseData.data.data;
+  }
+  // Si hay una estructura simple { success: true, data: cliente }
+  else if (responseData?.data) {
+    responseData = responseData.data;
+  }
+  
+  return responseData;
 };

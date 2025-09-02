@@ -165,6 +165,16 @@ const SupplierDetail: React.FC<SupplierDetailProps> = ({ supplier }) => {
             ) : '-'}
           </Descriptions.Item>
 
+          <Descriptions.Item label="Categorías Especializadas" span={2}>
+            {supplier.specializedCategories && supplier.specializedCategories.length > 0 ? (
+              <Space wrap>
+                {supplier.specializedCategories.map((category, index) => (
+                  <Tag key={index} color="blue">{category}</Tag>
+                ))}
+              </Space>
+            ) : '-'}
+          </Descriptions.Item>
+
           <Descriptions.Item label="Persona de Contacto">
             {supplier.contactPerson ? (
               <Space>

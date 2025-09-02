@@ -16,6 +16,21 @@ export interface SaleDetail {
   suggestedPrice?: number; // Precio sugerido original
 }
 
+export interface SalePayment {
+  id: number;
+  saleId: number;
+  amount: number;
+  method: string;
+  note?: string;
+  date: string;
+}
+
+export interface CreateSalePayment {
+  amount: number;
+  method: string;
+  note?: string;
+}
+
 export interface Sale {
   id: number;
   date: string;
@@ -23,7 +38,9 @@ export interface Sale {
   totalAmount: number;
   paidAmount: number;
   isPaid: boolean;
+  paymentMethod?: string; // Para compatibilidad hacia atrás
   details: SaleDetail[];
+  payments?: SalePayment[]; // Múltiples métodos de pago
 }
 
 export interface ProfitabilityStats {

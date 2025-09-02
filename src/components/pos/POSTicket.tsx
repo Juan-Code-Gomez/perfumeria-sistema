@@ -11,6 +11,11 @@ interface POSTicketProps {
     totalAmount: number;
     paidAmount: number;
     paymentMethod: string;
+    payments?: Array<{
+      method: string;
+      amount: number;
+      note?: string;
+    }>;
     details: Array<{
       product: {
         name: string;
@@ -184,31 +189,53 @@ const POSTicket = forwardRef<HTMLDivElement, POSTicketProps>(({ sale, change = 0
 
         {/* Información de pago */}
         <div style={{ marginTop: '15px', fontSize: '11px' }}>
-          <div style={styles.totalLine}>
-            <span>Método de Pago:</span>
-            <span>{sale.paymentMethod}</span>
-          </div>
-          
-          {sale.paymentMethod === 'Efectivo' && (
+          {sale.payments && sale.payments.length > 1 ? (
+            // Múltiples métodos de pago
             <>
-              <div style={styles.totalLine}>
-                <span>Recibido:</span>
+              <div style={{ ...styles.totalLine, fontWeight: 'bold', marginBottom: '8px' }}>
+                <span>MÉTODOS DE PAGO:</span>
+              </div>
+              {sale.payments.map((payment, index) => (
+                <div key={index} style={styles.totalLine}>
+                  <span>{payment.method}:</span>
+                  <span>${payment.amount.toLocaleString('es-CO')}</span>
+                </div>
+              ))}
+              <div style={{ ...styles.totalLine, borderTop: '1px dashed #000', paddingTop: '5px', marginTop: '5px' }}>
+                <span>TOTAL PAGADO:</span>
                 <span>${sale.paidAmount.toLocaleString('es-CO')}</span>
               </div>
-              {change > 0 && (
+            </>
+          ) : (
+            // Método de pago único (tradicional)
+            <>
+              <div style={styles.totalLine}>
+                <span>Método de Pago:</span>
+                <span>{sale.paymentMethod}</span>
+              </div>
+              
+              {sale.paymentMethod === 'Efectivo' && (
+                <>
+                  <div style={styles.totalLine}>
+                    <span>Recibido:</span>
+                    <span>${sale.paidAmount.toLocaleString('es-CO')}</span>
+                  </div>
+                  {change > 0 && (
+                    <div style={styles.totalLine}>
+                      <span>Cambio:</span>
+                      <span>${change.toLocaleString('es-CO')}</span>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {sale.paymentMethod === 'Crédito' && (
                 <div style={styles.totalLine}>
-                  <span>Cambio:</span>
-                  <span>${change.toLocaleString('es-CO')}</span>
+                  <span>Estado:</span>
+                  <span>PENDIENTE DE PAGO</span>
                 </div>
               )}
             </>
-          )}
-
-          {sale.paymentMethod === 'Crédito' && (
-            <div style={styles.totalLine}>
-              <span>Estado:</span>
-              <span>PENDIENTE DE PAGO</span>
-            </div>
           )}
         </div>
       </div>
