@@ -42,7 +42,6 @@ import ProductStats from "../../components/products/ProductStats";
 import { getCategories } from "../../features/categories/categoriesSlice";
 import { getUnits } from "../../features/units/unitsSlice";
 import BulkUploadProducts from "../../components/products/BulkUploadProducts";
-import FieldPermissionGuard from "../../components/FieldPermissionGuard";
 import { usePermissions } from "../../hooks/usePermissions";
 
 const { Option } = Select;
