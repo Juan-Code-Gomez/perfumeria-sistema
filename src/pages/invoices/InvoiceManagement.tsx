@@ -30,6 +30,7 @@ import {
   ExclamationCircleOutlined,
 } from '@ant-design/icons';
 import { useAppDispatch, useAppSelector } from '../../store';
+import { usePermissions } from '../../hooks/usePermissions';
 import {
   fetchInvoices,
   fetchInvoiceSummary,
@@ -63,6 +64,7 @@ interface PaymentFormData {
 const InvoiceManagement: React.FC = () => {
   const dispatch = useAppDispatch();
   const { items, summary, loading, error } = useAppSelector((state) => state.invoices);
+  const { hasPermission } = usePermissions();
   
   const [modalVisible, setModalVisible] = useState(false);
   const [paymentModalVisible, setPaymentModalVisible] = useState(false);
@@ -318,29 +320,33 @@ const InvoiceManagement: React.FC = () => {
               Pagar
             </Button>
           )}
-          <Button
-            type="link"
-            icon={<EditOutlined />}
-            onClick={() => handleEdit(record)}
-            size="small"
-          >
-            Editar
-          </Button>
-          <Popconfirm
-            title="¿Está seguro de eliminar esta factura?"
-            onConfirm={() => handleDelete(record.id)}
-            okText="Sí"
-            cancelText="No"
-          >
+          {hasPermission('facturas', 'edit') && (
             <Button
               type="link"
-              danger
-              icon={<DeleteOutlined />}
+              icon={<EditOutlined />}
+              onClick={() => handleEdit(record)}
               size="small"
             >
-              Eliminar
+              Editar
             </Button>
-          </Popconfirm>
+          )}
+          {hasPermission('facturas', 'delete') && (
+            <Popconfirm
+              title="¿Está seguro de eliminar esta factura?"
+              onConfirm={() => handleDelete(record.id)}
+              okText="Sí"
+              cancelText="No"
+            >
+              <Button
+                type="link"
+                danger
+                icon={<DeleteOutlined />}
+                size="small"
+              >
+                Eliminar
+              </Button>
+            </Popconfirm>
+          )}
         </Space>
       ),
     },

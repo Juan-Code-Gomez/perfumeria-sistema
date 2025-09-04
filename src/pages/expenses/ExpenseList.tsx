@@ -22,6 +22,7 @@ import dayjs from "dayjs";
 import type { ColumnsType } from "antd/lib/table";
 
 import { useAppDispatch, useAppSelector } from "../../store";
+import { usePermissions } from "../../hooks/usePermissions";
 import {
   fetchExpenses,
   fetchExpenseSummary,
@@ -46,6 +47,7 @@ export default function ExpenseList() {
   const { items, total, loading, error, filters, summary } = useAppSelector(
     (s) => s.expenses
   );
+  const { hasPermission } = usePermissions();
 
   // Estado modal
   const [modalOpen, setModalOpen] = useState(false);
@@ -144,34 +146,38 @@ export default function ExpenseList() {
       title: "⚙️ Acciones",
       render: (_: any, rec: Expense) => (
         <Space>
-          <Tooltip title="Editar gasto">
-            <Button
-              size="small"
-              type="link"
-              onClick={() => {
-                setEditing(rec);
-                setModalOpen(true);
-              }}
-            >
-              ✏️
-            </Button>
-          </Tooltip>
-          <Tooltip title="Eliminar gasto">
-            <Button
-              size="small"
-              danger
-              type="link"
-              onClick={async () => {
-                await dispatch(removeExpense(rec.id!)).unwrap();
-                message.success("Gasto eliminado");
-                // refresca
-                dispatch(fetchExpenses(filters));
-                dispatch(fetchExpenseSummary(filters));
-              }}
-            >
-              🗑️
-            </Button>
-          </Tooltip>
+          {hasPermission('gastos', 'edit') && (
+            <Tooltip title="Editar gasto">
+              <Button
+                size="small"
+                type="link"
+                onClick={() => {
+                  setEditing(rec);
+                  setModalOpen(true);
+                }}
+              >
+                ✏️
+              </Button>
+            </Tooltip>
+          )}
+          {hasPermission('gastos', 'delete') && (
+            <Tooltip title="Eliminar gasto">
+              <Button
+                size="small"
+                danger
+                type="link"
+                onClick={async () => {
+                  await dispatch(removeExpense(rec.id!)).unwrap();
+                  message.success("Gasto eliminado");
+                  // refresca
+                  dispatch(fetchExpenses(filters));
+                  dispatch(fetchExpenseSummary(filters));
+                }}
+              >
+                🗑️
+              </Button>
+            </Tooltip>
+          )}
         </Space>
       ),
       width: 100,

@@ -14,7 +14,6 @@ import {
   AppstoreOutlined,
   ShopOutlined,
   SettingOutlined,
-  FileTextOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { useAppSelector } from "../store/index";
@@ -117,20 +116,20 @@ const SidebarMenu: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
     });
   }
 
-  // Gastos - Para vendedores (solo crear) y administradores
+  // Gastos - Solo administradores
   if (hasPermission('gastos', 'view')) {
     menuItems.push({
       key: "/expenses",
       icon: <DollarOutlined style={{ fontSize: '16px' }} />,
       label: (
         <span style={{ fontSize: '14px' }}>
-          {isVendedor && !isAdmin ? 'Registrar Gastos' : 'Gastos'}
+          Gastos
         </span>
       ),
     });
   }
 
-  // Cierres de caja - Para vendedores y administradores
+  // Cierres de caja - Solo administradores
   if (hasPermission('cierres-caja', 'view')) {
     menuItems.push({
       key: "/cash-closings",
@@ -138,19 +137,6 @@ const SidebarMenu: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
       label: (
         <span style={{ fontSize: '14px' }}>
           Cierres de caja
-        </span>
-      ),
-    });
-  }
-
-  // Facturas - Para vendedores (solo crear) y administradores
-  if (hasPermission('facturas', 'view')) {
-    menuItems.push({
-      key: "/invoices",
-      icon: <FileTextOutlined style={{ fontSize: '16px' }} />,
-      label: (
-        <span style={{ fontSize: '14px' }}>
-          {isVendedor && !isAdmin ? 'Registrar Facturas' : 'Facturas'}
         </span>
       ),
     });

@@ -3,12 +3,13 @@ import { Card, Row, Col, Tag, Button, Popconfirm, Statistic, Space, Tooltip } fr
 import { EditOutlined, DeleteOutlined, ShoppingCartOutlined, WarningOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import type { Product } from '../../services/productService';
 import type { Category, Unit } from '../../features/products/types';
+import FieldPermissionGuard from '../FieldPermissionGuard';
 
 interface ProductCardViewProps {
   products: Product[];
   loading: boolean;
-  onEdit: (product: Product) => void;
-  onDelete: (id: number) => void;
+  onEdit?: (product: Product) => void;
+  onDelete?: (id: number) => void;
 }
 
 const ProductCardView: React.FC<ProductCardViewProps> = ({
@@ -77,24 +78,29 @@ const ProductCardView: React.FC<ProductCardViewProps> = ({
                 )
               }
               actions={[
-                <Tooltip title="Editar producto">
-                  <Button
-                    type="text"
-                    icon={<EditOutlined />}
-                    onClick={() => onEdit(product)}
-                  />
-                </Tooltip>,
-                <Popconfirm
-                  title="¿Eliminar producto?"
-                  description="Esta acción no se puede deshacer"
-                  onConfirm={() => onDelete(product.id)}
-                  okText="Sí"
-                  cancelText="No"
-                >
-                  <Tooltip title="Eliminar producto">
-                    <Button type="text" danger icon={<DeleteOutlined />} />
+                ...(onEdit ? [
+                  <Tooltip title="Editar producto" key="edit">
+                    <Button
+                      type="text"
+                      icon={<EditOutlined />}
+                      onClick={() => onEdit(product)}
+                    />
                   </Tooltip>
-                </Popconfirm>,
+                ] : []),
+                ...(onDelete ? [
+                  <Popconfirm
+                    key="delete"
+                    title="¿Eliminar producto?"
+                    description="Esta acción no se puede deshacer"
+                    onConfirm={() => onDelete(product.id)}
+                    okText="Sí"
+                    cancelText="No"
+                  >
+                    <Tooltip title="Eliminar producto">
+                      <Button type="text" danger icon={<DeleteOutlined />} />
+                    </Tooltip>
+                  </Popconfirm>
+                ] : []),
               ]}
             >
               <div style={{ height: 180 }}>
@@ -141,12 +147,16 @@ const ProductCardView: React.FC<ProductCardViewProps> = ({
 
                 {/* Precios */}
                 <Row gutter={8} style={{ marginBottom: 8 }}>
-                  <Col span={12}>
-                    <div style={{ fontSize: 12, color: '#666' }}>Compra</div>
-                    <div style={{ fontSize: 14, fontWeight: 600 }}>
-                      {formatCurrency(product.purchasePrice)}
-                    </div>
-                  </Col>
+                  {/* Precio de compra - Solo para roles administrativos */}
+                  <FieldPermissionGuard hideFor={['VENDEDOR']}>
+                    <Col span={12}>
+                      <div style={{ fontSize: 12, color: '#666' }}>Compra</div>
+                      <div style={{ fontSize: 14, fontWeight: 600 }}>
+                        {formatCurrency(product.purchasePrice)}
+                      </div>
+                    </Col>
+                  </FieldPermissionGuard>
+                  
                   <Col span={12}>
                     <div style={{ fontSize: 12, color: '#666' }}>Venta</div>
                     <div style={{ fontSize: 14, fontWeight: 600, color: '#52c41a' }}>
@@ -155,23 +165,25 @@ const ProductCardView: React.FC<ProductCardViewProps> = ({
                   </Col>
                 </Row>
 
-                {/* Margen y Utilidad */}
-                <Row gutter={8}>
-                  <Col span={12}>
-                    <Tag
-                      color={margin >= 50 ? 'green' : margin >= 20 ? 'orange' : 'red'}
-                      style={{ width: '100%', textAlign: 'center' }}
-                    >
-                      {margin.toFixed(1)}% margen
-                    </Tag>
-                  </Col>
-                  <Col span={12}>
-                    <div style={{ fontSize: 11, color: '#666' }}>Utilidad</div>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: profit > 0 ? '#52c41a' : '#ff4d4f' }}>
-                      {formatCurrency(profit)}
-                    </div>
-                  </Col>
-                </Row>
+                {/* Margen y Utilidad - Solo para roles administrativos */}
+                <FieldPermissionGuard hideFor={['VENDEDOR']}>
+                  <Row gutter={8}>
+                    <Col span={12}>
+                      <Tag
+                        color={margin >= 50 ? 'green' : margin >= 20 ? 'orange' : 'red'}
+                        style={{ width: '100%', textAlign: 'center' }}
+                      >
+                        {margin.toFixed(1)}% margen
+                      </Tag>
+                    </Col>
+                    <Col span={12}>
+                      <div style={{ fontSize: 11, color: '#666' }}>Utilidad</div>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: profit > 0 ? '#52c41a' : '#ff4d4f' }}>
+                        {formatCurrency(profit)}
+                      </div>
+                    </Col>
+                  </Row>
+                </FieldPermissionGuard>
               </div>
             </Card>
           </Col>

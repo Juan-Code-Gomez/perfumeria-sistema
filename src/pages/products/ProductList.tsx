@@ -42,6 +42,8 @@ import ProductStats from "../../components/products/ProductStats";
 import { getCategories } from "../../features/categories/categoriesSlice";
 import { getUnits } from "../../features/units/unitsSlice";
 import BulkUploadProducts from "../../components/products/BulkUploadProducts";
+import FieldPermissionGuard from "../../components/FieldPermissionGuard";
+import { usePermissions } from "../../hooks/usePermissions";
 
 const { Option } = Select;
 
@@ -62,6 +64,15 @@ const ProductList: React.FC = () => {
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
 
   const [form] = Form.useForm();
+
+  // Hook de permisos
+  const { hasPermission } = usePermissions();
+
+  // Verificar permisos específicos
+  const canEditProducts = hasPermission('productos', 'edit');
+  const canDeleteProducts = hasPermission('productos', 'delete');
+  const canCreateProducts = hasPermission('productos', 'create');
+  const canExportProducts = hasPermission('productos', 'export');
 
   // Carga inicial y cuando cambian los filtros
   useEffect(() => {
@@ -205,55 +216,64 @@ const ProductList: React.FC = () => {
         }
       },
     },
-    {
+    // Precio de compra - Solo visible para roles administrativos
+    ...(hasPermission('productos', 'edit') ? [{
       title: "P. Compra",
       dataIndex: "purchasePrice",
       key: "purchasePrice",
       render: (v: number) => v ? `$${v.toLocaleString()}` : '$0',
-    },
+    }] : []),
     {
       title: "P. Venta",
       dataIndex: "salePrice",
       key: "salePrice",
       render: (v: number) => v ? `$${v.toLocaleString()}` : '$0',
     },
-    {
-      title: "Utilidad",
-      dataIndex: "utilidad",
-      key: "utilidad",
-      render: (v: number) => (v != null ? `$${v.toLocaleString()}` : "-"),
-    },
-    {
-      title: "Margen",
-      dataIndex: "margen",
-      key: "margen",
-      render: (v: number) => (
-        <Tag color={v >= 50 ? "green" : v >= 20 ? "orange" : "red"}>
-          {v ? `${v.toFixed(1)}%` : "-"}
-        </Tag>
-      ),
-    },
-    {
+    // Utilidad y margen - Solo visible para roles administrativos
+    ...(hasPermission('productos', 'edit') ? [
+      {
+        title: "Utilidad",
+        dataIndex: "utilidad",
+        key: "utilidad",
+        render: (v: number) => (v != null ? `$${v.toLocaleString()}` : "-"),
+      },
+      {
+        title: "Margen",
+        dataIndex: "margen",
+        key: "margen",
+        render: (v: number) => (
+          <Tag color={v >= 50 ? "green" : v >= 20 ? "orange" : "red"}>
+            {v ? `${v.toFixed(1)}%` : "-"}
+          </Tag>
+        ),
+      }
+    ] : []),
+    // Columna de acciones - Condicionada por permisos
+    ...(canEditProducts || canDeleteProducts ? [{
       title: "Acciones",
       key: "actions",
       render: (_: any, record: Product) => (
-        <>
-          <Button type="link" onClick={() => handleShowModal(record)}>
-            Editar
-          </Button>
-          <Popconfirm
-            title="Eliminar producto?"
-            onConfirm={() => handleDelete(record.id)}
-            okText="Sí"
-            cancelText="No"
-          >
-            <Button danger type="link">
-              Eliminar
+        <Space size="small">
+          {canEditProducts && (
+            <Button type="link" onClick={() => handleShowModal(record)}>
+              Editar
             </Button>
-          </Popconfirm>
-        </>
+          )}
+          {canDeleteProducts && (
+            <Popconfirm
+              title="Eliminar producto?"
+              onConfirm={() => handleDelete(record.id)}
+              okText="Sí"
+              cancelText="No"
+            >
+              <Button danger type="link">
+                Eliminar
+              </Button>
+            </Popconfirm>
+          )}
+        </Space>
       ),
-    },
+    }] : []),
   ];
 
   return (
@@ -290,48 +310,58 @@ const ProductList: React.FC = () => {
               </Button.Group>
             </Space>
             
-            <Button
-              href="/plantilla-carga-masiva-productos.xlsx"
-              target="_blank"
-              icon={<FileExcelOutlined />}
-              size="small"
-            >
-              Plantilla
-            </Button>
+            {canExportProducts && (
+              <Button
+                href="/plantilla-carga-masiva-productos.xlsx"
+                target="_blank"
+                icon={<FileExcelOutlined />}
+                size="small"
+              >
+                Plantilla
+              </Button>
+            )}
             
-            <Button
-              onClick={() => setOpenBulkModal(true)}
-              icon={<UploadOutlined />}
-              size="small"
-            >
-              Carga masiva
-            </Button>
+            {canCreateProducts && (
+              <Button
+                onClick={() => setOpenBulkModal(true)}
+                icon={<UploadOutlined />}
+                size="small"
+              >
+                Carga masiva
+              </Button>
+            )}
             
-            <Button
-              onClick={handleExport}
-              icon={<DownloadOutlined />}
-              type="default"
-              loading={loading}
-              size="small"
-            >
-              Exportar
-            </Button>
+            {canExportProducts && (
+              <Button
+                onClick={handleExport}
+                icon={<DownloadOutlined />}
+                type="default"
+                loading={loading}
+                size="small"
+              >
+                Exportar
+              </Button>
+            )}
             
-            <Button
-              type="primary"
-              onClick={() => handleShowModal()}
-              icon={<PlusOutlined />}
-              size="small"
-            >
-              Nuevo Producto
-            </Button>
+            {canCreateProducts && (
+              <Button
+                type="primary"
+                onClick={() => handleShowModal()}
+                icon={<PlusOutlined />}
+                size="small"
+              >
+                Nuevo Producto
+              </Button>
+            )}
           </Space>
           
-          <BulkUploadProducts
-            open={openBulkModal}
-            onClose={() => setOpenBulkModal(false)}
-            onUploaded={() => dispatch(fetchProducts(filters))}
-          />
+          {canCreateProducts && (
+            <BulkUploadProducts
+              open={openBulkModal}
+              onClose={() => setOpenBulkModal(false)}
+              onUploaded={() => dispatch(fetchProducts(filters))}
+            />
+          )}
         </Col>
       </Row>
 
@@ -451,8 +481,8 @@ const ProductList: React.FC = () => {
           <ProductCardView
             products={items}
             loading={loading}
-            onEdit={handleShowModal}
-            onDelete={handleDelete}
+            onEdit={canEditProducts ? handleShowModal : undefined}
+            onDelete={canDeleteProducts ? handleDelete : undefined}
           />
           {/* Paginación para vista de tarjetas */}
           <div style={{ marginTop: 24, textAlign: 'center' }}>
@@ -476,21 +506,23 @@ const ProductList: React.FC = () => {
         </div>
       )}
 
-      {/* Modal genérico con el form */}
-      <Modal
-        title={editingProduct ? "Editar Producto" : "Nuevo Producto"}
-        open={isModalOpen}
-        onCancel={handleCloseModal}
-        footer={null}
-      >
-        <ProductForm
-          product={editingProduct}
-          onSaved={() => {
-            handleCloseModal();
-            // dispatch(fetchProducts(filters));
-          }}
-        />
-      </Modal>
+      {/* Modal genérico con el form - Solo si tiene permisos */}
+      {(canCreateProducts || canEditProducts) && (
+        <Modal
+          title={editingProduct ? "Editar Producto" : "Nuevo Producto"}
+          open={isModalOpen}
+          onCancel={handleCloseModal}
+          footer={null}
+        >
+          <ProductForm
+            product={editingProduct}
+            onSaved={() => {
+              handleCloseModal();
+              // dispatch(fetchProducts(filters));
+            }}
+          />
+        </Modal>
+      )}
 
       {error && <div className="text-red-500 mt-2">{error}</div>}
     </div>
