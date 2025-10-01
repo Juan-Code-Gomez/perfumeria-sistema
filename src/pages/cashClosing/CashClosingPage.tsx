@@ -453,26 +453,6 @@ const CashClosingList: React.FC = () => {
               </Descriptions.Item>
             </Descriptions>
             
-            {/* Explicación del cálculo */}
-            <Alert
-              message="🧮 Fórmula de Cálculo del Sistema"
-              description={
-                <div>
-                  <Text code>
-                    Caja Final Sistema = Saldo Inicial + Ventas en Efectivo + Otros Ingresos - Gastos - Pagos Proveedores
-                  </Text>
-                  <br />
-                  <Text type="secondary" style={{ fontSize: '12px' }}>
-                    Solo las ventas en <strong>efectivo</strong> afectan la cantidad física de dinero en caja.
-                    Las ventas con tarjeta/transferencia no suman al efectivo físico.
-                  </Text>
-                </div>
-              }
-              type="info"
-              showIcon
-              className="mb-4"
-            />
-
             {/* Detalles de transacciones individuales */}
             <Row gutter={16} className="mb-6">
               {/* Detalle de Ventas */}

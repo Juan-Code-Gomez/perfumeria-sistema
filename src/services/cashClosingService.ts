@@ -48,9 +48,9 @@ export const getCashClosingSummary = async (date: string) => {
     const response = await api.get('/cash-closing/summary', { params: { date } });
     console.log('📈 getCashClosingSummary response:', response.data);
     
-    // El endpoint ahora devuelve directamente los datos
-    if (response.data) {
-      return response.data;
+    // El backend devuelve { success: true, data: {...} }, necesitamos extraer data
+    if (response.data && response.data.success && response.data.data) {
+      return response.data.data;
     } else {
       throw new Error('No se pudo obtener el resumen del día');
     }
