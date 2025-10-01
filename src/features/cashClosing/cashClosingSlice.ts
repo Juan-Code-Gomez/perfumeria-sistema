@@ -39,6 +39,29 @@ interface CashClosingSummary {
   totalExpense: number;
   totalPayments: number;
   systemCash: number;
+  salesDetail?: Array<{
+    id: number;
+    totalAmount: number;
+    paymentMethod: string;
+    isPaid: boolean;
+    createdAt: string;
+    customerName?: string;
+  }>;
+  expensesDetail?: Array<{
+    id: number;
+    amount: number;
+    description: string;
+    date: string;
+    createdAt: string;
+  }>;
+  paymentsDetail?: Array<{
+    id: number;
+    amount: number;
+    supplierName: string;
+    description: string;
+    date: string;
+    createdAt: string;
+  }>;
   explanation?: {
     formula: string;
     note: string;
