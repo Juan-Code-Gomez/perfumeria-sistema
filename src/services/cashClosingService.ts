@@ -44,22 +44,45 @@ export const createCashClosing = async (payload: any) => {
 
 export const getCashClosingSummary = async (date: string) => {
   try {
-    console.log('Calling getCashClosingSummary with date:', date);
+    console.log('📊 Calling getCashClosingSummary with date:', date);
     const response = await api.get('/cash-closing/summary', { params: { date } });
-    console.log('getCashClosingSummary response:', response);
+    console.log('📈 getCashClosingSummary response:', response.data);
     
-    let data;
-    // Verificar si la respuesta tiene el wrapper de success
-    if (response.data && typeof response.data === 'object' && 'data' in response.data) {
-      data = response.data.data; // Extraer data del wrapper
+    // El endpoint ahora devuelve directamente los datos
+    if (response.data) {
+      return response.data;
     } else {
-      data = response.data; // Usar directamente si no hay wrapper
+      throw new Error('No se pudo obtener el resumen del día');
     }
-    
-    console.log('getCashClosingSummary processed data:', data);
-    return data;
   } catch (error) {
-    console.error('Error getting cash closing summary:', error);
+    console.error('❌ Error getting cash closing summary:', error);
+    throw error;
+  }
+};
+
+// Agregar nuevos métodos para UPDATE y DELETE
+export const updateCashClosing = async (id: number, payload: any) => {
+  try {
+    console.log('📝 Updating cash closing:', id, payload);
+    const response = await api.put(`/cash-closing/${id}`, payload);
+    console.log('✅ Update response:', response.data);
+    
+    return response.data;
+  } catch (error) {
+    console.error('❌ Error updating cash closing:', error);
+    throw error;
+  }
+};
+
+export const deleteCashClosing = async (id: number) => {
+  try {
+    console.log('🗑️ Deleting cash closing:', id);
+    const response = await api.delete(`/cash-closing/${id}`);
+    console.log('✅ Delete response:', response.data);
+    
+    return response.data;
+  } catch (error) {
+    console.error('❌ Error deleting cash closing:', error);
     throw error;
   }
 };
