@@ -229,9 +229,30 @@ const CashClosingList: React.FC = () => {
   const [diff, setDiff] = useState(0);
 
   const handleValuesChange = (_: any, values: any) => {
-    // summary.systemCash es la caja calculada por sistema
-    if (summary && values.closingCash !== undefined) {
-      setDiff(values.closingCash - summary.systemCash);
+    // CÁLCULO CORRECTO: Caja sistema = Saldo inicial + Ventas efectivo + Ingresos - Gastos - Pagos
+    if (summary && values.closingCash !== undefined && values.openingCash !== undefined) {
+      const systemCashComplete = 
+        (values.openingCash || 0) +           // Saldo inicial (del form)
+        (summary.cashSales || 0) +            // Ventas en efectivo del día
+        0 -                                   // Ingresos extra (opcional, por ahora 0)
+        (summary.totalExpense || 0) -         // Gastos del día
+        (summary.totalPayments || 0);        // Pagos a proveedores
+        
+      const difference = (values.closingCash || 0) - systemCashComplete;
+      
+      console.log('💰 Cálculo de diferencia:', {
+        closingCash: values.closingCash,
+        openingCash: values.openingCash,
+        cashSales: summary.cashSales,
+        totalExpense: summary.totalExpense,
+        totalPayments: summary.totalPayments,
+        systemCashComplete,
+        difference
+      });
+      
+      setDiff(difference);
+    } else {
+      setDiff(0);
     }
   };
 
@@ -392,11 +413,14 @@ const CashClosingList: React.FC = () => {
               <Col span={8}>
                 <Card size="small" className="text-center">
                   <Statistic
-                    title="🖥️ Caja Sistema"
+                    title="🖥️ Base Sistema"
                     value={summary.systemCash || 0}
                     prefix="$"
                     valueStyle={{ color: '#1890ff', fontSize: '18px' }}
                   />
+                  <Text type="secondary" style={{ fontSize: '11px' }}>
+                    (Sin saldo inicial)
+                  </Text>
                 </Card>
               </Col>
             </Row>
@@ -428,6 +452,27 @@ const CashClosingList: React.FC = () => {
                 <Text strong>${summary.totalIncome?.toLocaleString()}</Text>
               </Descriptions.Item>
             </Descriptions>
+            
+            {/* Explicación del cálculo */}
+            <Alert
+              message="🧮 Fórmula de Cálculo del Sistema"
+              description={
+                <div>
+                  <Text code>
+                    Caja Final Sistema = Saldo Inicial + Ventas en Efectivo + Otros Ingresos - Gastos - Pagos Proveedores
+                  </Text>
+                  <br />
+                  <Text type="secondary" style={{ fontSize: '12px' }}>
+                    Solo las ventas en <strong>efectivo</strong> afectan la cantidad física de dinero en caja.
+                    Las ventas con tarjeta/transferencia no suman al efectivo físico.
+                  </Text>
+                </div>
+              }
+              type="info"
+              showIcon
+              className="mb-4"
+            />
+            
             <Form
               layout="vertical"
               form={form}

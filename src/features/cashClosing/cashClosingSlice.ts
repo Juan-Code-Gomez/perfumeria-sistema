@@ -39,6 +39,10 @@ interface CashClosingSummary {
   totalExpense: number;
   totalPayments: number;
   systemCash: number;
+  explanation?: {
+    formula: string;
+    note: string;
+  };
 }
 
 const initialState: CashClosingState = {
