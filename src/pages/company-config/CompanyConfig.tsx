@@ -15,6 +15,8 @@ import {
   message,
   Tabs,
   Space,
+  Upload,
+  Image,
 } from 'antd';
 import {
   SaveOutlined,
@@ -23,15 +25,18 @@ import {
   PrinterOutlined,
   FileTextOutlined,
   GlobalOutlined,
+  UploadOutlined,
 } from '@ant-design/icons';
 import { useAppDispatch, useAppSelector } from '../../store';
 import {
   fetchCompanyConfig,
   updateCompanyConfig,
   fetchPublicCompanyConfig,
+  uploadLogo,
   clearError,
   type CreateCompanyConfigData,
 } from '../../features/company-config/companyConfigSlice';
+
 
 const { Title } = Typography;
 const { TextArea } = Input;
@@ -95,6 +100,32 @@ const CompanyConfig: React.FC = () => {
       form.setFieldsValue(config);
       message.info('Formulario restaurado');
     }
+  };
+
+  const handleLogoUpload = async (file: File) => {
+    // Validaciones del archivo
+    const isImage = file.type.startsWith('image/');
+    if (!isImage) {
+      message.error('Solo se permiten archivos de imagen');
+      return false;
+    }
+
+    const isLt5M = file.size / 1024 / 1024 < 5;
+    if (!isLt5M) {
+      message.error('El archivo debe ser menor a 5MB');
+      return false;
+    }
+
+    try {
+      await dispatch(uploadLogo(file)).unwrap();
+      // También actualizar la configuración pública
+      dispatch(fetchPublicCompanyConfig());
+      message.success('Logo subido exitosamente');
+    } catch (error: any) {
+      message.error(error || 'Error al subir logo');
+    }
+
+    return false; // Prevenir upload automático
   };
 
   const basicInfoForm = (
@@ -175,10 +206,30 @@ const CompanyConfig: React.FC = () => {
         </Col>
         <Col xs={24} sm={12}>
           <Form.Item
-            name="logo"
-            label="URL del Logo"
+            label="Logo de la Empresa"
           >
-            <Input placeholder="https://ejemplo.com/logo.png" />
+            <Space direction="vertical" style={{ width: '100%' }}>
+              {config?.logo && (
+                <Image
+                  src={config.logo}
+                  alt="Logo actual"
+                  style={{ maxHeight: 100, maxWidth: 200 }}
+                  fallback="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMIAAADDCAYAAADQvc6UAAABRWlDQ1BJQ0MgUHJvZmlsZQAAKJFjYGASSSwoyGFhYGDIzSspCnJ3UoiUoiIjFJgf8LAwSDCIMogwMCcmFxc4BgQ4ANUwgCjUcG3awyMIPqyLsis7PPOq3QdDFcvjV3jOD1boQVTPQrgSkktTgbSf4A4LbmgqISBgTEFyFYuLykAsTuAbJEioKOA7DkgdjqEvQHEToKwj4DVhAQ5A9k3gGyB5IxEoBmML4BsnSQk8XQkNtReEOBxcfXxUQg1Mjc0dyHgXNJBSWpFCYh2zi+oLMpMzyhRcASGUqqCZ16yno6CkYGRAQMDKMwhqj/fAIcloxgHQqxAjIHBEugw5sUIsSQpBobtQPdLciLEVJYzMPBHMDBsayhILEqEO4DxG0txmrERhM29nYGBddr//5/DGRjYNRkY/l7////39v///y4Dmn+LgeHANwDrkl1AuO+pmgAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAwqADAAQAAAABAAAAwwAAAAD9b/HnAAAHlklEQVR4Ae3dP3Ik1RnG4W+FgYzN"
+                />
+              )}
+              <Upload
+                beforeUpload={handleLogoUpload}
+                showUploadList={false}
+                accept="image/*"
+              >
+                <Button icon={<UploadOutlined />}>
+                  {config?.logo ? 'Cambiar Logo' : 'Subir Logo'}
+                </Button>
+              </Upload>
+              <small style={{ color: '#666' }}>
+                Formatos soportados: JPG, PNG, GIF, WebP. Tamaño máximo: 5MB
+              </small>
+            </Space>
           </Form.Item>
         </Col>
       </Row>

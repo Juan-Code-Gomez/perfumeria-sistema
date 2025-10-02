@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Layout, Dropdown, Avatar, Typography } from "antd";
 import { UserOutlined } from "@ant-design/icons";
 import { Outlet, useNavigate } from "react-router-dom";
@@ -6,6 +6,7 @@ import { useAppDispatch, useAppSelector } from "../store";
 import { logoutWithPermissions } from "../features/auth/authSlice";
 import { fetchUserModules, fetchUserPermissions } from "../features/permissions/permissionsSlice";
 import { fetchPublicCompanyConfig } from "../features/company-config/companyConfigSlice";
+
 import DynamicSidebarMenu from "./DynamicSidebarMenu";
 
 const { Header, Sider, Content } = Layout;
@@ -17,6 +18,7 @@ const AppLayout: React.FC = () => {
   const { user, token } = useAppSelector((state: any) => state.auth);
   const { userModules } = useAppSelector((state: any) => state.permissions);
   const { publicConfig } = useAppSelector((state: any) => state.companyConfig);
+  const [logoError, setLogoError] = useState(false);
 
   // Efecto para cargar módulos cuando la aplicación se inicializa con un usuario ya autenticado
   useEffect(() => {
@@ -33,6 +35,23 @@ const AppLayout: React.FC = () => {
     // Cargar configuración pública al inicializar el layout
     dispatch(fetchPublicCompanyConfig());
   }, [dispatch]);
+
+  // Resetear error de logo cuando cambie la configuración
+  useEffect(() => {
+    setLogoError(false);
+  }, [publicConfig?.logo]);
+
+  // Función para generar iniciales del nombre de la empresa
+  const getCompanyInitials = (companyName?: string): string => {
+    if (!companyName) return 'MF'; // Milán Fragancias por defecto
+    
+    return companyName
+      .split(' ')
+      .map((word: string) => word.charAt(0))
+      .join('')
+      .toUpperCase()
+      .slice(0, 2) || 'MF';
+  };
 
   const handleLogout = () => {
     dispatch(logoutWithPermissions());
@@ -60,21 +79,36 @@ const AppLayout: React.FC = () => {
             width: '48px',
             height: '48px',
             borderRadius: '12px',
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            background: publicConfig?.logo ? 'transparent' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             margin: '0 auto 16px',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+            overflow: 'hidden'
           }}>
-            <span style={{ 
-              fontSize: '24px', 
-              fontWeight: 'bold', 
-              color: '#fff',
-              textShadow: '0 2px 4px rgba(0,0,0,0.3)'
-            }}>
-              M
-            </span>
+            {(publicConfig?.logo && !logoError) ? (
+              <img 
+                src={publicConfig.logo}
+                alt="Company Logo"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  borderRadius: '12px'
+                }}
+                onError={() => setLogoError(true)}
+              />
+            ) : (
+              <span style={{ 
+                fontSize: '24px', 
+                fontWeight: 'bold', 
+                color: '#fff',
+                textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+              }}>
+                {getCompanyInitials(publicConfig?.companyName)}
+              </span>
+            )}
           </div>
           <h2 style={{ 
             color: '#fff', 

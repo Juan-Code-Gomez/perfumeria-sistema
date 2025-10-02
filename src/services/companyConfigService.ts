@@ -22,8 +22,11 @@ export const companyConfigService = {
   async getPublicConfig(): Promise<{ companyName: string; logo?: string }> {
     // Usar axios directamente sin interceptors para evitar agregar token
     const response = await axios.get(`${API_URL}/company-config/public`);
+    console.log('Public config response:', response.data);
     // Verificar si la respuesta tiene estructura envuelta o directa
-    return response.data.data || response.data;
+    const config = response.data.data || response.data;
+    console.log('Parsed public config:', config);
+    return config;
   },
 
   // Obtener configuración actual
@@ -71,5 +74,30 @@ export const companyConfigService = {
   // Eliminar configuración
   async delete(id: number): Promise<void> {
     await api.delete(`/${id}`);
+  },
+
+  // Subir logo
+  async uploadLogo(file: File): Promise<{
+    success: boolean;
+    data: {
+      success: boolean;
+      message: string;
+      data: {
+        logoUrl: string;
+        filename: string;
+        companyConfig: CompanyConfig;
+      };
+    };
+  }> {
+    const formData = new FormData();
+    formData.append('logo', file);
+
+    const response = await api.post('/upload-logo', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
+    return response.data;
   },
 };

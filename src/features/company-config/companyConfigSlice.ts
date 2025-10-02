@@ -128,6 +128,47 @@ export const getPOSConfig = createAsyncThunk<any, void, { rejectValue: string }>
   }
 );
 
+export const uploadLogo = createAsyncThunk<
+  CompanyConfig,
+  File,
+  { rejectValue: string }
+>(
+  'companyConfig/uploadLogo',
+  async (file, thunkAPI) => {
+    try {
+      const response: any = await companyConfigService.uploadLogo(file);
+      console.log('Full Upload response:', JSON.stringify(response, null, 2)); // Debug completo
+      
+      // Intentar diferentes estructuras posibles
+      let companyConfig = null;
+      
+      if (response.data?.data?.companyConfig) {
+        console.log('Found: response.data.data.companyConfig');
+        companyConfig = response.data.data.companyConfig;
+      } else if (response.data?.companyConfig) {
+        console.log('Found: response.data.companyConfig');
+        companyConfig = response.data.companyConfig;
+      } else if (response.companyConfig) {
+        console.log('Found: response.companyConfig');
+        companyConfig = response.companyConfig;
+      } else if (response.data) {
+        console.log('Using: response.data as fallback');
+        companyConfig = response.data;
+      } else {
+        console.log('Using: response as last resort');
+        companyConfig = response;
+      }
+      
+      console.log('Final companyConfig:', companyConfig);
+      return companyConfig;
+      
+    } catch (e: any) {
+      console.error('Upload error:', e);
+      return thunkAPI.rejectWithValue(e.message ?? 'Error al subir logo');
+    }
+  }
+);
+
 const companyConfigSlice = createSlice({
   name: 'companyConfig',
   initialState,
@@ -180,6 +221,26 @@ const companyConfigSlice = createSlice({
       .addCase(updateCompanyConfig.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload || 'Error al actualizar configuración';
+      })
+      // Upload logo
+      .addCase(uploadLogo.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(uploadLogo.fulfilled, (state, action) => {
+        state.loading = false;
+        state.config = action.payload;
+        // También actualizar la configuración pública si existe
+        if (state.publicConfig) {
+          state.publicConfig = {
+            ...state.publicConfig,
+            logo: action.payload.logo,
+          };
+        }
+      })
+      .addCase(uploadLogo.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || 'Error al subir logo';
       });
   },
 });
