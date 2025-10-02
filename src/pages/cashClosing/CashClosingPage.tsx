@@ -12,6 +12,7 @@ import {
   InputNumber,
   Input,
   message,
+  Descriptions,
   Spin,
   Typography,
   Space,
@@ -423,122 +424,35 @@ const CashClosingList: React.FC = () => {
                 </Card>
               </Col>
             </Row>
-
-            {/* Detalles de transacciones individuales */}
-            <Row gutter={16} className="mb-6">
-              {/* Detalle de Ventas */}
-              <Col span={8}>
-                <Card 
-                  title="🛒 Ventas del Día" 
-                  size="small"
-                  style={{ maxHeight: '300px', overflow: 'auto' }}
-                >
-                  {summary.salesDetail && summary.salesDetail.length > 0 ? (
-                    <div>
-                      {summary.salesDetail.map((sale: any) => (
-                        <div key={sale.id} style={{ 
-                          padding: '8px', 
-                          borderBottom: '1px solid #f0f0f0',
-                          marginBottom: '4px'
-                        }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <Text strong>${sale.totalAmount?.toLocaleString()}</Text>
-                            <Tag color={
-                              sale.paymentMethod === 'Efectivo' ? 'green' :
-                              sale.paymentMethod === 'Tarjeta' ? 'blue' :
-                              sale.paymentMethod === 'Transferencia' ? 'purple' :
-                              sale.paymentMethod === 'Crédito' ? 'orange' : 'default'
-                            }>
-                              {sale.paymentMethod}
-                            </Tag>
-                          </div>
-                          <Text type="secondary" style={{ fontSize: '11px' }}>
-                            {sale.customerName} - {dayjs(sale.createdAt).format('HH:mm')}
-                          </Text>
-                          {!sale.isPaid && (
-                            <Tag color="red">No Pagado</Tag>
-                          )}
-                        </div>
-                      ))}
-                      <div style={{ textAlign: 'center', marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #d9d9d9' }}>
-                        <Text strong>Total: ${summary.totalSales?.toLocaleString()}</Text>
-                      </div>
-                    </div>
-                  ) : (
-                    <Text type="secondary">No hay ventas registradas</Text>
-                  )}
-                </Card>
-              </Col>
-
-              {/* Detalle de Gastos */}
-              <Col span={8}>
-                <Card 
-                  title="💸 Gastos del Día" 
-                  size="small"
-                  style={{ maxHeight: '300px', overflow: 'auto' }}
-                >
-                  {summary.expensesDetail && summary.expensesDetail.length > 0 ? (
-                    <div>
-                      {summary.expensesDetail.map((expense: any) => (
-                        <div key={expense.id} style={{ 
-                          padding: '8px', 
-                          borderBottom: '1px solid #f0f0f0',
-                          marginBottom: '4px'
-                        }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <Text strong>${expense.amount?.toLocaleString()}</Text>
-                            <Tag color="red">Gasto</Tag>
-                          </div>
-                          <Text type="secondary" style={{ fontSize: '11px' }}>
-                            {expense.description} - {dayjs(expense.createdAt).format('HH:mm')}
-                          </Text>
-                        </div>
-                      ))}
-                      <div style={{ textAlign: 'center', marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #d9d9d9' }}>
-                        <Text strong>Total: ${summary.totalExpense?.toLocaleString()}</Text>
-                      </div>
-                    </div>
-                  ) : (
-                    <Text type="secondary">No hay gastos registrados</Text>
-                  )}
-                </Card>
-              </Col>
-
-              {/* Detalle de Pagos a Proveedores */}
-              <Col span={8}>
-                <Card 
-                  title="🏪 Pagos a Proveedores" 
-                  size="small"
-                  style={{ maxHeight: '300px', overflow: 'auto' }}
-                >
-                  {summary.paymentsDetail && summary.paymentsDetail.length > 0 ? (
-                    <div>
-                      {summary.paymentsDetail.map((payment: any) => (
-                        <div key={payment.id} style={{ 
-                          padding: '8px', 
-                          borderBottom: '1px solid #f0f0f0',
-                          marginBottom: '4px'
-                        }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <Text strong>${payment.amount?.toLocaleString()}</Text>
-                            <Tag color="volcano">Pago</Tag>
-                          </div>
-                          <Text type="secondary" style={{ fontSize: '11px' }}>
-                            {payment.supplierName} - {dayjs(payment.createdAt).format('HH:mm')}
-                          </Text>
-                        </div>
-                      ))}
-                      <div style={{ textAlign: 'center', marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #d9d9d9' }}>
-                        <Text strong>Total: ${summary.totalPayments?.toLocaleString()}</Text>
-                      </div>
-                    </div>
-                  ) : (
-                    <Text type="secondary">No hay pagos registrados</Text>
-                  )}
-                </Card>
-              </Col>
-            </Row>
             
+            <Descriptions
+              column={2}
+              bordered
+              size="small"
+              className="mb-6"
+              layout="horizontal"
+              title="💳 Desglose de Ventas por Método de Pago"
+            >
+              <Descriptions.Item label="💵 Efectivo">
+                <Text strong>${summary.cashSales?.toLocaleString()}</Text>
+              </Descriptions.Item>
+              <Descriptions.Item label="💳 Tarjeta">
+                <Text strong>${summary.cardSales?.toLocaleString()}</Text>
+              </Descriptions.Item>
+              <Descriptions.Item label="🏦 Transferencia">
+                <Text strong>${summary.transferSales?.toLocaleString()}</Text>
+              </Descriptions.Item>
+              <Descriptions.Item label="📋 Crédito">
+                <Text strong>${summary.creditSales?.toLocaleString()}</Text>
+              </Descriptions.Item>
+              <Descriptions.Item label="🏪 Pagos a Proveedores">
+                <Text strong>${summary.totalPayments?.toLocaleString()}</Text>
+              </Descriptions.Item>
+              <Descriptions.Item label="💰 Otros Ingresos">
+                <Text strong>${summary.totalIncome?.toLocaleString()}</Text>
+              </Descriptions.Item>
+            </Descriptions>
+
             <Form
               layout="vertical"
               form={form}

@@ -5,6 +5,7 @@ import { Outlet, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../store";
 import { logoutWithPermissions } from "../features/auth/authSlice";
 import { fetchUserModules, fetchUserPermissions } from "../features/permissions/permissionsSlice";
+import { fetchPublicCompanyConfig } from "../features/company-config/companyConfigSlice";
 import DynamicSidebarMenu from "./DynamicSidebarMenu";
 
 const { Header, Sider, Content } = Layout;
@@ -15,6 +16,7 @@ const AppLayout: React.FC = () => {
   const navigate = useNavigate();
   const { user, token } = useAppSelector((state: any) => state.auth);
   const { userModules } = useAppSelector((state: any) => state.permissions);
+  const { publicConfig } = useAppSelector((state: any) => state.companyConfig);
 
   // Efecto para cargar módulos cuando la aplicación se inicializa con un usuario ya autenticado
   useEffect(() => {
@@ -25,6 +27,12 @@ const AppLayout: React.FC = () => {
       dispatch(fetchUserPermissions());
     }
   }, [dispatch, user, token, userModules]);
+
+  // Efecto para cargar la configuración pública de la empresa
+  useEffect(() => {
+    // Cargar configuración pública al inicializar el layout
+    dispatch(fetchPublicCompanyConfig());
+  }, [dispatch]);
 
   const handleLogout = () => {
     dispatch(logoutWithPermissions());
@@ -76,7 +84,7 @@ const AppLayout: React.FC = () => {
             letterSpacing: '0.5px',
             textShadow: '0 2px 4px rgba(0,0,0,0.3)'
           }}>
-            Milán Fragancias
+            {publicConfig?.companyName || 'Milán Fragancias'}
           </h2>
           <Text style={{ 
             color: 'rgba(255,255,255,0.7)', 

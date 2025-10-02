@@ -47,12 +47,14 @@ export interface CreateCompanyConfigData {
 
 interface CompanyConfigState {
   config: CompanyConfig | null;
+  publicConfig: { companyName: string; logo?: string } | null;
   loading: boolean;
   error: string | null;
 }
 
 const initialState: CompanyConfigState = {
   config: null,
+  publicConfig: null,
   loading: false,
   error: null,
 };
@@ -156,25 +158,11 @@ const companyConfigSlice = createSlice({
       })
       .addCase(fetchPublicCompanyConfig.fulfilled, (state, action) => {
         state.loading = false;
-        // Actualizar solo los campos disponibles en la configuración pública
-        if (state.config) {
-          state.config.companyName = action.payload.companyName;
-          state.config.logo = action.payload.logo;
-        } else {
-          // Crear una configuración básica si no existe
-          state.config = {
-            id: 0,
-            companyName: action.payload.companyName,
-            logo: action.payload.logo,
-            currency: 'COP',
-            printLogo: false,
-            timezone: 'America/Bogota',
-            dateFormat: 'DD/MM/YYYY',
-            numberFormat: 'es-CO',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          } as CompanyConfig;
-        }
+        // Guardar la configuración pública
+        state.publicConfig = {
+          companyName: action.payload.companyName,
+          logo: action.payload.logo,
+        };
       })
       .addCase(fetchPublicCompanyConfig.rejected, (state, action) => {
         state.loading = false;

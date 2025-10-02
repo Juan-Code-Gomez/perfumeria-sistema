@@ -22,7 +22,8 @@ export const companyConfigService = {
   async getPublicConfig(): Promise<{ companyName: string; logo?: string }> {
     // Usar axios directamente sin interceptors para evitar agregar token
     const response = await axios.get(`${API_URL}/company-config/public`);
-    return response.data.data; // Extraer el campo 'data' de la respuesta
+    // Verificar si la respuesta tiene estructura envuelta o directa
+    return response.data.data || response.data;
   },
 
   // Obtener configuración actual
