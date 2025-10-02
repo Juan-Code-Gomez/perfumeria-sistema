@@ -12,7 +12,6 @@ import {
   InputNumber,
   Input,
   message,
-  Descriptions,
   Spin,
   Typography,
   Space,
@@ -425,34 +424,6 @@ const CashClosingList: React.FC = () => {
               </Col>
             </Row>
 
-            <Descriptions
-              column={2}
-              bordered
-              size="small"
-              className="mb-6"
-              layout="horizontal"
-              title="💳 Desglose de Ventas por Método de Pago"
-            >
-              <Descriptions.Item label="💵 Efectivo">
-                <Text strong>${summary.cashSales?.toLocaleString()}</Text>
-              </Descriptions.Item>
-              <Descriptions.Item label="💳 Tarjeta">
-                <Text strong>${summary.cardSales?.toLocaleString()}</Text>
-              </Descriptions.Item>
-              <Descriptions.Item label="🏦 Transferencia">
-                <Text strong>${summary.transferSales?.toLocaleString()}</Text>
-              </Descriptions.Item>
-              <Descriptions.Item label="📋 Crédito">
-                <Text strong>${summary.creditSales?.toLocaleString()}</Text>
-              </Descriptions.Item>
-              <Descriptions.Item label="🏪 Pagos a Proveedores">
-                <Text strong>${summary.totalPayments?.toLocaleString()}</Text>
-              </Descriptions.Item>
-              <Descriptions.Item label="💰 Otros Ingresos">
-                <Text strong>${summary.totalIncome?.toLocaleString()}</Text>
-              </Descriptions.Item>
-            </Descriptions>
-            
             {/* Detalles de transacciones individuales */}
             <Row gutter={16} className="mb-6">
               {/* Detalle de Ventas */}
