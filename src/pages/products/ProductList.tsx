@@ -23,6 +23,8 @@ import {
   UploadOutlined,
   DownloadOutlined,
   FileExcelOutlined,
+  ScanOutlined,
+  BarcodeOutlined,
 } from "@ant-design/icons";
 import { useAppDispatch, useAppSelector } from "../../store/index";
 import {
@@ -42,6 +44,10 @@ import ProductStats from "../../components/products/ProductStats";
 import { getCategories } from "../../features/categories/categoriesSlice";
 import { getUnits } from "../../features/units/unitsSlice";
 import BulkUploadProducts from "../../components/products/BulkUploadProducts";
+import InventoryExportModal from "../../components/products/InventoryExportModal";
+import BarcodeScanner from "../../components/products/BarcodeScanner";
+import BarcodeGenerator from "../../components/products/BarcodeGenerator";
+import QuickBarcodeScanner from "../../components/products/QuickBarcodeScanner";
 import { usePermissions } from "../../hooks/usePermissions";
 
 const { Option } = Select;
@@ -60,6 +66,10 @@ const ProductList: React.FC = () => {
     null
   );
   const [openBulkModal, setOpenBulkModal] = useState(false);
+  const [openInventoryExportModal, setOpenInventoryExportModal] = useState(false);
+  const [openBarcodeScanner, setOpenBarcodeScanner] = useState(false);
+  const [openBarcodeGenerator, setOpenBarcodeGenerator] = useState(false);
+  const [selectedProductForBarcode, setSelectedProductForBarcode] = useState<Product | null>(null);
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
 
   const [form] = Form.useForm();
@@ -146,6 +156,24 @@ const ProductList: React.FC = () => {
       message.error("Error al exportar productos");
       console.error("Error exporting products:", error);
     }
+  };
+
+  // Handlers para códigos de barras
+  const handleProductFoundByBarcode = (product: Product) => {
+    console.log('Producto encontrado por código de barras:', product);
+    message.success(`Producto encontrado: ${product.name}`);
+    
+    // Aquí podrías abrir el modal de edición, agregar a carrito, etc.
+    setEditingProduct(product);
+    setIsModalOpen(true);
+  };
+
+  const handleBarcodeGenerated = (product: Product) => {
+    console.log('Código generado para producto:', product);
+    message.success(`Código generado: ${product.barcode}`);
+    
+    // Refrescar la lista de productos
+    dispatch(fetchProducts({ ...filters, page, pageSize }));
   };
 
   const handleShowModal = (product?: Product) => {
@@ -338,7 +366,42 @@ const ProductList: React.FC = () => {
                 loading={loading}
                 size="small"
               >
-                Exportar
+                Exportar Lista
+              </Button>
+            )}
+            
+            {canExportProducts && (
+              <Button
+                onClick={() => setOpenInventoryExportModal(true)}
+                icon={<FileExcelOutlined />}
+                type="default"
+                loading={loading}
+                size="small"
+                style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', color: 'white' }}
+              >
+                Inventario Físico
+              </Button>
+            )}
+
+            <Button
+              onClick={() => setOpenBarcodeScanner(true)}
+              icon={<ScanOutlined />}
+              type="default"
+              size="small"
+              style={{ backgroundColor: '#722ed1', borderColor: '#722ed1', color: 'white' }}
+            >
+              Buscar por Código
+            </Button>
+
+            {canEditProducts && (
+              <Button
+                onClick={() => setOpenBarcodeGenerator(true)}
+                icon={<BarcodeOutlined />}
+                type="default"
+                size="small"
+                style={{ backgroundColor: '#fa8c16', borderColor: '#fa8c16', color: 'white' }}
+              >
+                Generar Códigos
               </Button>
             )}
             
@@ -522,6 +585,48 @@ const ProductList: React.FC = () => {
           />
         </Modal>
       )}
+
+      {/* Modal de Exportación de Inventario */}
+      <InventoryExportModal
+        visible={openInventoryExportModal}
+        onCancel={() => setOpenInventoryExportModal(false)}
+      />
+
+      {/* Modal de Escáner de Códigos de Barras */}
+      <BarcodeScanner
+        visible={openBarcodeScanner}
+        onCancel={() => setOpenBarcodeScanner(false)}
+        onProductFound={handleProductFoundByBarcode}
+        title="Buscar Producto por Código"
+        mode="general"
+      />
+
+      {/* Modal de Generador de Códigos de Barras */}
+      <BarcodeGenerator
+        visible={openBarcodeGenerator}
+        onCancel={() => {
+          setOpenBarcodeGenerator(false);
+          setSelectedProductForBarcode(null);
+        }}
+        product={selectedProductForBarcode}
+        onGenerated={handleBarcodeGenerated}
+      />
+
+      {/* Escáner Rápido - Componente de demostración */}
+      <div style={{ position: 'fixed', top: 20, right: 20, width: 300, zIndex: 1000 }}>
+        <Card size="small" title="🚀 Demo: Escáner Rápido">
+          <QuickBarcodeScanner
+            onProductFound={(product) => {
+              message.success(`¡Producto encontrado! ${product.name}`);
+              console.log('Producto:', product);
+            }}
+            placeholder="Escanear aquí..."
+            size="small"
+            showHistory
+            autoFocus={false}
+          />
+        </Card>
+      </div>
 
       {error && <div className="text-red-500 mt-2">{error}</div>}
     </div>

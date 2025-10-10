@@ -5,6 +5,7 @@ import * as productService from "../../services/productService";
 
 // Usar el tipo Product del servicio
 type Product = productService.Product;
+type InventoryExportOptions = productService.InventoryExportOptions;
 
 export interface ProductFilters {
   name?: string;
@@ -141,6 +142,21 @@ export const exportProducts = createAsyncThunk<
   }
 });
 
+export const exportInventory = createAsyncThunk<
+  { success: boolean; message: string },
+  InventoryExportOptions,
+  { rejectValue: string }
+>("products/exportInventory", async (options, thunkAPI) => {
+  try {
+    const result = await productService.exportInventory(options);
+    return result;
+  } catch (err: any) {
+    return thunkAPI.rejectWithValue(
+      err.message || "Error al exportar inventario"
+    );
+  }
+});
+
 const productSlice = createSlice({
   name: "products",
   initialState,
@@ -259,6 +275,17 @@ const productSlice = createSlice({
       .addCase(exportProducts.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload ?? "Error al exportar productos";
+      })
+      .addCase(exportInventory.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(exportInventory.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(exportInventory.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload ?? "Error al exportar inventario";
       });
   },
 });

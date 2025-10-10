@@ -321,6 +321,19 @@ export const bulkUploadProducts = async (file: File, withSupplier: boolean = fal
   return result;
 };
 
+// Interfaz para opciones de exportación de inventario
+export interface InventoryExportOptions {
+  format?: 'excel' | 'csv' | 'pdf';
+  groupBy?: 'category' | 'supplier' | 'none';
+  stockFilter?: 'all' | 'low' | 'out' | 'available';
+  includePhysicalCountColumns?: boolean;
+  includeStockValue?: boolean;
+  includeImages?: boolean;
+  sortBy?: string;
+  categoryIds?: number[];
+  supplierIds?: number[];
+}
+
 export const exportProductsToExcel = async () => {
   try {
     const response = await api.get("/products/export/excel", {
@@ -358,4 +371,123 @@ export const exportProductsToExcel = async () => {
     console.error('Error exporting products:', error);
     throw error;
   }
+};
+
+// Nueva función para exportar inventario con opciones avanzadas
+export const exportInventory = async (options: InventoryExportOptions = {}) => {
+  try {
+    const response = await api.post("/products/export/inventory", options, {
+      responseType: 'blob', // Importante para manejar archivos binarios
+      timeout: 60000, // 60 segundos para PDF
+    });
+
+    // Determinar tipo de contenido según el formato
+    let contentType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    let extension = 'xlsx';
+    
+    if (options.format === 'csv') {
+      contentType = 'text/csv';
+      extension = 'csv';
+    } else if (options.format === 'pdf') {
+      contentType = 'application/pdf';
+      extension = 'pdf';
+    }
+
+    // Crear objeto URL para descargar el archivo
+    const blob = new Blob([response.data], { type: contentType });
+    
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    
+    // Obtener nombre del archivo de los headers o usar uno por defecto
+    const contentDisposition = response.headers['content-disposition'];
+    let filename = `inventario_fisico_${new Date().toISOString().split('T')[0]}.${extension}`;
+    
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+      if (filenameMatch) {
+        filename = filenameMatch[1];
+      }
+    }
+    
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+
+    return { success: true, message: 'Inventario exportado exitosamente' };
+  } catch (error: any) {
+    console.error('Error exporting inventory:', error);
+    throw error;
+  }
+};
+
+// ===== SERVICIOS PARA CÓDIGOS DE BARRAS =====
+
+export const getProductByBarcode = async (barcode: string): Promise<Product | null> => {
+  try {
+    const response = await api.get(`/products/barcode/${barcode}`);
+    
+    if (response.data.success) {
+      return response.data.data;
+    } else {
+      return null;
+    }
+  } catch (error: any) {
+    console.error('Error fetching product by barcode:', error);
+    if (error.response?.status === 404) {
+      return null;
+    }
+    throw error;
+  }
+};
+
+export const generateBarcode = async (productId: number) => {
+  try {
+    const response = await api.post(`/products/generate-barcode/${productId}`);
+    return response.data?.data || response.data;
+  } catch (error: any) {
+    console.error('Error generating barcode:', error);
+    throw error;
+  }
+};
+
+export const generateBarcodesBulk = async () => {
+  try {
+    const response = await api.post('/products/generate-barcodes-bulk');
+    return response.data?.data || response.data;
+  } catch (error: any) {
+    console.error('Error generating barcodes bulk:', error);
+    throw error;
+  }
+};
+
+// Función para validar formato de código de barras
+export const validateBarcodeFormat = (barcode: string): boolean => {
+  // Validar que sea numérico y tenga la longitud correcta
+  const numericBarcode = barcode.replace(/\D/g, '');
+  
+  // Códigos internos de la perfumería (formato 77XXXXX + dígito verificador)
+  if (numericBarcode.length === 8 && numericBarcode.startsWith('77')) {
+    return true;
+  }
+  
+  // Códigos EAN-13
+  if (numericBarcode.length === 13) {
+    return true;
+  }
+  
+  // Códigos UPC-A
+  if (numericBarcode.length === 12) {
+    return true;
+  }
+  
+  // Códigos EAN-8
+  if (numericBarcode.length === 8) {
+    return true;
+  }
+  
+  return false;
 };
