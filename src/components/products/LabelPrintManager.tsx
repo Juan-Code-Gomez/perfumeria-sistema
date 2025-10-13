@@ -1,5 +1,5 @@
 // src/components/products/LabelPrintManager.tsx
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   Modal,
   Button,
@@ -12,21 +12,19 @@ import {
   Col,
   Divider,
   Alert,
-  Switch,
   Form,
   message,
   Checkbox
 } from 'antd';
 import {
   PrinterOutlined,
-  BarcodeOutlined,
   SettingOutlined,
   DownloadOutlined,
   EyeOutlined
 } from '@ant-design/icons';
 import type { Product } from '../../services/productService';
 
-const { Text, Title } = Typography;
+const { Text } = Typography;
 const { Option } = Select;
 
 interface LabelPrintManagerProps {
@@ -68,7 +66,6 @@ const LabelPrintManager: React.FC<LabelPrintManagerProps> = ({
     layout: '2x1'
   });
   const [previewMode, setPreviewMode] = useState(false);
-  const printRef = useRef<HTMLDivElement>(null);
 
   const productsToLabel = selectedProducts && selectedProducts.length > 0 ? selectedProducts : products;
 
@@ -110,7 +107,6 @@ const LabelPrintManager: React.FC<LabelPrintManagerProps> = ({
       border: '1px solid #ddd',
       padding: '3mm',
       margin: '2mm',
-      pageBreakInside: 'avoid',
       fontSize: config.size === 'small' ? '8px' : config.size === 'medium' ? '10px' : '12px',
       fontFamily: 'Arial, sans-serif',
       display: 'flex',
@@ -192,7 +188,7 @@ const LabelPrintManager: React.FC<LabelPrintManagerProps> = ({
             marginTop: '2px',
             color: '#d4380d'
           }}>
-            ${product.sellPrice?.toLocaleString() || 'N/A'}
+            ${product.salePrice?.toLocaleString() || 'N/A'}
           </div>
         )}
       </div>
@@ -427,12 +423,19 @@ const LabelPrintManager: React.FC<LabelPrintManagerProps> = ({
               ))}
               {productsToLabel.length > 6 && (
                 <div style={{ 
-                  ...getLabelStyle(),
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   backgroundColor: '#f5f5f5',
-                  transform: 'scale(0.8)'
+                  transform: 'scale(0.8)',
+                  width: LABEL_SIZES[config.size].width,
+                  minHeight: LABEL_SIZES[config.size].height,
+                  border: '1px solid #ddd',
+                  padding: '3mm',
+                  margin: '2mm',
+                  fontSize: config.size === 'small' ? '8px' : config.size === 'medium' ? '10px' : '12px',
+                  fontFamily: 'Arial, sans-serif',
+                  flexDirection: 'column' as const
                 }}>
                   <Text type="secondary">
                     +{productsToLabel.length - 6} más...
