@@ -48,6 +48,7 @@ import InventoryExportModal from "../../components/products/InventoryExportModal
 import BarcodeScanner from "../../components/products/BarcodeScanner";
 import BarcodeGenerator from "../../components/products/BarcodeGenerator";
 import QuickBarcodeScanner from "../../components/products/QuickBarcodeScanner";
+import LabelPrintManager from "../../components/products/LabelPrintManager";
 import { usePermissions } from "../../hooks/usePermissions";
 
 const { Option } = Select;
@@ -69,7 +70,9 @@ const ProductList: React.FC = () => {
   const [openInventoryExportModal, setOpenInventoryExportModal] = useState(false);
   const [openBarcodeScanner, setOpenBarcodeScanner] = useState(false);
   const [openBarcodeGenerator, setOpenBarcodeGenerator] = useState(false);
+  const [openLabelManager, setOpenLabelManager] = useState(false);
   const [selectedProductForBarcode, setSelectedProductForBarcode] = useState<Product | null>(null);
+  const [selectedProducts, setSelectedProducts] = useState<Product[]>([]);
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
 
   const [form] = Form.useForm();
@@ -404,6 +407,18 @@ const ProductList: React.FC = () => {
                 Generar Códigos
               </Button>
             )}
+
+            {canExportProducts && (
+              <Button
+                onClick={() => setOpenLabelManager(true)}
+                icon={<UploadOutlined />}
+                type="default"
+                size="small"
+                style={{ backgroundColor: '#13c2c2', borderColor: '#13c2c2', color: 'white' }}
+              >
+                Imprimir Etiquetas
+              </Button>
+            )}
             
             {canCreateProducts && (
               <Button
@@ -526,6 +541,25 @@ const ProductList: React.FC = () => {
           rowClassName={(record) =>
             record.stock <= (record.minStock ?? 0) ? "bg-red-50" : ""
           }
+          rowSelection={{
+            type: 'checkbox',
+            selectedRowKeys: selectedProducts.map(p => p.id),
+            onChange: (selectedRowKeys) => {
+              const selected = items.filter(item => selectedRowKeys.includes(item.id));
+              setSelectedProducts(selected);
+            },
+            onSelectAll: (selected, _selectedRows, changeRows) => {
+              if (selected) {
+                setSelectedProducts([...selectedProducts, ...changeRows]);
+              } else {
+                const changeIds = changeRows.map(row => row.id);
+                setSelectedProducts(selectedProducts.filter(p => !changeIds.includes(p.id)));
+              }
+            },
+            getCheckboxProps: (record) => ({
+              name: record.name,
+            }),
+          }}
           pagination={{
             current: page,
             pageSize,
@@ -610,6 +644,14 @@ const ProductList: React.FC = () => {
         }}
         product={selectedProductForBarcode}
         onGenerated={handleBarcodeGenerated}
+      />
+
+      {/* Modal de Gestor de Etiquetas */}
+      <LabelPrintManager
+        visible={openLabelManager}
+        onCancel={() => setOpenLabelManager(false)}
+        products={items}
+        selectedProducts={selectedProducts}
       />
 
       {/* Escáner Rápido - Componente de demostración */}
