@@ -37,6 +37,7 @@ import type { Client } from '../../features/clients/types';
 import MultiplePaymentModal from './MultiplePaymentModal';
 import type { PaymentMethod } from './MultiplePaymentModal';
 import { usePOSPersistence } from '../../hooks/usePOSPersistence';
+import { usePOSConfiguration } from '../../hooks/usePOSConfiguration';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -61,6 +62,15 @@ interface Props {
 const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
   const dispatch = useAppDispatch();
   const searchInputRef = useRef<any>(null);
+
+  // Hook de configuración del POS
+  const { config: posConfig, refetch: refetchConfig } = usePOSConfiguration();
+  
+  // Debug: mostrar la configuración actual
+  useEffect(() => {
+    console.log('POS Config loaded:', posConfig);
+    console.log('Edit cost enabled:', posConfig.editCostEnabled);
+  }, [posConfig]);
 
   // Hook de persistencia del carrito
   const {
@@ -233,6 +243,36 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
       profit,
       profitMargin,
     });
+  };
+
+  // Actualizar costo de compra (solo si está habilitado)
+  const updatePurchasePrice = (key: string, newCost: number) => {
+    const currentItem = items.find(item => item.key === key);
+    if (!currentItem) return;
+
+    // Verificar si la función está habilitada
+    if (!posConfig.editCostEnabled) {
+      message.warning('La edición de costos no está habilitada para este usuario');
+      return;
+    }
+
+    // No permitir costos negativos
+    if (newCost < 0) {
+      message.warning('El costo no puede ser negativo');
+      return;
+    }
+
+    // Recalcular ganancia y margen
+    const profit = currentItem.unitPrice - newCost;
+    const profitMargin = newCost > 0 ? (profit / newCost) * 100 : 0;
+
+    updatePersistentItem(key, {
+      purchasePrice: newCost,
+      profit,
+      profitMargin,
+    });
+
+    message.success(`Costo actualizado para ${currentItem.product.name}`);
   };
 
   // Remover item
@@ -477,6 +517,43 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
         />
       ),
     },
+    // Columna de costo (solo visible si está habilitada)
+    ...(posConfig.editCostEnabled ? [{
+      title: 'Costo',
+      dataIndex: 'purchasePrice',
+      key: 'purchasePrice',
+      width: 100,
+      render: (cost: number, record: POSItem) => {
+        const isInsumoOrCombo = record.product.salesType === 'INSUMO' || record.product.salesType === 'COMBO';
+        
+        if (isInsumoOrCombo) {
+          return (
+            <div style={{ textAlign: 'center' }}>
+              <Text type="secondary">N/A</Text>
+            </div>
+          );
+        }
+
+        return (
+          <div>
+            <InputNumber
+              prefix="$"
+              value={cost}
+              onChange={(value) => updatePurchasePrice(record.key, value || 0)}
+              formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+              parser={(value) => parseFloat(value!.replace(/\$\s?|(,*)/g, '')) || 0}
+              style={{ width: '90px' }}
+              min={0}
+            />
+            <div>
+              <Text type="secondary" style={{ fontSize: '11px' }}>
+                Margen: {record.profitMargin.toFixed(1)}%
+              </Text>
+            </div>
+          </div>
+        );
+      },
+    }] : []),
     {
       title: 'Precio Unit.',
       dataIndex: 'unitPrice',
@@ -584,6 +661,15 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
             style={{ height: '100%' }}
             extra={
               <Space>
+                <Button 
+                  size="small"
+                  onClick={async () => {
+                    await refetchConfig();
+                    console.log('Config refrescada:', posConfig);
+                  }}
+                >
+                  🔄 Debug Config
+                </Button>
                 <Button 
                   icon={<ClearOutlined />} 
                   onClick={clearCart}

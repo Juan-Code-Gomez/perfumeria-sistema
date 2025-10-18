@@ -1,5 +1,5 @@
 // src/pages/company-config/CompanyConfig.tsx
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Card,
   Form,
@@ -26,6 +26,9 @@ import {
   FileTextOutlined,
   GlobalOutlined,
   UploadOutlined,
+  SecurityScanOutlined,
+  DollarOutlined,
+  ShopOutlined,
 } from '@ant-design/icons';
 import { useAppDispatch, useAppSelector } from '../../store';
 import {
@@ -36,20 +39,52 @@ import {
   clearError,
   type CreateCompanyConfigData,
 } from '../../features/company-config/companyConfigSlice';
+import systemParametersService from '../../services/systemParametersService';
+import type { SystemParameter } from '../../services/systemParametersService';
 
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 const { TextArea } = Input;
 const { Option } = Select;
 
 const CompanyConfig: React.FC = () => {
   const dispatch = useAppDispatch();
   const { config, loading, error } = useAppSelector((state) => state.companyConfig);
+  const { user } = useAppSelector((state) => state.auth);
   const [form] = Form.useForm();
+  const [systemParameters, setSystemParameters] = useState<SystemParameter[]>([]);
+  const [parametersLoading, setParametersLoading] = useState(false);
+  
+  // Verificar si el usuario es SUPER_ADMIN
+  const userRoles = user?.roles?.map(ur => ur.role.name) || [];
+  const isSuperAdmin = userRoles.includes('SUPER_ADMIN');
 
   useEffect(() => {
     dispatch(fetchCompanyConfig());
-  }, [dispatch]);
+    // Cargar parámetros del sistema si es SUPER_ADMIN
+    if (isSuperAdmin) {
+      loadSystemParameters();
+    }
+  }, [dispatch, isSuperAdmin]);
+
+  const loadSystemParameters = async () => {
+    if (!isSuperAdmin) return;
+    
+    setParametersLoading(true);
+    try {
+      const parameters = await systemParametersService.getAllParameters();
+      console.log('Parámetros cargados:', parameters); // Debug
+      // Asegurar que siempre tengamos un array
+      setSystemParameters(Array.isArray(parameters) ? parameters : []);
+    } catch (error) {
+      console.error('Error loading system parameters:', error);
+      message.error('Error al cargar parámetros del sistema');
+      // En caso de error, establecer un array vacío
+      setSystemParameters([]);
+    } finally {
+      setParametersLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (config) {
@@ -100,6 +135,37 @@ const CompanyConfig: React.FC = () => {
       form.setFieldsValue(config);
       message.info('Formulario restaurado');
     }
+  };
+
+  const handleParameterChange = async (key: string, value: boolean) => {
+    try {
+      await systemParametersService.updateParameter(key, { parameterValue: value });
+      setSystemParameters(prev => 
+        prev.map(param => 
+          param.parameterKey === key 
+            ? { ...param, parameterValue: value }
+            : param
+        )
+      );
+      
+      // Limpiar cache del POS si se modificó un parámetro relacionado
+      if (key.includes('pos_')) {
+        systemParametersService.clearPosCache();
+      }
+      
+      message.success('Parámetro actualizado correctamente. Los cambios se aplicarán inmediatamente en el POS.');
+    } catch (error) {
+      message.error('Error al actualizar parámetro');
+    }
+  };
+
+  const getParameterDisplayName = (key: string): string => {
+    const displayNames: { [key: string]: string } = {
+      'pos_edit_cost_enabled': 'Permitir editar costo en POS',
+      'pos_show_profit_margin': 'Mostrar margen de ganancia',
+      'audit_track_cost_changes': 'Auditar cambios de costos',
+    };
+    return displayNames[key] || key;
   };
 
   const handleLogoUpload = async (file: File) => {
@@ -379,6 +445,68 @@ const CompanyConfig: React.FC = () => {
           </Form.Item>
         </Col>
       </Row>
+
+      {/* Sección de Parámetros del Sistema - Solo para SUPER_ADMIN */}
+      {isSuperAdmin && (
+        <>
+          <Divider />
+          <Title level={5}>
+            <SecurityScanOutlined /> Parámetros Avanzados
+          </Title>
+          <Row gutter={[16, 16]}>
+            <Col xs={24} sm={12}>
+              <Space direction="vertical" style={{ width: '100%' }}>
+                <Text strong>
+                  <DollarOutlined /> Punto de Venta
+                </Text>
+                {parametersLoading ? (
+                  <Text type="secondary">Cargando parámetros...</Text>
+                ) : Array.isArray(systemParameters) && systemParameters.length > 0 ? (
+                  systemParameters
+                    .filter(param => param.category === 'pos')
+                    .map(param => (
+                      <div key={param.parameterKey} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0' }}>
+                        <Text>{getParameterDisplayName(param.parameterKey)}</Text>
+                        <Switch
+                          checked={param.parameterValue}
+                          onChange={(checked) => handleParameterChange(param.parameterKey, checked)}
+                          loading={parametersLoading}
+                        />
+                      </div>
+                    ))
+                ) : (
+                  <Text type="secondary">No hay parámetros de POS configurados</Text>
+                )}
+              </Space>
+            </Col>
+            <Col xs={24} sm={12}>
+              <Space direction="vertical" style={{ width: '100%' }}>
+                <Text strong>
+                  <ShopOutlined /> Sistema
+                </Text>
+                {parametersLoading ? (
+                  <Text type="secondary">Cargando parámetros...</Text>
+                ) : Array.isArray(systemParameters) && systemParameters.length > 0 ? (
+                  systemParameters
+                    .filter(param => param.category === 'security')
+                    .map(param => (
+                      <div key={param.parameterKey} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0' }}>
+                        <Text>{getParameterDisplayName(param.parameterKey)}</Text>
+                        <Switch
+                          checked={param.parameterValue}
+                          onChange={(checked) => handleParameterChange(param.parameterKey, checked)}
+                          loading={parametersLoading}
+                        />
+                      </div>
+                    ))
+                ) : (
+                  <Text type="secondary">No hay parámetros de Sistema configurados</Text>
+                )}
+              </Space>
+            </Col>
+          </Row>
+        </>
+      )}
     </Card>
   );
 

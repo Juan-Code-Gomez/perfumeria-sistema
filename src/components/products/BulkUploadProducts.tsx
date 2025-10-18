@@ -48,6 +48,7 @@ const BulkProductUploadModal: React.FC<BulkProductUploadModalProps> = ({
   const [excelPreview, setExcelPreview] = useState<ExcelPreview | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [confirmationData, setConfirmationData] = useState<ConfirmationData | null>(null);
+  const [detailedErrors, setDetailedErrors] = useState<any[]>([]);
 
   const handleBeforeUpload = (file: RcFile) => {
     const isExcel =
@@ -199,8 +200,31 @@ const BulkProductUploadModal: React.FC<BulkProductUploadModalProps> = ({
       }, 2000);
       
     } catch (err: any) {
-      setError(err.message || "Error al subir el archivo");
-      message.error("Error en la carga masiva");
+      // Si el error viene del backend con detalles específicos
+      if (err.errores && Array.isArray(err.errores)) {
+        setError(`Carga completada con errores (${err.errores.length} filas fallaron)`);
+        setDetailedErrors(err.errores);
+        // Mostrar los primeros 3 errores específicos
+        const errorDetails = err.errores.slice(0, 3).map((error: any) => 
+          `Fila ${error.fila}: ${error.error}`
+        ).join('\n');
+        message.error({
+          content: (
+            <div>
+              <div>Error en la carga masiva</div>
+              <div style={{ fontSize: '12px', marginTop: '4px' }}>
+                {errorDetails}
+                {err.errores.length > 3 && `\n... y ${err.errores.length - 3} errores más`}
+              </div>
+            </div>
+          ),
+          duration: 8,
+        });
+      } else {
+        setError(err.message || "Error al subir el archivo");
+        setDetailedErrors([]);
+        message.error("Error en la carga masiva");
+      }
       setCurrentStep(1);
     } finally {
       setUploading(false);
@@ -214,6 +238,7 @@ const BulkProductUploadModal: React.FC<BulkProductUploadModalProps> = ({
     setShowConfirmation(false);
     setConfirmationData(null);
     setError(null);
+    setDetailedErrors([]);
   };
 
   const handleCancel = () => {
@@ -528,13 +553,54 @@ const BulkProductUploadModal: React.FC<BulkProductUploadModalProps> = ({
       )}
 
       {error && (
-        <Alert
-          message="Error en la carga"
-          description={error}
-          type="error"
-          showIcon
-          style={{ marginTop: 16 }}
-        />
+        <div style={{ marginTop: 16 }}>
+          <Alert
+            message="Error en la carga"
+            description={error}
+            type="error"
+            showIcon
+            style={{ marginBottom: 16 }}
+          />
+          
+          {detailedErrors.length > 0 && (
+            <Card 
+              title={
+                <span>
+                  <WarningOutlined style={{ color: '#ff4d4f', marginRight: 8 }} />
+                  Errores Detallados ({detailedErrors.length} filas)
+                </span>
+              }
+              size="small"
+            >
+              <List
+                dataSource={detailedErrors.slice(0, 10)} // Mostrar max 10 errores
+                renderItem={(error: any) => (
+                  <List.Item>
+                    <div style={{ width: '100%' }}>
+                      <div style={{ fontWeight: 'bold', color: '#ff4d4f' }}>
+                        Fila {error.fila}: {error.producto}
+                      </div>
+                      <div style={{ color: '#666', fontSize: '12px' }}>
+                        {error.error}
+                      </div>
+                      {error.solucion && (
+                        <div style={{ color: '#1890ff', fontSize: '12px', marginTop: '4px' }}>
+                          💡 {error.solucion}
+                        </div>
+                      )}
+                    </div>
+                  </List.Item>
+                )}
+                size="small"
+              />
+              {detailedErrors.length > 10 && (
+                <div style={{ textAlign: 'center', padding: '8px', color: '#666' }}>
+                  ... y {detailedErrors.length - 10} errores más. Revisa tu archivo Excel.
+                </div>
+              )}
+            </Card>
+          )}
+        </div>
       )}
     </Modal>
   );
