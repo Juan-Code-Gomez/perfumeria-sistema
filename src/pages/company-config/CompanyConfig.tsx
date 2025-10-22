@@ -163,6 +163,7 @@ const CompanyConfig: React.FC = () => {
     const displayNames: { [key: string]: string } = {
       'pos_edit_cost_enabled': 'Permitir editar costo en POS',
       'pos_show_profit_margin': 'Mostrar margen de ganancia',
+      'allow_manual_sale_date': 'Permitir fecha manual en ventas',
       'audit_track_cost_changes': 'Auditar cambios de costos',
     };
     return displayNames[key] || key;
@@ -463,10 +464,19 @@ const CompanyConfig: React.FC = () => {
                   <Text type="secondary">Cargando parámetros...</Text>
                 ) : Array.isArray(systemParameters) && systemParameters.length > 0 ? (
                   systemParameters
-                    .filter(param => param.category === 'pos')
+                    .filter(param => param.category === 'pos' || param.category === 'sales')
                     .map(param => (
                       <div key={param.parameterKey} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0' }}>
-                        <Text>{getParameterDisplayName(param.parameterKey)}</Text>
+                        <div style={{ flex: 1 }}>
+                          <Text>{getParameterDisplayName(param.parameterKey)}</Text>
+                          {param.parameterKey === 'allow_manual_sale_date' && (
+                            <div>
+                              <Text type="secondary" style={{ fontSize: '12px' }}>
+                                Para migración de datos históricos
+                              </Text>
+                            </div>
+                          )}
+                        </div>
                         <Switch
                           checked={param.parameterValue}
                           onChange={(checked) => handleParameterChange(param.parameterKey, checked)}

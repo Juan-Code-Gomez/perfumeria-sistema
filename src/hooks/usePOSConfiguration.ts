@@ -16,6 +16,7 @@ export const usePOSConfiguration = (companyId?: number): UsePOSConfigurationRetu
     showProfitMargin: true,
     requireCustomer: false,
     negativeStockAllowed: false,
+    allowManualSaleDate: false,
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

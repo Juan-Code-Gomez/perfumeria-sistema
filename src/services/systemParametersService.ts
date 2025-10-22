@@ -21,6 +21,7 @@ export interface PosConfiguration {
   showProfitMargin: boolean;
   requireCustomer: boolean;
   negativeStockAllowed: boolean;
+  allowManualSaleDate: boolean;
 }
 
 class SystemParametersService {
@@ -34,7 +35,11 @@ class SystemParametersService {
       const params = companyId ? { companyId } : {};
       const response = await api.get('/system-parameters/pos/configuration', { params });
       console.log('POS Configuration response:', response.data); // Debug
-      return response.data?.data || response.data;
+      
+      // Manejar estructura anidada: response.data.data.data
+      const config = response.data?.data?.data || response.data?.data || response.data;
+      console.log('Parsed POS Config:', config); // Debug
+      return config;
     } catch (error) {
       console.error('Error al obtener configuración del POS:', error);
       // Configuración por defecto en caso de error
@@ -43,6 +48,7 @@ class SystemParametersService {
         showProfitMargin: true,
         requireCustomer: false,
         negativeStockAllowed: false,
+        allowManualSaleDate: false,
       };
     }
   }
@@ -68,6 +74,18 @@ class SystemParametersService {
     } catch (error) {
       console.error('Error al verificar si margen de ganancia está visible:', error);
       return true; // Por defecto visible
+    }
+  }
+
+  // Verificar si fecha manual de venta está habilitada
+  async isManualSaleDateEnabled(companyId?: number): Promise<boolean> {
+    try {
+      const params = companyId ? { companyId } : {};
+      const response = await api.get('/system-parameters/pos/manual-sale-date-enabled', { params });
+      return response.data.enabled;
+    } catch (error) {
+      console.error('Error al verificar si fecha manual está habilitada:', error);
+      return false; // Por defecto deshabilitado
     }
   }
 
@@ -188,7 +206,8 @@ class SystemParametersService {
   clearPosCache(): void {
     const keys = Array.from(this.cache.keys()).filter(key => 
       key.includes('pos_edit_cost_enabled') || 
-      key.includes('pos_show_profit_margin')
+      key.includes('pos_show_profit_margin') ||
+      key.includes('allow_manual_sale_date')
     );
     keys.forEach(key => {
       this.cache.delete(key);

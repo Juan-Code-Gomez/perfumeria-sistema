@@ -15,6 +15,9 @@ import {
   Tag,
   Divider,
   Modal,
+  DatePicker,
+  Switch,
+  Alert,
 } from 'antd';
 import {
   DeleteOutlined,
@@ -24,7 +27,9 @@ import {
   PrinterOutlined,
   UserOutlined,
   CreditCardOutlined,
+  CalendarOutlined,
 } from '@ant-design/icons';
+import dayjs, { Dayjs } from 'dayjs';
 import { useAppDispatch } from '../../store';
 import { createSale } from '../../features/sales/salesSlice';
 import debounce from 'lodash.debounce';
@@ -70,7 +75,12 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
   useEffect(() => {
     console.log('POS Config loaded:', posConfig);
     console.log('Edit cost enabled:', posConfig.editCostEnabled);
+    console.log('Allow manual sale date:', posConfig.allowManualSaleDate);
   }, [posConfig]);
+
+  // Estados para fecha manual
+  const [useManualDate, setUseManualDate] = useState(false);
+  const [manualSaleDate, setManualSaleDate] = useState<Dayjs | null>(null);
 
   // Hook de persistencia del carrito
   const {
@@ -312,8 +322,13 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
     }
 
     try {
+      // Determinar la fecha a usar
+      const saleDate = (useManualDate && manualSaleDate) 
+        ? manualSaleDate.format('YYYY-MM-DD')
+        : new Date().toISOString();
+
       const saleData = {
-        date: new Date().toISOString(),
+        date: saleDate,
         clientId: selectedClient?.id || undefined,
         customerName: selectedClient?.name || customerName,
         totalAmount: finalTotal,
@@ -406,8 +421,13 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
       // Para ventas a crédito, el monto pagado es 0 y no está pagada
       const isCredit = paymentMethod === 'Crédito';
       
+      // Determinar la fecha a usar
+      const saleDate = (useManualDate && manualSaleDate) 
+        ? manualSaleDate.format('YYYY-MM-DD')
+        : new Date().toISOString();
+      
       const saleData = {
-        date: new Date().toISOString(),
+        date: saleDate,
         clientId: selectedClient?.id || undefined, // Solo enviar si existe y no es null
         customerName: selectedClient?.name || customerName,
         totalAmount: finalTotal,
@@ -787,6 +807,62 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
               )}
             </div>
 
+            {/* Fecha Manual (solo si está habilitado) */}
+            {posConfig.allowManualSaleDate && (
+              <>
+                <Divider />
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                    <Text strong>
+                      <CalendarOutlined /> Fecha de Venta:
+                    </Text>
+                    <Switch
+                      checked={useManualDate}
+                      onChange={(checked) => {
+                        setUseManualDate(checked);
+                        if (!checked) {
+                          setManualSaleDate(null);
+                        }
+                      }}
+                      checkedChildren="Manual"
+                      unCheckedChildren="Hoy"
+                      size="small"
+                    />
+                  </div>
+
+                  {useManualDate && (
+                    <>
+                      <DatePicker
+                        value={manualSaleDate}
+                        onChange={setManualSaleDate}
+                        format="DD/MM/YYYY"
+                        placeholder="Seleccionar fecha"
+                        style={{ width: '100%' }}
+                        disabledDate={(current) => {
+                          // No permitir fechas futuras
+                          return current && current > dayjs().endOf('day');
+                        }}
+                      />
+                      <Alert
+                        message="Modo fecha manual activado para migración de datos históricos"
+                        type="warning"
+                        showIcon
+                        style={{ marginTop: 8, fontSize: '12px' }}
+                      />
+                    </>
+                  )}
+
+                  {!useManualDate && (
+                    <div style={{ marginTop: 4 }}>
+                      <Text type="secondary" style={{ fontSize: '12px' }}>
+                        📅 Fecha actual: {dayjs().format('DD/MM/YYYY')}
+                      </Text>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+
             <Divider />
 
             {/* Totales */}
@@ -938,7 +1014,8 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
                 disabled={
                   items.length === 0 || 
                   (paymentMethod === 'Crédito' && !selectedClient?.name) || // Solo cliente registrado para crédito
-                  (paymentMethod === 'Efectivo' && amountReceived < finalTotal)
+                  (paymentMethod === 'Efectivo' && amountReceived < finalTotal) ||
+                  (useManualDate && !manualSaleDate) // Validar fecha manual si está activada
                 }
                 style={{ height: '50px', fontSize: '16px', fontWeight: 'bold' }}
               >
