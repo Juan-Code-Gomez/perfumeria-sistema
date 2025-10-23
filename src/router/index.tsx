@@ -22,7 +22,7 @@ import PendingSales from "../pages/sales/PendingSales";
 import ClientList from "../pages/clients/ClientList";
 import POSPage from "../pages/sales/POSPage";
 import CapitalManagement from "../pages/capital/CapitalManagement";
-import InvoiceManagement from "../pages/invoices/InvoiceManagement";
+import InvoiceManagementFIFO from "../pages/invoices/InvoiceManagement_FIFO";
 import CompanyConfig from "../pages/company-config/CompanyConfig";
 
 export const router = createBrowserRouter([
@@ -60,7 +60,7 @@ export const router = createBrowserRouter([
           { path: "/pending-sales", element: <PendingSales /> },
           { path: "/clients", element: <ClientList /> },
           { path: "/capital", element: <CapitalManagement /> },
-          { path: "/invoices", element: <InvoiceManagement /> },
+          { path: "/invoices", element: <InvoiceManagementFIFO /> },
           { path: "/company-config", element: <CompanyConfig /> },
         ],
       },

@@ -30,12 +30,14 @@ import {
   DownloadOutlined,
   FilterOutlined,
   CheckCircleOutlined,
+  DeleteOutlined,
 } from '@ant-design/icons';
 import { useAppDispatch, useAppSelector } from '../../store';
 import {
   fetchSales,
   addSalePayment,
   setFilters,
+  deleteSale,
 } from '../../features/sales/salesSlice';
 import SaleDetailModal from '../../components/sales/SaleDetailModal';
 import { useNavigate } from 'react-router-dom';
@@ -59,6 +61,7 @@ const SaleList: React.FC = () => {
   const { items, loading, filters } = useAppSelector(
     (state: any) => state.sales
   );
+  const { user } = useAppSelector((state: any) => state.auth);
 
   const [selectedSale, setSelectedSale] = useState<any>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
@@ -320,6 +323,43 @@ const SaleList: React.FC = () => {
     }
   };
 
+  // Función para eliminar una venta (solo ADMIN y SUPER_ADMIN)
+  const handleDeleteSale = (sale: any) => {
+    Modal.confirm({
+      title: '¿Estás seguro de eliminar esta venta?',
+      content: (
+        <div>
+          <p><strong>Venta #</strong>{sale.id}</p>
+          <p><strong>Cliente:</strong> {sale.customerName || 'Cliente ocasional'}</p>
+          <p><strong>Total:</strong> ${sale.totalAmount?.toLocaleString()}</p>
+          <p style={{ color: '#52c41a', marginTop: 12 }}>
+            ✅ El inventario será restaurado automáticamente
+          </p>
+        </div>
+      ),
+      icon: <DeleteOutlined style={{ color: '#ff4d4f' }} />,
+      okText: 'Sí, eliminar',
+      okType: 'danger',
+      cancelText: 'Cancelar',
+      onOk: async () => {
+        try {
+          await dispatch(deleteSale(sale.id)).unwrap();
+          message.success(`Venta #${sale.id} eliminada y stock restaurado`);
+          dispatch(fetchSales(filters));
+        } catch (err: any) {
+          message.error(err.message || 'Error al eliminar venta');
+        }
+      },
+    });
+  };
+
+  // Verificar si el usuario es ADMIN o SUPER_ADMIN
+  const isAdminOrSuperAdmin = () => {
+    if (!user?.roles) return false;
+    const userRoles = user.roles.map((ur: any) => ur.role.name);
+    return userRoles.includes('ADMIN') || userRoles.includes('SUPER_ADMIN');
+  };
+
   const columns = [
     {
       title: 'ID',
@@ -485,6 +525,19 @@ const SaleList: React.FC = () => {
                 size="small"
                 style={{ padding: '4px 8px', color: '#52c41a' }}
                 title={`Saldar $${pendiente.toLocaleString()} automáticamente`}
+              />
+            )}
+
+            {/* Botón ELIMINAR - Solo visible para ADMIN y SUPER_ADMIN */}
+            {isAdminOrSuperAdmin() && (
+              <Button
+                type="link"
+                icon={<DeleteOutlined />}
+                onClick={() => handleDeleteSale(record)}
+                size="small"
+                style={{ padding: '4px 8px', color: '#ff4d4f' }}
+                title="Eliminar venta y restaurar inventario"
+                danger
               />
             )}
           </Space>

@@ -23,6 +23,8 @@ import {
 } from "@ant-design/icons";
 import { useAppDispatch, useAppSelector } from "../store";
 import { fetchDashboard } from "../features/dashboard/dashboardSlice";
+import InventoryValuationCard from "../components/dashboard/InventoryValuationCard";
+import ExpiringBatchesAlert from "../components/dashboard/ExpiringBatchesAlert";
 
 import dayjs from "dayjs";
 
@@ -297,6 +299,16 @@ const Dashboard: React.FC = () => {
             </Card>
           </Col>
         </Row>
+      </div>
+
+      {/* Sistema de Lotes FIFO - Alertas de Vencimiento */}
+      <div className="mb-6">
+        <ExpiringBatchesAlert />
+      </div>
+
+      {/* Sistema de Lotes FIFO - Valuación del Inventario */}
+      <div className="mb-6">
+        <InventoryValuationCard />
       </div>
 
       {/* Future Features Placeholder */}

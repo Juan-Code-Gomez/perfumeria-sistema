@@ -25,6 +25,7 @@ import {
   FileExcelOutlined,
   ScanOutlined,
   BarcodeOutlined,
+  BarChartOutlined,
 } from "@ant-design/icons";
 import { useAppDispatch, useAppSelector } from "../../store/index";
 import {
@@ -49,6 +50,7 @@ import BarcodeScanner from "../../components/products/BarcodeScanner";
 import BarcodeGenerator from "../../components/products/BarcodeGenerator";
 import QuickBarcodeScanner from "../../components/products/QuickBarcodeScanner";
 import LabelPrintManager from "../../components/products/LabelPrintManager";
+import ProductBatchesModal from "../../components/products/ProductBatchesModal";
 import { usePermissions } from "../../hooks/usePermissions";
 
 const { Option } = Select;
@@ -74,6 +76,8 @@ const ProductList: React.FC = () => {
   const [selectedProductForBarcode, setSelectedProductForBarcode] = useState<Product | null>(null);
   const [selectedProducts, setSelectedProducts] = useState<Product[]>([]);
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
+  const [batchModalVisible, setBatchModalVisible] = useState(false);
+  const [selectedProductForBatches, setSelectedProductForBatches] = useState<{ id: number; name: string } | null>(null);
 
   const [form] = Form.useForm();
 
@@ -284,6 +288,17 @@ const ProductList: React.FC = () => {
       key: "actions",
       render: (_: any, record: Product) => (
         <Space size="small">
+          <Button 
+            type="default"
+            icon={<BarChartOutlined />}
+            onClick={() => {
+              setSelectedProductForBatches({ id: record.id, name: record.name });
+              setBatchModalVisible(true);
+            }}
+            size="small"
+          >
+            Ver Lotes
+          </Button>
           {canEditProducts && (
             <Button type="link" onClick={() => handleShowModal(record)}>
               Editar
@@ -669,6 +684,19 @@ const ProductList: React.FC = () => {
           />
         </Card>
       </div>
+
+      {/* Modal de Lotes FIFO */}
+      {selectedProductForBatches && (
+        <ProductBatchesModal
+          visible={batchModalVisible}
+          onClose={() => {
+            setBatchModalVisible(false);
+            setSelectedProductForBatches(null);
+          }}
+          productId={selectedProductForBatches.id}
+          productName={selectedProductForBatches.name}
+        />
+      )}
 
       {error && <div className="text-red-500 mt-2">{error}</div>}
     </div>

@@ -1,6 +1,17 @@
 // src/services/invoiceService.ts
 import api from './api';
 
+export interface InvoiceItem {
+  id?: number;
+  productId: number;
+  quantity: number;
+  unitCost: number;
+  description?: string;
+  batchNumber?: string;
+  expiryDate?: string;
+  totalPrice?: number;
+}
+
 export interface Invoice {
   id: number;
   invoiceNumber: string;
@@ -9,10 +20,18 @@ export interface Invoice {
   paidAmount: number;
   status: 'PENDING' | 'PARTIAL' | 'PAID';
   description?: string;
+  notes?: string;
   invoiceDate: string;
   dueDate?: string;
   createdAt: string;
   updatedAt: string;
+  supplierId?: number;
+  inventoryProcessed?: boolean;
+  InvoiceItem?: InvoiceItem[];
+  Supplier?: {
+    id: number;
+    name: string;
+  };
 }
 
 export interface InvoiceSummary {
@@ -38,13 +57,11 @@ export interface InvoiceSummary {
 
 export interface CreateInvoiceData {
   invoiceNumber: string;
-  supplierName: string;
-  amount: number;
-  paidAmount?: number;
-  status?: string;
-  description?: string;
-  invoiceDate: string;
-  dueDate?: string;
+  supplierId: number;
+  discount?: number;
+  notes?: string;
+  processInventory?: boolean;
+  items: InvoiceItem[];
 }
 
 // Interfaz para la respuesta envuelta del backend

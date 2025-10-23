@@ -50,3 +50,9 @@ export async function getProfitabilityStats(params?: {
   const res = await api.get("/sales/analytics/profitability", { params });
   return res.data;
 }
+
+// Eliminar una venta (solo ADMIN y SUPER_ADMIN)
+export async function deleteSale(saleId: number) {
+  const res = await api.delete(`/sales/${saleId}`);
+  return res.data;
+}

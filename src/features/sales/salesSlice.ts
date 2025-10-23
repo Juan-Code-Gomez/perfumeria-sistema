@@ -1,4 +1,4 @@
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+﻿import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import * as salesService from "../../services/salesService";
 import type { Sale, CreateSalePayload } from "../../types/SaleTypes";
 
@@ -8,7 +8,7 @@ interface SalesState {
   loading: boolean;
   error: string | null;
   filters: { dateFrom?: string; dateTo?: string };
-  payments: any[]; // historial de abonos de una venta seleccionada
+  payments: any[];
   paymentsLoading: boolean;
 }
 
@@ -22,7 +22,6 @@ const initialState: SalesState = {
   paymentsLoading: false,
 };
 
-// Thunks
 export const fetchSales = createAsyncThunk<
   Sale[],
   { dateFrom?: string; dateTo?: string } | undefined
@@ -58,7 +57,6 @@ export const fetchPendingSales = createAsyncThunk(
   }
 );
 
-// Obtener pagos/abonos de una venta
 export const fetchSalePayments = createAsyncThunk(
   "sales/fetchSalePayments",
   async (saleId: number, thunkAPI) => {
@@ -70,25 +68,18 @@ export const fetchSalePayments = createAsyncThunk(
   }
 );
 
-// Registrar un nuevo abono/pago a una venta
-export const addSalePayment = createAsyncThunk(
+export const addSalePayment = createAsyncThunk<
+  any,
+  {
+    saleId: number;
+    amount: number;
+    date: string;
+    method?: string;
+    note?: string;
+  }
+>(
   "sales/addSalePayment",
-  async (
-    {
-      saleId,
-      amount,
-      date,
-      method,
-      note,
-    }: {
-      saleId: number;
-      amount: number;
-      date: string;
-      method?: string;
-      note?: string;
-    },
-    thunkAPI
-  ) => {
+  async ({ saleId, amount, date, method, note }, thunkAPI) => {
     try {
       return await salesService.createSalePayment(saleId, {
         amount,
@@ -104,20 +95,34 @@ export const addSalePayment = createAsyncThunk(
   }
 );
 
-export const createCreditNote = createAsyncThunk(
+export const createCreditNote = createAsyncThunk<
+  any,
+  {
+    saleId: number;
+    details: { productId: number; quantity: number }[];
+  }
+>(
   "sales/createCreditNote",
-  async (
-    data: {
-      saleId: number;
-      details: { productId: number; quantity: number }[];
-    },
-    thunkAPI
-  ) => {
+  async (data, thunkAPI) => {
     try {
       return await salesService.createCreditNote(data);
     } catch (err: any) {
       return thunkAPI.rejectWithValue(
         err.message || "Error al crear nota de crédito"
+      );
+    }
+  }
+);
+
+export const deleteSale = createAsyncThunk<number, number>(
+  "sales/deleteSale",
+  async (saleId, thunkAPI) => {
+    try {
+      await salesService.deleteSale(saleId);
+      return saleId;
+    } catch (err: any) {
+      return thunkAPI.rejectWithValue(
+        err.message || "Error al eliminar venta"
       );
     }
   }
@@ -136,7 +141,6 @@ const saleSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    // Ventas normales
     builder
       .addCase(fetchSales.pending, (state) => {
         state.loading = true;
@@ -159,7 +163,6 @@ const saleSlice = createSlice({
         state.error = action.payload as string;
       });
 
-    // Ventas pendientes
     builder
       .addCase(fetchPendingSales.pending, (state) => {
         state.loading = true;
@@ -174,7 +177,6 @@ const saleSlice = createSlice({
         state.error = action.payload as string;
       });
 
-    // Historial de abonos
     builder
       .addCase(fetchSalePayments.pending, (state) => {
         state.paymentsLoading = true;
@@ -189,14 +191,12 @@ const saleSlice = createSlice({
         state.error = action.payload as string;
       });
 
-    // Nuevo abono
     builder
       .addCase(addSalePayment.pending, (state) => {
         state.paymentsLoading = true;
         state.error = null;
       })
       .addCase(addSalePayment.fulfilled, (state, _action) => {
-        // Agrega el nuevo pago al historial (si es necesario), o puedes refrescar después
         state.paymentsLoading = false;
       })
       .addCase(addSalePayment.rejected, (state, action) => {
@@ -204,7 +204,6 @@ const saleSlice = createSlice({
         state.error = action.payload as string;
       });
 
-    // Nota de crédito
     builder
       .addCase(createCreditNote.pending, (state) => {
         state.loading = true;
@@ -215,6 +214,20 @@ const saleSlice = createSlice({
         state.items.unshift(action.payload);
       })
       .addCase(createCreditNote.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      });
+
+    builder
+      .addCase(deleteSale.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(deleteSale.fulfilled, (state, action) => {
+        state.loading = false;
+        state.items = state.items.filter((sale) => sale.id !== action.payload);
+      })
+      .addCase(deleteSale.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       });
