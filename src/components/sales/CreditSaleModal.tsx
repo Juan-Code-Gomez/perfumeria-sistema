@@ -51,7 +51,7 @@ export default function CreditSaleModal({ open, onClose, onSaved }: Props) {
       setProductLoading(true);
       try {
         const res = await productService.getProducts({ name: q, page:1, pageSize:10 });
-        cb(res.items);
+        cb(res.data?.items || []);
       } catch {
         cb([]);
       } finally {

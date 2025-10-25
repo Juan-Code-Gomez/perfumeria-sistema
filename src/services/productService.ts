@@ -88,14 +88,111 @@ export const getProducts = async (filters?: {
 }) => {
   try {
     const response = await api.get("/products", { params: filters });
-    console.log('getProducts API response:', response.data);
-    // Handle double response wrapper: response.data.data contains the actual data
-    const result = response.data?.success ? response.data.data : response.data;
-    console.log('getProducts processed result:', result);
-    return result;
+    
+    // Si es un array directo, retornarlo con estructura de paginación
+    if (Array.isArray(response.data)) {
+      return {
+        data: {
+          items: response.data,
+          total: response.data.length,
+          page: 1,
+          pageSize: response.data.length,
+        }
+      };
+    }
+    
+    // Estructura con doble wrapper: {success: true, data: {success: true, data: {items: [...]}}}
+    if (response.data?.data?.data?.items && Array.isArray(response.data.data.data.items)) {
+      return {
+        data: response.data.data.data
+      };
+    }
+    
+    // Estructura con wrapper simple: {success: true, data: {items: [...]}}
+    if (response.data?.data?.items && Array.isArray(response.data.data.items)) {
+      return {
+        data: response.data.data
+      };
+    }
+    
+    // Estructura: {data: {items: [...]}}
+    if (response.data?.items && Array.isArray(response.data.items)) {
+      return {
+        data: response.data
+      };
+    }
+    
+    // Estructura: {success: true, data: [...]}
+    if (response.data?.data && Array.isArray(response.data.data)) {
+      return {
+        data: {
+          items: response.data.data,
+          total: response.data.data.length,
+          page: 1,
+          pageSize: response.data.data.length,
+        }
+      };
+    }
+    
+    console.error('❌ Unexpected products response format:', response.data);
+    return {
+      data: {
+        items: [],
+        total: 0,
+        page: 1,
+        pageSize: 0,
+      }
+    };
   } catch (error: any) {
-    console.error('Error fetching products:', error);
+    console.error('❌ Error fetching products:', error);
     throw error;
+  }
+};
+
+// Servicio específico para búsqueda de productos en facturas/compras
+// No interfiere con la paginación del módulo de productos
+export const searchProductsForInvoice = async (searchTerm?: string, limit: number = 50) => {
+  try {
+    const params: any = {
+      pageSize: limit,
+    };
+    
+    if (searchTerm && searchTerm.trim().length >= 2) {
+      params.search = searchTerm.trim();
+    }
+    
+    const response = await api.get("/products", { params });
+    
+    // Si es un array directo, retornarlo
+    if (Array.isArray(response.data)) {
+      return response.data;
+    }
+    
+    // Estructura con doble wrapper: {success: true, data: {success: true, data: {items: [...]}}}
+    if (response.data?.data?.data?.items && Array.isArray(response.data.data.data.items)) {
+      return response.data.data.data.items;
+    }
+    
+    // Estructura con wrapper simple: {success: true, data: {items: [...]}}
+    if (response.data?.data?.items && Array.isArray(response.data.data.items)) {
+      return response.data.data.items;
+    }
+    
+    // Estructura: {data: {items: [...]}}
+    if (response.data?.items && Array.isArray(response.data.items)) {
+      return response.data.items;
+    }
+    
+    // Estructura: {success: true, data: [...]}
+    if (response.data?.data && Array.isArray(response.data.data)) {
+      return response.data.data;
+    }
+    
+    console.error('❌ Unexpected products response format:', response.data);
+    return [];
+  } catch (error: any) {
+    console.error('❌ Error searching products for invoice:', error);
+    return [];
   }
 };
 

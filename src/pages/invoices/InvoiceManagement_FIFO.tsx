@@ -25,9 +25,9 @@ import {
 } from '@ant-design/icons';
 import InvoiceForm from '../../components/invoices/InvoiceForm';
 import InvoiceDetailModal from '../../components/invoices/InvoiceDetailModal';
+import PaymentModal from '../../components/invoices/PaymentModal';
 import { getInvoices, createInvoice, deleteInvoice } from '../../services/invoiceService';
 import { getSuppliers } from '../../services/supplierService';
-import { getProducts } from '../../services/productService';
 import type { Invoice } from '../../services/invoiceService';
 import dayjs from 'dayjs';
 
@@ -41,6 +41,7 @@ const InvoiceManagementFIFO: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [formVisible, setFormVisible] = useState(false);
   const [detailVisible, setDetailVisible] = useState(false);
+  const [paymentVisible, setPaymentVisible] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [searchText, setSearchText] = useState('');
 
@@ -51,15 +52,17 @@ const InvoiceManagementFIFO: React.FC = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [invoicesData, suppliersData, productsData] = await Promise.all([
+      const [invoicesData, suppliersData] = await Promise.all([
         getInvoices(),
         getSuppliers(),
-        getProducts(),
       ]);
+      
       setInvoices(invoicesData);
       setSuppliers(suppliersData);
-      setProducts(productsData);
+      // No cargar productos aquí - la búsqueda es dinámica en el modal
+      setProducts([]);
     } catch (error: any) {
+      console.error('❌ Error loading data:', error);
       message.error(error.response?.data?.message || 'Error al cargar datos');
     } finally {
       setLoading(false);
@@ -96,6 +99,15 @@ const InvoiceManagementFIFO: React.FC = () => {
   const handleViewDetails = (invoice: Invoice) => {
     setSelectedInvoice(invoice);
     setDetailVisible(true);
+  };
+
+  const handleOpenPayment = (invoice: Invoice) => {
+    setSelectedInvoice(invoice);
+    setPaymentVisible(true);
+  };
+
+  const handlePaymentSuccess = () => {
+    loadData(); // Recargar datos después de registrar un pago
   };
 
   const filteredInvoices = invoices.filter((invoice) =>
@@ -135,7 +147,7 @@ const InvoiceManagementFIFO: React.FC = () => {
       align: 'right' as const,
       render: (amount: number) => (
         <span style={{ fontWeight: 'bold', color: '#1890ff' }}>
-          ${amount.toFixed(2)}
+          ${Math.round(amount).toLocaleString('es-CO')}
         </span>
       ),
     },
@@ -250,8 +262,8 @@ const InvoiceManagementFIFO: React.FC = () => {
               <Card>
                 <Statistic
                   title="Monto Total"
-                  value={totalAmount}
-                  precision={2}
+                  value={Math.round(totalAmount)}
+                  precision={0}
                   prefix={<DollarOutlined />}
                   valueStyle={{ color: '#52c41a' }}
                 />
@@ -307,6 +319,14 @@ const InvoiceManagementFIFO: React.FC = () => {
         visible={detailVisible}
         invoice={selectedInvoice}
         onClose={() => setDetailVisible(false)}
+        onOpenPayment={handleOpenPayment}
+      />
+
+      <PaymentModal
+        visible={paymentVisible}
+        invoice={selectedInvoice}
+        onClose={() => setPaymentVisible(false)}
+        onSuccess={handlePaymentSuccess}
       />
     </div>
   );

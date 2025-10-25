@@ -92,6 +92,18 @@ const ProductList: React.FC = () => {
 
   // Carga inicial y cuando cambian los filtros
   useEffect(() => {
+    // Resetear a la página 1 cuando el componente se monta
+    if (page !== 1) {
+      dispatch(setPage({ page: 1, pageSize }));
+    } else {
+      dispatch(fetchProducts({ ...filters, page, pageSize }));
+    }
+    // Solo ejecutar al montar el componente
+    // eslint-disable-next-line
+  }, []);
+
+  // Efecto separado para cambios en filtros y paginación
+  useEffect(() => {
     dispatch(fetchProducts({ ...filters, page, pageSize }));
   }, [dispatch, filters, page, pageSize]);
 

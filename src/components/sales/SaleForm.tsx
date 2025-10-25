@@ -64,7 +64,7 @@ const SaleForm: React.FC<Props> = ({ open, onClose, onSaved }) => {
           page: 1,
           pageSize: 10,
         });
-        cb(res.items);
+        cb(res.data?.items || []);
       } catch {
         cb([]);
       } finally {

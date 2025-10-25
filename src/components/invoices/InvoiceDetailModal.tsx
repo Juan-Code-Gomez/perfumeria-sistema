@@ -1,10 +1,11 @@
 // src/components/invoices/InvoiceDetailModal.tsx
 import React from 'react';
-import { Modal, Descriptions, Table, Tag, Space, Typography } from 'antd';
+import { Modal, Descriptions, Table, Tag, Space, Typography, Button } from 'antd';
 import {
   FileTextOutlined,
   CheckCircleOutlined,
   ClockCircleOutlined,
+  WalletOutlined,
 } from '@ant-design/icons';
 import type { Invoice, InvoiceItem } from '../../services/invoiceService';
 import dayjs from 'dayjs';
@@ -15,14 +16,18 @@ interface InvoiceDetailModalProps {
   visible: boolean;
   invoice: Invoice | null;
   onClose: () => void;
+  onOpenPayment?: (invoice: Invoice) => void;
 }
 
 const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
   visible,
   invoice,
   onClose,
+  onOpenPayment,
 }) => {
   if (!invoice) return null;
+
+  const remainingAmount = invoice.amount - invoice.paidAmount;
 
   const columns = [
     {
@@ -43,7 +48,7 @@ const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
       key: 'unitCost',
       align: 'right' as const,
       width: 120,
-      render: (value: number) => `$${value?.toFixed(2) || '0.00'}`,
+      render: (value: number) => `$${Math.round(value || 0).toLocaleString('es-CO')}`,
     },
     {
       title: 'Subtotal',
@@ -52,7 +57,7 @@ const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
       align: 'right' as const,
       width: 120,
       render: (value: number, record: InvoiceItem) => 
-        `$${(value || (record.quantity * record.unitCost)).toFixed(2)}`,
+        `$${Math.round(value || (record.quantity * record.unitCost)).toLocaleString('es-CO')}`,
     },
     {
       title: 'Lote',
@@ -80,7 +85,23 @@ const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
       }
       open={visible}
       onCancel={onClose}
-      footer={null}
+      footer={
+        <Space>
+          <Button onClick={onClose}>Cerrar</Button>
+          {invoice.status !== 'PAID' && onOpenPayment && (
+            <Button
+              type="primary"
+              icon={<WalletOutlined />}
+              onClick={() => {
+                onOpenPayment(invoice);
+                onClose();
+              }}
+            >
+              Registrar Pago / Abono
+            </Button>
+          )}
+        </Space>
+      }
       width={1000}
     >
       <Space direction="vertical" style={{ width: '100%' }} size="large">
@@ -89,25 +110,47 @@ const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
             <strong>{invoice.invoiceNumber}</strong>
           </Descriptions.Item>
           <Descriptions.Item label="Estado">
-            <Tag color={invoice.status === 'PAID' ? 'success' : 'warning'}>
+            <Tag color={
+              invoice.status === 'PAID' ? 'success' : 
+              invoice.status === 'PARTIAL' ? 'processing' : 
+              'warning'
+            }>
               {invoice.status}
             </Tag>
           </Descriptions.Item>
           <Descriptions.Item label="Proveedor">
             {invoice.Supplier?.name || invoice.supplierName}
           </Descriptions.Item>
-          <Descriptions.Item label="Fecha">
+          <Descriptions.Item label="Fecha de Factura">
             {dayjs(invoice.invoiceDate || invoice.createdAt).format('DD/MM/YYYY')}
           </Descriptions.Item>
+          {invoice.dueDate && (
+            <Descriptions.Item label="Fecha de Vencimiento" span={2}>
+              <Text type={dayjs(invoice.dueDate).isBefore(dayjs()) && invoice.status !== 'PAID' ? 'danger' : undefined}>
+                {dayjs(invoice.dueDate).format('DD/MM/YYYY')}
+                {dayjs(invoice.dueDate).isBefore(dayjs()) && invoice.status !== 'PAID' && (
+                  <Tag color="error" style={{ marginLeft: 8 }}>VENCIDA</Tag>
+                )}
+              </Text>
+            </Descriptions.Item>
+          )}
           <Descriptions.Item label="Monto Total">
             <Text strong style={{ fontSize: 16, color: '#1890ff' }}>
-              ${invoice.amount.toFixed(2)}
+              ${Math.round(invoice.amount).toLocaleString('es-CO')}
             </Text>
           </Descriptions.Item>
           <Descriptions.Item label="Monto Pagado">
             <Text strong style={{ fontSize: 16, color: '#52c41a' }}>
-              ${invoice.paidAmount.toFixed(2)}
+              ${Math.round(invoice.paidAmount).toLocaleString('es-CO')}
             </Text>
+          </Descriptions.Item>
+          <Descriptions.Item label="Saldo Pendiente" span={2}>
+            <Text strong style={{ fontSize: 18, color: remainingAmount > 0 ? '#ff4d4f' : '#52c41a' }}>
+              ${Math.round(remainingAmount).toLocaleString('es-CO')}
+            </Text>
+            {remainingAmount === 0 && (
+              <Tag color="success" style={{ marginLeft: 8 }}>PAGADA</Tag>
+            )}
           </Descriptions.Item>
           <Descriptions.Item label="Inventario Procesado" span={2}>
             {invoice.inventoryProcessed ? (

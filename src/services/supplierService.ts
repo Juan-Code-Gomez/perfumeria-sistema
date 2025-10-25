@@ -70,7 +70,24 @@ export const getSuppliers = async (params?: {
   if (params?.withDebt) queryParams.append('withDebt', 'true');
   
   const response = await api.get(`/suppliers?${queryParams.toString()}`);
-  return response.data;
+  
+  // Si response.data es un array, retornarlo directamente
+  if (Array.isArray(response.data)) {
+    return response.data;
+  }
+  
+  // Si viene envuelto en un objeto, intentar extraer el array
+  if (response.data?.data && Array.isArray(response.data.data)) {
+    return response.data.data;
+  }
+  
+  // Si viene con otra estructura, buscar la propiedad que contiene el array
+  if (response.data?.suppliers && Array.isArray(response.data.suppliers)) {
+    return response.data.suppliers;
+  }
+  
+  console.error('Unexpected suppliers response format:', response.data);
+  return [];
 };
 
 export const getSupplierStatistics = async (): Promise<SupplierStatistics> => {
