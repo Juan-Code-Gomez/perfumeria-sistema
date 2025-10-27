@@ -10,6 +10,7 @@ export interface InvoiceItem {
   batchNumber?: string;
   expiryDate?: string;
   totalPrice?: number;
+  affectInventory?: boolean; // Control individual de inventario por item
 }
 
 export interface Invoice {

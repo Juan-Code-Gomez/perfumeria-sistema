@@ -54,6 +54,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
   const [selectedProduct, setSelectedProduct] = useState<number | null>(null);
   const [quantity, setQuantity] = useState<number>(1);
   const [unitCost, setUnitCost] = useState<number>(0);
+  const [affectInventory, setAffectInventory] = useState<boolean>(true); // Nuevo estado
   const [searchText, setSearchText] = useState<string>('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searching, setSearching] = useState(false);
@@ -110,6 +111,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
       quantity,
       unitCost,
       description: product.name,
+      affectInventory, // Agregar el campo affectInventory
     };
 
     setItems([...items, newItem]);
@@ -118,6 +120,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
     setSelectedProduct(null);
     setQuantity(1);
     setUnitCost(0);
+    setAffectInventory(true); // Resetear a true por defecto
     
     message.success(`${product.name} agregado a la factura`);
   };
@@ -194,6 +197,27 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
       align: 'right' as const,
       width: 140,
       render: (_: any, record: InvoiceItem) => `$${Math.round(record.quantity * record.unitCost).toLocaleString('es-CO')}`,
+    },
+    {
+      title: (
+        <Tooltip title="Indica si este ítem sumará al inventario">
+          <Space>
+            <InfoCircleOutlined />
+            Suma Stock
+          </Space>
+        </Tooltip>
+      ),
+      key: 'affectInventory',
+      align: 'center' as const,
+      width: 120,
+      render: (_: any, record: InvoiceItem) => (
+        <span style={{ 
+          color: record.affectInventory !== false ? '#52c41a' : '#ff4d4f',
+          fontWeight: 'bold'
+        }}>
+          {record.affectInventory !== false ? '✓ Sí' : '✗ No'}
+        </span>
+      ),
     },
     {
       title: 'Acciones',
@@ -356,6 +380,18 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                 parser={(value) => value?.replace(/\$\s?|(,*)/g, '') as any}
               />
 
+              <Tooltip title="Desactiva esto si el producto ya tiene inventario y solo quieres registrar la factura sin sumar stock">
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                  <Switch
+                    checked={affectInventory}
+                    onChange={setAffectInventory}
+                    checkedChildren="Suma Stock"
+                    unCheckedChildren="No Suma"
+                  />
+                  <InfoCircleOutlined style={{ color: affectInventory ? '#52c41a' : '#ff4d4f' }} />
+                </div>
+              </Tooltip>
+
               <Button
                 type="primary"
                 icon={<PlusOutlined />}
@@ -367,7 +403,9 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
             </Space>
             
             <small style={{ color: '#666' }}>
-              💡 El lote y vencimiento se asignarán automáticamente según el número de factura
+              💡 {affectInventory 
+                ? 'Este producto SUMARÁ al inventario (crea lote FIFO y actualiza stock)'
+                : 'Este producto NO sumará al inventario (solo se registra en factura)'}
             </small>
           </Space>
         </div>
