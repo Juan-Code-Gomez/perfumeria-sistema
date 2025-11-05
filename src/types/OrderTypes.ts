@@ -1,10 +1,12 @@
 // Tipos para el módulo de Pedidos
 
-export enum OrderStatus {
-  PENDING = 'PENDING',
-  APPROVED = 'APPROVED',
-  CANCELLED = 'CANCELLED',
-}
+export const OrderStatus = {
+  PENDING: 'PENDING',
+  APPROVED: 'APPROVED',
+  CANCELLED: 'CANCELLED',
+} as const;
+
+export type OrderStatus = typeof OrderStatus[keyof typeof OrderStatus];
 
 export interface OrderDetail {
   id: number;
