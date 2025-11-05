@@ -21,6 +21,7 @@ export interface Product {
   isComposite: boolean;
   requiresPreparation: boolean;
   stock: number;
+  reservedStock?: number; // Stock reservado por pedidos pendientes
   minStock?: number;
   purchasePrice: number;
   salePrice: number;

@@ -135,7 +135,7 @@ const DynamicSidebarMenu: React.FC<DynamicSidebarMenuProps> = ({ onLogout }) => 
 
     // 2. OPERACIONES
     const operationModules = accessibleModules.filter(m => 
-      ['ventas', 'productos', 'clientes', 'proveedores', 'pos'].includes(m.name)
+      ['ventas', 'productos', 'clientes', 'proveedores', 'pos', 'pedidos'].includes(m.name)
     );
 
     if (operationModules.length > 0) {

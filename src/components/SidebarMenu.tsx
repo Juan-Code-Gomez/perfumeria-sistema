@@ -104,6 +104,19 @@ const SidebarMenu: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
     });
   }
 
+  // Pedidos - Para vendedores (crear y ver propios) y administradores
+  if (hasPermission('pedidos', 'view')) {
+    menuItems.push({
+      key: "/orders",
+      icon: <FileTextOutlined style={{ fontSize: '16px' }} />,
+      label: (
+        <span style={{ fontSize: '14px' }}>
+          {isVendedor && !isAdmin ? 'Mis Pedidos' : 'Gestión de Pedidos'}
+        </span>
+      ),
+    });
+  }
+
   // Proveedores - Solo administradores
   if (hasPermission('proveedores', 'view')) {
     menuItems.push({

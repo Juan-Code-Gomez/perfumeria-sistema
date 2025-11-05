@@ -24,6 +24,7 @@ import POSPage from "../pages/sales/POSPage";
 import CapitalManagement from "../pages/capital/CapitalManagement";
 import InvoiceManagementFIFO from "../pages/invoices/InvoiceManagement_FIFO";
 import CompanyConfig from "../pages/company-config/CompanyConfig";
+import OrdersPage from "../pages/orders/OrdersPage";
 
 export const router = createBrowserRouter([
   {
@@ -62,6 +63,7 @@ export const router = createBrowserRouter([
           { path: "/capital", element: <CapitalManagement /> },
           { path: "/invoices", element: <InvoiceManagementFIFO /> },
           { path: "/company-config", element: <CompanyConfig /> },
+          { path: "/orders", element: <OrdersPage /> }, // Nuevo módulo de pedidos
         ],
       },
 

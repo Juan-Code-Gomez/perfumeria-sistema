@@ -38,15 +38,27 @@ const UserForm: React.FC<UserFormProps> = ({ open, onClose, user, onSaved }) => 
     try {
       const values = await form.validateFields();
       setLoading(true);
+      
       if (user) {
-        // Editar
+        // Editar - NO enviar username, solo enviar password si no está vacío
+        const updateData: any = {
+          name: values.name,
+          roleIds: values.roleIds,
+        };
+        
+        // Solo incluir password si se ingresó uno nuevo
+        if (values.password && values.password.trim() !== '') {
+          updateData.password = values.password;
+        }
+        
         await dispatch(
-          updateUser({ id: user.id, data: { ...values } })
+          updateUser({ id: user.id, data: updateData })
         ).unwrap();
       } else {
-        // Crear
+        // Crear - enviar todos los campos
         await dispatch(createUser(values)).unwrap();
       }
+      
       setLoading(false);
       onSaved?.();
       onClose();
@@ -73,7 +85,7 @@ const UserForm: React.FC<UserFormProps> = ({ open, onClose, user, onSaved }) => 
             { required: true, message: "Ingresa el usuario" },
           ]}
         >
-          <Input />
+          <Input disabled={!!user} placeholder="Nombre de usuario" />
         </Form.Item>
         <Form.Item
           name="name"
