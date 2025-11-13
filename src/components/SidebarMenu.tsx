@@ -15,6 +15,7 @@ import {
   ShopOutlined,
   SettingOutlined,
   FileTextOutlined,
+  PercentageOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { useAppSelector } from "../store/index";
@@ -190,6 +191,16 @@ const SidebarMenu: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
       label: (
         <span style={{ fontSize: '14px' }}>
           Resumen de ganancias
+        </span>
+      ),
+    });
+
+    menuItems.push({
+      key: "/reports/discounts",
+      icon: <PercentageOutlined style={{ fontSize: '16px' }} />,
+      label: (
+        <span style={{ fontSize: '14px' }}>
+          Reporte de descuentos
         </span>
       ),
     });

@@ -15,6 +15,7 @@ import {
   Card,
   Checkbox,
   Space,
+  Drawer,
 } from "antd";
 import { 
   TableOutlined, 
@@ -26,6 +27,7 @@ import {
   ScanOutlined,
   BarcodeOutlined,
   BarChartOutlined,
+  FilterOutlined,
 } from "@ant-design/icons";
 import { useAppDispatch, useAppSelector } from "../../store/index";
 import {
@@ -64,6 +66,11 @@ const ProductList: React.FC = () => {
   );
   const { listUnits } = useAppSelector((state: RootState) => state.units);
   
+  // Responsive states
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [isTablet, setIsTablet] = useState(window.innerWidth >= 768 && window.innerWidth < 1024);
+  const [filtersVisible, setFiltersVisible] = useState(false);
+  
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [editingProduct, setEditingProduct] = React.useState<Product | null>(
     null
@@ -89,6 +96,17 @@ const ProductList: React.FC = () => {
   const canDeleteProducts = hasPermission('productos', 'delete');
   const canCreateProducts = hasPermission('productos', 'create');
   const canExportProducts = hasPermission('productos', 'export');
+
+  // Responsive handler
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+      setIsTablet(window.innerWidth >= 768 && window.innerWidth < 1024);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Carga inicial y cuando cambian los filtros
   useEffect(() => {
@@ -205,12 +223,13 @@ const ProductList: React.FC = () => {
     setIsModalOpen(false);
   };
 
-  // columnas de la tabla
+  // columnas de la tabla - responsive
   const columns = [
-    {
+    ...(!isMobile ? [{
       title: "Imagen",
       dataIndex: "imageUrl",
       key: "imageUrl",
+      width: 60,
       render: (url: string) =>
         url ? (
           <img
@@ -226,24 +245,33 @@ const ProductList: React.FC = () => {
         ) : (
           <Tag color="default">Sin imagen</Tag>
         ),
+    }] : []),
+    { 
+      title: "Nombre", 
+      dataIndex: "name", 
+      key: "name",
+      width: isMobile ? undefined : 200,
+      ellipsis: true,
     },
-    { title: "Nombre", dataIndex: "name", key: "name" },
-    {
+    ...(!isMobile ? [{
       title: "Unidad",
       dataIndex: "unit",
       key: "unit",
+      width: 100,
       render: (u: Unit | undefined) => <Tag>{u?.name || 'Sin unidad'}</Tag>,
-    },
-    {
+    }] : []),
+    ...(!isMobile && !isTablet ? [{
       title: "Categoría",
       dataIndex: "category",
       key: "category",
+      width: 120,
       render: (c: Category | undefined) => <Tag>{c?.name || 'Sin categoría'}</Tag>,
-    },
+    }] : []),
     {
       title: "Stock",
       dataIndex: "stock",
       key: "stock",
+      width: isMobile ? 70 : 80,
       render: (s: number) => {
         if (s <= 1) {
           return (
@@ -262,31 +290,35 @@ const ProductList: React.FC = () => {
         }
       },
     },
-    // Precio de compra - Solo visible para roles administrativos
-    ...(hasPermission('productos', 'edit') ? [{
+    // Precio de compra - Solo visible para roles administrativos y no mobile
+    ...(hasPermission('productos', 'edit') && !isMobile && !isTablet ? [{
       title: "P. Compra",
       dataIndex: "purchasePrice",
       key: "purchasePrice",
+      width: 100,
       render: (v: number) => v ? `$${v.toLocaleString()}` : '$0',
     }] : []),
     {
       title: "P. Venta",
       dataIndex: "salePrice",
       key: "salePrice",
+      width: isMobile ? 90 : 100,
       render: (v: number) => v ? `$${v.toLocaleString()}` : '$0',
     },
-    // Utilidad y margen - Solo visible para roles administrativos
-    ...(hasPermission('productos', 'edit') ? [
+    // Utilidad y margen - Solo visible para roles administrativos y desktop
+    ...(hasPermission('productos', 'edit') && !isMobile && !isTablet ? [
       {
         title: "Utilidad",
         dataIndex: "utilidad",
         key: "utilidad",
+        width: 90,
         render: (v: number) => (v != null ? `$${v.toLocaleString()}` : "-"),
       },
       {
         title: "Margen",
         dataIndex: "margen",
         key: "margen",
+        width: 80,
         render: (v: number) => (
           <Tag color={v >= 50 ? "green" : v >= 20 ? "orange" : "red"}>
             {v ? `${v.toFixed(1)}%` : "-"}
@@ -298,22 +330,30 @@ const ProductList: React.FC = () => {
     ...(canEditProducts || canDeleteProducts ? [{
       title: "Acciones",
       key: "actions",
+      fixed: isMobile ? ('right' as const) : undefined,
+      width: isMobile ? 80 : isTablet ? 180 : 200,
       render: (_: any, record: Product) => (
-        <Space size="small">
-          <Button 
-            type="default"
-            icon={<BarChartOutlined />}
-            onClick={() => {
-              setSelectedProductForBatches({ id: record.id, name: record.name });
-              setBatchModalVisible(true);
-            }}
-            size="small"
-          >
-            Ver Lotes
-          </Button>
+        <Space size="small" direction={isMobile ? "vertical" : "horizontal"}>
+          {!isMobile && (
+            <Button 
+              type="default"
+              icon={<BarChartOutlined />}
+              onClick={() => {
+                setSelectedProductForBatches({ id: record.id, name: record.name });
+                setBatchModalVisible(true);
+              }}
+              size={isTablet ? "middle" : "small"}
+            >
+              Ver Lotes
+            </Button>
+          )}
           {canEditProducts && (
-            <Button type="link" onClick={() => handleShowModal(record)}>
-              Editar
+            <Button 
+              type="link" 
+              onClick={() => handleShowModal(record)}
+              size={isMobile ? "middle" : "small"}
+            >
+              {isMobile ? "✏️" : "Editar"}
             </Button>
           )}
           {canDeleteProducts && (
@@ -335,39 +375,61 @@ const ProductList: React.FC = () => {
 
   return (
     <div className="p-4">
-      <Row justify="space-between" align="middle" className="mb-4">
-        <Col>
-          <h1 className="text-2xl font-semibold">Gestión de Productos</h1>
-          <p className="text-gray-600">
+      <Row 
+        justify="space-between" 
+        align="middle" 
+        className="mb-4"
+        gutter={isMobile ? [8, 8] : [16, 16]}
+      >
+        <Col xs={24} sm={24} md={12}>
+          <h1 
+            className="font-semibold" 
+            style={{ 
+              fontSize: isMobile ? '1.5rem' : '2rem',
+              marginBottom: isMobile ? '4px' : '8px'
+            }}
+          >
+            Gestión de Productos
+          </h1>
+          <p 
+            className="text-gray-600" 
+            style={{ fontSize: isMobile ? '12px' : '14px' }}
+          >
             Administra tu inventario de perfumes y fragancias ({total} productos)
           </p>
         </Col>
-        <Col>
-          <Space size="middle">
+        <Col xs={24} sm={24} md={12}>
+          <Space 
+            size={isMobile ? "small" : "middle"} 
+            wrap
+            style={{ width: '100%', justifyContent: isMobile ? 'flex-start' : 'flex-end' }}
+          >
             {/* Toggle de vista */}
             <Space>
-              <span style={{ fontSize: 12, color: '#666' }}>Vista:</span>
+              {!isMobile && (
+                <span style={{ fontSize: 12, color: '#666' }}>Vista:</span>
+              )}
               <Button.Group>
                 <Button
                   type={viewMode === 'table' ? 'primary' : 'default'}
                   icon={<TableOutlined />}
                   onClick={() => setViewMode('table')}
-                  size="small"
+                  size={isMobile ? "middle" : "small"}
                 >
-                  Tabla
+                  {!isMobile && "Tabla"}
                 </Button>
                 <Button
                   type={viewMode === 'cards' ? 'primary' : 'default'}
                   icon={<AppstoreOutlined />}
                   onClick={() => setViewMode('cards')}
-                  size="small"
+                  size={isMobile ? "middle" : "small"}
                 >
-                  Tarjetas
+                  {!isMobile && "Tarjetas"}
                 </Button>
               </Button.Group>
             </Space>
             
-            {canExportProducts && (
+            {!isMobile && canExportProducts && (
               <Button
                 href="/plantilla-carga-masiva-productos.xlsx"
                 target="_blank"
@@ -382,13 +444,13 @@ const ProductList: React.FC = () => {
               <Button
                 onClick={() => setOpenBulkModal(true)}
                 icon={<UploadOutlined />}
-                size="small"
+                size={isMobile ? "middle" : "small"}
               >
-                Carga masiva
+                {!isMobile && "Carga masiva"}
               </Button>
             )}
             
-            {canExportProducts && (
+            {!isMobile && canExportProducts && (
               <Button
                 onClick={handleExport}
                 icon={<DownloadOutlined />}
@@ -400,7 +462,7 @@ const ProductList: React.FC = () => {
               </Button>
             )}
             
-            {canExportProducts && (
+            {!isMobile && canExportProducts && (
               <Button
                 onClick={() => setOpenInventoryExportModal(true)}
                 icon={<FileExcelOutlined />}
@@ -417,13 +479,13 @@ const ProductList: React.FC = () => {
               onClick={() => setOpenBarcodeScanner(true)}
               icon={<ScanOutlined />}
               type="default"
-              size="small"
+              size={isMobile ? "middle" : "small"}
               style={{ backgroundColor: '#722ed1', borderColor: '#722ed1', color: 'white' }}
             >
-              Buscar por Código
+              {!isMobile && "Buscar por Código"}
             </Button>
 
-            {canEditProducts && (
+            {!isMobile && canEditProducts && (
               <Button
                 onClick={() => setOpenBarcodeGenerator(true)}
                 icon={<BarcodeOutlined />}
@@ -435,7 +497,7 @@ const ProductList: React.FC = () => {
               </Button>
             )}
 
-            {canExportProducts && (
+            {!isMobile && canExportProducts && (
               <Button
                 onClick={() => setOpenLabelManager(true)}
                 icon={<UploadOutlined />}
@@ -452,9 +514,9 @@ const ProductList: React.FC = () => {
                 type="primary"
                 onClick={() => handleShowModal()}
                 icon={<PlusOutlined />}
-                size="small"
+                size={isMobile ? "middle" : "small"}
               >
-                Nuevo Producto
+                {isMobile ? "Nuevo" : "Nuevo Producto"}
               </Button>
             )}
           </Space>
@@ -472,90 +534,200 @@ const ProductList: React.FC = () => {
       {/* Estadísticas rápidas */}
       <ProductStats products={items} loading={loading} />
 
-      {/* Formulario de filtros mejorado */}
-      <Card className="mb-4 shadow-sm" size="small">
-        <Form
-          layout="inline"
-          form={form}
-          onFinish={onFinishFilters}
-          style={{ flexWrap: 'wrap', gap: '8px' }}
-        >
-          <Form.Item name="search" style={{ minWidth: 200 }}>
-            <Input
-              placeholder="🔍 Buscar por nombre..."
-              allowClear
-              size="small"
-            />
-          </Form.Item>
-          
-          <Form.Item name="categoryId" style={{ minWidth: 140 }}>
-            <Select
-              placeholder="📂 Categoría"
-              allowClear
-              size="small"
+      {/* Formulario de filtros mejorado - Mobile: Drawer, Desktop: Card */}
+      {isMobile ? (
+        <>
+          <Button
+            icon={<FilterOutlined />}
+            onClick={() => setFiltersVisible(true)}
+            type="primary"
+            size="large"
+            block
+            style={{ marginBottom: 16 }}
+          >
+            Filtros ({Object.keys(filters).filter(k => filters[k as keyof typeof filters]).length})
+          </Button>
+          <Drawer
+            title="Filtros de Productos"
+            placement="bottom"
+            height="80%"
+            onClose={() => setFiltersVisible(false)}
+            open={filtersVisible}
+          >
+            <Form
+              layout="vertical"
+              form={form}
+              onFinish={(values) => {
+                onFinishFilters(values);
+                setFiltersVisible(false);
+              }}
             >
-              {listCategories?.map((cat) => (
-                <Option key={cat.id} value={cat.id}>
-                  {cat.name}
-                </Option>
-              ))}
-            </Select>
-          </Form.Item>
-          
-          <Form.Item name="unitId" style={{ minWidth: 120 }}>
-            <Select
-              placeholder="📏 Unidad"
-              allowClear
-              size="small"
-            >
-              {listUnits?.map((unit) => (
-                <Option key={unit.id} value={unit.id}>
-                  {unit.name}
-                </Option>
-              ))}
-            </Select>
-          </Form.Item>
-          
-          <Form.Item name="lowStock" valuePropName="checked">
-            <Checkbox style={{ fontSize: 12 }}>⚠️ Solo stock bajo</Checkbox>
-          </Form.Item>
-          
-          <Form.Item>
-            <Space size="small">
-              <Form.Item name="stockMin" style={{ margin: 0 }}>
+              <Form.Item name="search" label="Buscar">
                 <Input
-                  placeholder="Stock min"
-                  type="number"
-                  min={0}
-                  size="small"
-                  style={{ width: 80 }}
+                  placeholder="🔍 Buscar por nombre..."
+                  allowClear
+                  size="large"
                 />
               </Form.Item>
-              <span style={{ fontSize: 12, color: '#999' }}>-</span>
-              <Form.Item name="stockMax" style={{ margin: 0 }}>
-                <Input
-                  placeholder="Stock max"
-                  type="number"
-                  min={0}
-                  size="small"
-                  style={{ width: 80 }}
-                />
+              
+              <Form.Item name="categoryId" label="Categoría">
+                <Select
+                  placeholder="📂 Categoría"
+                  allowClear
+                  size="large"
+                >
+                  {listCategories?.map((cat) => (
+                    <Option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </Option>
+                  ))}
+                </Select>
               </Form.Item>
-            </Space>
-          </Form.Item>
-          
-          <Form.Item>
-            <Space>
-              <Button htmlType="submit" type="primary" size="small">
-                Filtrar
-              </Button>
-              <Button onClick={onClearFilters} size="small">
-                Limpiar
-              </Button>
-            </Space>
-          </Form.Item>
-        </Form>
-      </Card>
+              
+              <Form.Item name="unitId" label="Unidad">
+                <Select
+                  placeholder="📏 Unidad"
+                  allowClear
+                  size="large"
+                >
+                  {listUnits?.map((unit) => (
+                    <Option key={unit.id} value={unit.id}>
+                      {unit.name}
+                    </Option>
+                  ))}
+                </Select>
+              </Form.Item>
+              
+              <Form.Item name="lowStock" valuePropName="checked">
+                <Checkbox>⚠️ Solo stock bajo</Checkbox>
+              </Form.Item>
+              
+              <Form.Item label="Rango de Stock">
+                <Space.Compact style={{ width: '100%' }}>
+                  <Form.Item name="stockMin" noStyle>
+                    <Input
+                      placeholder="Mínimo"
+                      type="number"
+                      min={0}
+                      size="large"
+                    />
+                  </Form.Item>
+                  <Form.Item name="stockMax" noStyle>
+                    <Input
+                      placeholder="Máximo"
+                      type="number"
+                      min={0}
+                      size="large"
+                    />
+                  </Form.Item>
+                </Space.Compact>
+              </Form.Item>
+              
+              <Form.Item>
+                <Space style={{ width: '100%' }} direction="vertical">
+                  <Button htmlType="submit" type="primary" size="large" block>
+                    Aplicar Filtros
+                  </Button>
+                  <Button 
+                    onClick={() => {
+                      onClearFilters();
+                      setFiltersVisible(false);
+                    }} 
+                    size="large" 
+                    block
+                  >
+                    Limpiar
+                  </Button>
+                </Space>
+              </Form.Item>
+            </Form>
+          </Drawer>
+        </>
+      ) : (
+        <Card className="mb-4 shadow-sm" size="small">
+          <Form
+            layout="inline"
+            form={form}
+            onFinish={onFinishFilters}
+            style={{ flexWrap: 'wrap', gap: '8px' }}
+          >
+            <Form.Item name="search" style={{ minWidth: 200 }}>
+              <Input
+                placeholder="🔍 Buscar por nombre..."
+                allowClear
+                size={isTablet ? "middle" : "small"}
+              />
+            </Form.Item>
+            
+            <Form.Item name="categoryId" style={{ minWidth: 140 }}>
+              <Select
+                placeholder="📂 Categoría"
+                allowClear
+                size={isTablet ? "middle" : "small"}
+              >
+                {listCategories?.map((cat) => (
+                  <Option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </Option>
+                ))}
+              </Select>
+            </Form.Item>
+            
+            <Form.Item name="unitId" style={{ minWidth: 120 }}>
+              <Select
+                placeholder="📏 Unidad"
+                allowClear
+                size={isTablet ? "middle" : "small"}
+              >
+                {listUnits?.map((unit) => (
+                  <Option key={unit.id} value={unit.id}>
+                    {unit.name}
+                  </Option>
+                ))}
+              </Select>
+            </Form.Item>
+            
+            <Form.Item name="lowStock" valuePropName="checked">
+              <Checkbox style={{ fontSize: 12 }}>⚠️ Solo stock bajo</Checkbox>
+            </Form.Item>
+            
+            <Form.Item>
+              <Space size="small">
+                <Form.Item name="stockMin" style={{ margin: 0 }}>
+                  <Input
+                    placeholder="Stock min"
+                    type="number"
+                    min={0}
+                    size={isTablet ? "middle" : "small"}
+                    style={{ width: 80 }}
+                  />
+                </Form.Item>
+                <span style={{ fontSize: 12, color: '#999' }}>-</span>
+                <Form.Item name="stockMax" style={{ margin: 0 }}>
+                  <Input
+                    placeholder="Stock max"
+                    type="number"
+                    min={0}
+                    size={isTablet ? "middle" : "small"}
+                    style={{ width: 80 }}
+                  />
+                </Form.Item>
+              </Space>
+            </Form.Item>
+            
+            <Form.Item>
+              <Space>
+                <Button htmlType="submit" type="primary" size={isTablet ? "middle" : "small"}>
+                  Filtrar
+                </Button>
+                <Button onClick={onClearFilters} size={isTablet ? "middle" : "small"}>
+                  Limpiar
+                </Button>
+              </Space>
+            </Form.Item>
+          </Form>
+        </Card>
+      )}
 
       {/* Vista de productos */}
       {viewMode === 'table' ? (
@@ -564,7 +736,11 @@ const ProductList: React.FC = () => {
           columns={columns}
           rowKey="id"
           loading={loading}
-          scroll={{ x: true }}
+          scroll={{ 
+            x: isMobile ? 600 : isTablet ? 900 : true,
+            y: isMobile ? 'calc(60vh - 100px)' : 'calc(70vh - 150px)'
+          }}
+          size={isMobile ? "small" : "middle"}
           rowClassName={(record) =>
             record.stock <= (record.minStock ?? 0) ? "bg-red-50" : ""
           }
@@ -591,9 +767,11 @@ const ProductList: React.FC = () => {
             current: page,
             pageSize,
             total,
-            showSizeChanger: true,
+            showSizeChanger: !isMobile,
             pageSizeOptions: ["7", "10", "20", "50"],
-            size: "small",
+            size: isMobile ? "default" : "small",
+            showTotal: (total, range) => 
+              isMobile ? `${range[0]}-${range[1]}/${total}` : `${range[0]}-${range[1]} de ${total} productos`,
             onChange: (newPage, newPageSize) => {
               dispatch(setPage({ page: newPage, pageSize: newPageSize || 7 }));
             },
@@ -608,20 +786,31 @@ const ProductList: React.FC = () => {
             onDelete={canDeleteProducts ? handleDelete : undefined}
           />
           {/* Paginación para vista de tarjetas */}
-          <div style={{ marginTop: 24, textAlign: 'center' }}>
+          <div 
+            style={{ 
+              marginTop: 24, 
+              textAlign: 'center',
+              display: 'flex',
+              flexDirection: isMobile ? 'column' : 'row',
+              justifyContent: 'center',
+              alignItems: 'center',
+              gap: isMobile ? '8px' : '16px'
+            }}
+          >
             <Button
               disabled={page === 1}
               onClick={() => dispatch(setPage({ page: page - 1, pageSize }))}
-              style={{ marginRight: 8 }}
+              size={isMobile ? "middle" : undefined}
             >
               Anterior
             </Button>
-            <span style={{ margin: '0 16px' }}>
+            <span style={{ fontSize: isMobile ? '12px' : '14px' }}>
               Página {page} de {Math.ceil(total / pageSize)} ({total} productos)
             </span>
             <Button
               disabled={page >= Math.ceil(total / pageSize)}
               onClick={() => dispatch(setPage({ page: page + 1, pageSize }))}
+              size={isMobile ? "middle" : undefined}
             >
               Siguiente
             </Button>
@@ -681,21 +870,23 @@ const ProductList: React.FC = () => {
         selectedProducts={selectedProducts}
       />
 
-      {/* Escáner Rápido - Componente de demostración */}
-      <div style={{ position: 'fixed', top: 20, right: 20, width: 300, zIndex: 1000 }}>
-        <Card size="small" title="🚀 Demo: Escáner Rápido">
-          <QuickBarcodeScanner
-            onProductFound={(product) => {
-              message.success(`¡Producto encontrado! ${product.name}`);
-              console.log('Producto:', product);
-            }}
-            placeholder="Escanear aquí..."
-            size="small"
-            showHistory
-            autoFocus={false}
-          />
-        </Card>
-      </div>
+      {/* Escáner Rápido - Componente de demostración - Solo desktop */}
+      {!isMobile && !isTablet && (
+        <div style={{ position: 'fixed', top: 20, right: 20, width: 300, zIndex: 1000 }}>
+          <Card size="small" title="🚀 Demo: Escáner Rápido">
+            <QuickBarcodeScanner
+              onProductFound={(product) => {
+                message.success(`¡Producto encontrado! ${product.name}`);
+                console.log('Producto:', product);
+              }}
+              placeholder="Escanear aquí..."
+              size="small"
+              showHistory
+              autoFocus={false}
+            />
+          </Card>
+        </div>
+      )}
 
       {/* Modal de Lotes FIFO */}
       {selectedProductForBatches && (

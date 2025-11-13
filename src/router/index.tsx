@@ -25,6 +25,7 @@ import CapitalManagement from "../pages/capital/CapitalManagement";
 import InvoiceManagementFIFO from "../pages/invoices/InvoiceManagement_FIFO";
 import CompanyConfig from "../pages/company-config/CompanyConfig";
 import OrdersPage from "../pages/orders/OrdersPage";
+import DiscountReportPage from "../pages/reports/DiscountReportPage";
 
 export const router = createBrowserRouter([
   {
@@ -52,6 +53,10 @@ export const router = createBrowserRouter([
           {
             path: "/reports/profit-summary",
             element: <ProfitSummary />,
+          },
+          {
+            path: "/reports/discounts",
+            element: <DiscountReportPage />,
           },
           { path: "/categories", element: <CategoriesList /> },
           { path: "/units", element: <UnitList /> },

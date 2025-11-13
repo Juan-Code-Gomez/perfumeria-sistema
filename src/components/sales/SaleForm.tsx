@@ -130,6 +130,7 @@ const SaleForm: React.FC<Props> = ({ open, onClose, onSaved }) => {
       const basePayload = {
         date: values.date.format("YYYY-MM-DD"),
         totalAmount: totalVenta,
+        subtotalAmount: totalVenta, // Sin descuento por defecto
         paidAmount: Number(values.paidAmount || totalVenta),
         isPaid: true,
         paymentMethod: values.paymentMethod,

@@ -84,6 +84,37 @@ const SaleDetailModal: React.FC<SaleDetailModalProps> = ({
           <Descriptions.Item label="Cliente">
             {sale.customerName || <Tag color="default">Sin nombre</Tag>}
           </Descriptions.Item>
+          
+          {/* Información de descuento */}
+          {sale.discountAmount && sale.discountAmount > 0 ? (
+            <>
+              <Descriptions.Item label="Subtotal">
+                <span style={{ color: '#666' }}>
+                  ${sale.subtotalAmount?.toLocaleString() || '-'}
+                </span>
+              </Descriptions.Item>
+              <Descriptions.Item label="Descuento aplicado">
+                <div>
+                  <Tag color="red" style={{ marginBottom: 4 }}>
+                    {sale.discountType === 'percentage' 
+                      ? `${sale.discountValue}% de descuento`
+                      : 'Descuento fijo'
+                    }
+                  </Tag>
+                  <div style={{ fontSize: '14px', color: '#f5222d', fontWeight: 'bold' }}>
+                    -${sale.discountAmount.toLocaleString()}
+                  </div>
+                </div>
+              </Descriptions.Item>
+            </>
+          ) : (
+            <Descriptions.Item label="Subtotal" span={2}>
+              <span style={{ color: '#666' }}>
+                ${sale.totalAmount.toLocaleString()} (sin descuento)
+              </span>
+            </Descriptions.Item>
+          )}
+          
           <Descriptions.Item label="Total" span={2}>
             <b>${sale.totalAmount.toLocaleString()}</b>
           </Descriptions.Item>

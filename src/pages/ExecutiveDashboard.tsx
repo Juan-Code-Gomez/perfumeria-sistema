@@ -312,38 +312,48 @@ const ExecutiveDashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)' }}>
-      <div style={{ padding: '0 16px' }}>
-        {/* Header reorganizado */}
+      <div style={{ padding: window.innerWidth < 768 ? '0 8px' : '0 16px' }}>
+        {/* Header reorganizado - Responsive */}
         <div className="mb-8">
-          <Row justify="space-between" align="middle" className="mb-6">
+          <Row justify="space-between" align="middle" className="mb-6" gutter={[16, 16]}>
             <Col xs={24} lg={12}>
               <div>
                 <Title 
                   level={1} 
                   className="mb-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"
-                  style={{ fontWeight: 700, fontSize: '2.5rem' }}
+                  style={{ 
+                    fontWeight: 700, 
+                    fontSize: window.innerWidth < 768 ? '1.75rem' : '2.5rem',
+                    marginBottom: window.innerWidth < 768 ? '8px' : '16px'
+                  }}
                 >
                   📊 Dashboard Ejecutivo
                 </Title>
-                <Text className="text-lg text-gray-600">
+                <Text className="text-lg text-gray-600" style={{ fontSize: window.innerWidth < 768 ? '14px' : '16px' }}>
                   Visión completa y en tiempo real de Milán Fragancias
                 </Text>
               </div>
             </Col>
             <Col xs={24} lg={12}>
-              <div className="flex justify-end items-center gap-4">
+              <div style={{ 
+                display: 'flex', 
+                justifyContent: window.innerWidth < 768 ? 'flex-start' : 'flex-end',
+                alignItems: 'center', 
+                gap: window.innerWidth < 768 ? '12px' : '16px',
+                flexWrap: 'wrap'
+              }}>
                 <div className="text-center">
                   <Text type="secondary" className="text-xs block">
                     Última actualización
                   </Text>
-                  <Text className="text-sm font-semibold text-gray-700">
+                  <Text className="text-sm font-semibold text-gray-700" style={{ fontSize: window.innerWidth < 768 ? '12px' : '14px' }}>
                     <CalendarOutlined className="mr-1" />
                     {dayjs(lastUpdate).format('DD/MM/YYYY HH:mm')}
                   </Text>
                 </div>
                 <Button 
                   type="primary"
-                  size="large"
+                  size={window.innerWidth < 768 ? 'middle' : 'large'}
                   icon={<ReloadOutlined />} 
                   onClick={loadDashboardData}
                   loading={loading}
@@ -354,32 +364,32 @@ const ExecutiveDashboard: React.FC = () => {
                     border: 'none'
                   }}
                 >
-                  Actualizar
+                  {window.innerWidth < 768 ? '' : 'Actualizar'}
                 </Button>
               </div>
             </Col>
           </Row>
         </div>
 
-        {/* Alertas reorganizadas */}
+        {/* Alertas reorganizadas - Responsive */}
         {safeAlerts.length > 0 && (
           <div className="mb-8">
-            <Row justify="space-between" align="middle" className="mb-4">
-              <Col>
-                <Title level={4} className="mb-0 text-gray-700 flex items-center gap-2">
+            <Row justify="space-between" align="middle" className="mb-4" gutter={[16, 16]}>
+              <Col xs={24} sm={12}>
+                <Title level={4} className="mb-0 text-gray-700 flex items-center gap-2" style={{ fontSize: window.innerWidth < 768 ? '16px' : '20px' }}>
                   <WarningOutlined className="text-orange-500" />
                   Alertas Importantes
                 </Title>
               </Col>
-              <Col>
+              <Col xs={24} sm={12} style={{ textAlign: window.innerWidth < 768 ? 'left' : 'right' }}>
                 <Text type="secondary" className="text-sm">
                   {safeAlerts.length} alerta{safeAlerts.length > 1 ? 's' : ''} activa{safeAlerts.length > 1 ? 's' : ''}
                 </Text>
               </Col>
             </Row>
-            <Row gutter={[24, 16]}>
+            <Row gutter={[16, 16]}>
               {safeAlerts.slice(0, 3).map((alert, index) => (
-                <Col xs={24} lg={8} key={alert.id || index}>
+                <Col xs={24} md={12} lg={8} key={alert.id || index}>
                   <Alert
                     message={alert.message}
                     description={alert.detail}
@@ -397,14 +407,14 @@ const ExecutiveDashboard: React.FC = () => {
           </div>
         )}
 
-        {/* KPIs del día - Mejorados */}
+        {/* KPIs del día - Mejorados y Responsive */}
         <div className="mb-8">
-          <Title level={3} className="mb-6 text-gray-700 flex items-center gap-2">
+          <Title level={3} className="mb-6 text-gray-700 flex items-center gap-2" style={{ fontSize: window.innerWidth < 768 ? '18px' : '24px' }}>
             <ThunderboltOutlined className="text-yellow-500" />
             Métricas de Hoy
           </Title>
-          <Row gutter={[24, 24]}>
-            <Col xs={24} sm={12} xl={6}>
+          <Row gutter={[16, 16]}>
+            <Col xs={24} sm={12} lg={6}>
               <GradientCard
                 title="Ventas del Día"
                 value={safeKpis.today.sales}
@@ -414,7 +424,7 @@ const ExecutiveDashboard: React.FC = () => {
                 trendLabel="vs mes anterior"
               />
             </Col>
-            <Col xs={24} sm={12} xl={6}>
+            <Col xs={24} sm={12} lg={6}>
               <GradientCard
                 title="Gastos del Día"
                 value={safeKpis.today.expenses}
@@ -424,7 +434,7 @@ const ExecutiveDashboard: React.FC = () => {
                 trendLabel="vs mes anterior"
               />
             </Col>
-            <Col xs={24} sm={12} xl={6}>
+            <Col xs={24} sm={12} lg={6}>
               <GradientCard
                 title="Utilidad del Día"
                 value={safeKpis.today.sales - safeKpis.today.expenses}
@@ -434,7 +444,7 @@ const ExecutiveDashboard: React.FC = () => {
                 trendLabel="rendimiento"
               />
             </Col>
-            <Col xs={24} sm={12} xl={6}>
+            <Col xs={24} sm={12} lg={6}>
               <GradientCard
                 title="Transacciones"
                 value={safeKpis.today.transactions}
@@ -446,24 +456,24 @@ const ExecutiveDashboard: React.FC = () => {
           </Row>
         </div>
 
-        {/* Métricas del mes */}
+        {/* Métricas del mes - Responsive */}
         <div className="mb-8">
-          <Title level={3} className="mb-6 text-gray-700 flex items-center gap-2">
+          <Title level={3} className="mb-6 text-gray-700 flex items-center gap-2" style={{ fontSize: window.innerWidth < 768 ? '18px' : '24px' }}>
             <CalendarOutlined className="text-blue-500" />
             Resumen del Mes
           </Title>
-          <Row gutter={[24, 24]}>
+          <Row gutter={[16, 16]}>
             <Col xs={24} lg={16}>
               <Card 
                 title={
-                  <span className="text-lg font-semibold text-gray-700">
+                  <span className="text-lg font-semibold text-gray-700" style={{ fontSize: window.innerWidth < 768 ? '14px' : '16px' }}>
                     📈 Tendencia de Ventas (Últimos 7 días)
                   </span>
                 }
                 className="shadow-lg border-0"
                 style={{ borderRadius: '16px' }}
               >
-                <div style={{ height: 350 }}>
+                <div style={{ height: window.innerWidth < 768 ? 250 : 350 }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={safeCharts.salesTrend.slice(-7)}>
                       <defs>
@@ -475,13 +485,14 @@ const ExecutiveDashboard: React.FC = () => {
                       <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                       <XAxis 
                         dataKey="day" 
-                        tick={{ fontSize: 12, fill: '#666' }}
+                        tick={{ fontSize: window.innerWidth < 768 ? 10 : 12, fill: '#666' }}
                         axisLine={{ stroke: '#e8e8e8' }}
                       />
                       <YAxis 
-                        tick={{ fontSize: 12, fill: '#666' }}
+                        tick={{ fontSize: window.innerWidth < 768 ? 10 : 12, fill: '#666' }}
                         tickFormatter={(value) => `$${(value / 1000).toFixed(0)}K`}
                         axisLine={{ stroke: '#e8e8e8' }}
+                        width={window.innerWidth < 768 ? 45 : 60}
                       />
                       <RechartsTooltip 
                         formatter={(value: number) => [formatCurrency(value), 'Ventas']}
@@ -490,14 +501,15 @@ const ExecutiveDashboard: React.FC = () => {
                           backgroundColor: 'white',
                           border: 'none',
                           borderRadius: '12px',
-                          boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+                          boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+                          fontSize: window.innerWidth < 768 ? '12px' : '14px'
                         }}
                       />
                       <Area 
                         type="monotone" 
                         dataKey="sales" 
                         stroke={COLORS.primary}
-                        strokeWidth={3}
+                        strokeWidth={window.innerWidth < 768 ? 2 : 3}
                         fillOpacity={1} 
                         fill="url(#colorSales)" 
                       />
@@ -510,22 +522,22 @@ const ExecutiveDashboard: React.FC = () => {
             <Col xs={24} lg={8}>
               <Card 
                 title={
-                  <span className="text-lg font-semibold text-gray-700">
+                  <span className="text-lg font-semibold text-gray-700" style={{ fontSize: window.innerWidth < 768 ? '14px' : '16px' }}>
                     💳 Métodos de Pago
                   </span>
                 }
                 className="shadow-lg border-0"
                 style={{ borderRadius: '16px', height: '100%' }}
               >
-                <div style={{ height: 300 }}>
+                <div style={{ height: window.innerWidth < 768 ? 200 : 300 }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
                         data={paymentMethodsData}
                         cx="50%"
                         cy="50%"
-                        innerRadius={60}
-                        outerRadius={120}
+                        innerRadius={window.innerWidth < 768 ? 40 : 60}
+                        outerRadius={window.innerWidth < 768 ? 80 : 120}
                         paddingAngle={5}
                         dataKey="value"
                       >
@@ -542,7 +554,8 @@ const ExecutiveDashboard: React.FC = () => {
                           backgroundColor: 'white',
                           border: 'none',
                           borderRadius: '12px',
-                          boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+                          boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+                          fontSize: window.innerWidth < 768 ? '12px' : '14px'
                         }}
                       />
                     </PieChart>
@@ -557,9 +570,9 @@ const ExecutiveDashboard: React.FC = () => {
                           className="w-3 h-3 rounded-full mr-2"
                           style={{ backgroundColor: COLORS.chart[index % COLORS.chart.length] }}
                         />
-                        <Text className="text-sm">{method.name}</Text>
+                        <Text className="text-sm" style={{ fontSize: window.innerWidth < 768 ? '12px' : '14px' }}>{method.name}</Text>
                       </div>
-                      <Text strong className="text-sm">
+                      <Text strong className="text-sm" style={{ fontSize: window.innerWidth < 768 ? '12px' : '14px' }}>
                         {formatCurrency(method.value)}
                       </Text>
                     </div>
@@ -570,12 +583,12 @@ const ExecutiveDashboard: React.FC = () => {
           </Row>
         </div>
 
-        {/* Top productos y finanzas */}
-        <Row gutter={[24, 24]}>
+        {/* Top productos y finanzas - Responsive */}
+        <Row gutter={[16, 16]}>
           <Col xs={24} lg={12}>
             <Card 
               title={
-                <span className="text-lg font-semibold text-gray-700 flex items-center gap-2">
+                <span className="text-lg font-semibold text-gray-700 flex items-center gap-2" style={{ fontSize: window.innerWidth < 768 ? '14px' : '16px' }}>
                   <CrownOutlined className="text-yellow-500" />
                   Productos Estrella del Mes
                 </span>
@@ -588,6 +601,7 @@ const ExecutiveDashboard: React.FC = () => {
                 pagination={false}
                 size="small"
                 rowKey={(record, index) => `${record.product?.id || index}`}
+                scroll={{ x: window.innerWidth < 768 ? 400 : undefined }}
                 columns={[
                   {
                     title: 'Ranking',

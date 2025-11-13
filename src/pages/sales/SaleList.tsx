@@ -63,6 +63,10 @@ const SaleList: React.FC = () => {
   );
   const { user } = useAppSelector((state: any) => state.auth);
 
+  // Responsive states
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [isTablet, setIsTablet] = useState(window.innerWidth >= 768 && window.innerWidth < 1024);
+
   const [selectedSale, setSelectedSale] = useState<any>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('all'); // all, paid, pending, partial
@@ -79,6 +83,17 @@ const SaleList: React.FC = () => {
   const [abono, setAbono] = useState<number>(0);
   const [method, setMethod] = useState<string>("Efectivo");
   const [note, setNote] = useState<string>("");
+
+  // Responsive handler
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+      setIsTablet(window.innerWidth >= 768 && window.innerWidth < 1024);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Cargar ventas al montar el componente y cuando cambien los filtros
   useEffect(() => {
@@ -365,9 +380,9 @@ const SaleList: React.FC = () => {
       title: 'ID',
       dataIndex: 'id',
       key: 'id',
-      width: 80,
+      width: isMobile ? 60 : 80,
       render: (text: any) => (
-        <Text code style={{ fontSize: '12px' }}>
+        <Text code style={{ fontSize: isMobile ? '11px' : '12px' }}>
           #{text}
         </Text>
       ),
@@ -376,37 +391,38 @@ const SaleList: React.FC = () => {
       title: 'Fecha',
       dataIndex: 'date',
       key: 'date',
-      width: 120,
+      width: isMobile ? 90 : 120,
       render: (text: any) => (
-        <Text style={{ fontSize: '13px' }}>
-          {dayjs(text).format('DD/MM/YYYY')}
+        <Text style={{ fontSize: isMobile ? '11px' : '13px' }}>
+          {isMobile ? dayjs(text).format('DD/MM') : dayjs(text).format('DD/MM/YYYY')}
         </Text>
       ),
     },
-    {
+    ...(!isMobile ? [{
       title: 'Cliente',
       dataIndex: 'customerName',
       key: 'customerName',
-      width: 200,
+      width: isTablet ? 150 : 200,
+      ellipsis: true,
       render: (text: any) => (
         <Text style={{ fontSize: '13px', fontWeight: 500 }}>
           {text || 'Cliente ocasional'}
         </Text>
       ),
-    },
+    }] : []),
     {
       title: 'Total',
       dataIndex: 'totalAmount',
       key: 'totalAmount',
-      width: 120,
+      width: isMobile ? 80 : 120,
       align: 'right' as const,
       render: (text: any) => (
-        <Text strong style={{ fontSize: '14px', color: '#1890ff' }}>
+        <Text strong style={{ fontSize: isMobile ? '12px' : '14px', color: '#1890ff' }}>
           ${text?.toLocaleString() || '0'}
         </Text>
       ),
     },
-    {
+    ...(!isMobile && !isTablet ? [{
       title: 'Método de Pago',
       dataIndex: 'paymentMethod',
       key: 'paymentMethod',
@@ -421,11 +437,11 @@ const SaleList: React.FC = () => {
         };
         return <Tag color={colors[text] || "default"}>{text}</Tag>;
       },
-    },
+    }] : []),
     {
       title: 'Estado',
       key: 'status',
-      width: 120,
+      width: isMobile ? 80 : 120,
       render: (record: any) => {
         // Usar Math.round para evitar problemas de decimales
         const totalAmount = Math.round((record.totalAmount || 0) * 100) / 100;
@@ -434,29 +450,32 @@ const SaleList: React.FC = () => {
         
         // Si está pagado completamente (incluyendo tolerancia para decimales menores a 1)
         if (record.isPaid || pendiente <= 1) {
-          return <Tag color="success">Pagado</Tag>;
+          return <Tag color="success">{isMobile ? '✓' : 'Pagado'}</Tag>;
         } 
         // Si tiene abonos pero no está completamente pagado
         else if (paidAmount > 0 && pendiente > 1) {
           return (
             <div>
-              <Tag color="warning">Abonado</Tag>
-              <Text type="secondary" style={{ fontSize: '11px', display: 'block' }}>
-                Saldo: ${pendiente.toLocaleString()}
-              </Text>
+              <Tag color="warning">{isMobile ? '◐' : 'Abonado'}</Tag>
+              {!isMobile && (
+                <Text type="secondary" style={{ fontSize: '11px', display: 'block' }}>
+                  Saldo: ${pendiente.toLocaleString()}
+                </Text>
+              )}
             </div>
           );
         } 
         // Si no tiene abonos
         else {
-          return <Tag color="error">Pendiente</Tag>;
+          return <Tag color="error">{isMobile ? '✗' : 'Pendiente'}</Tag>;
         }
       },
     },
     {
       title: 'Acciones',
       key: 'actions',
-      width: 200,
+      width: isMobile ? 90 : isTablet ? 150 : 200,
+      fixed: isMobile ? ('right' as const) : undefined,
       render: (record: any) => {
         // Usar Math.round para evitar problemas de decimales
         const totalAmount = Math.round((record.totalAmount || 0) * 100) / 100;
@@ -465,44 +484,48 @@ const SaleList: React.FC = () => {
         const isCredit = record.paymentMethod === 'Crédito' || pendiente > 1;
         
         return (
-          <Space size={4}>
+          <Space size={isMobile ? 2 : 4} direction={isMobile ? "vertical" : "horizontal"}>
             <Button
               type="link"
               icon={<EyeOutlined />}
               onClick={() => handleViewDetail(record)}
-              size="small"
-              style={{ padding: '4px 8px' }}
+              size={isMobile ? "middle" : "small"}
+              style={{ padding: isMobile ? '4px' : '4px 8px' }}
             />
             
-            {/* Lógica de botones: Factura para créditos, Ticket para ventas pagadas */}
-            {isCredit ? (
-              <Button
-                type="link"
-                icon={<FileTextOutlined />}
-                onClick={() => handlePrint(record)}
-                size="small"
-                style={{ padding: '4px 8px', color: '#1890ff' }}
-                title="Imprimir Factura"
-              />
-            ) : (
-              <Button
-                type="link"
-                icon={<PrinterOutlined />}
-                onClick={() => handlePrintPOSTicket(record)}
-                size="small"
-                style={{ padding: '4px 8px', color: '#52c41a' }}
-                title="Imprimir Ticket POS"
-              />
+            {!isMobile && (
+              <>
+                {/* Lógica de botones: Factura para créditos, Ticket para ventas pagadas */}
+                {isCredit ? (
+                  <Button
+                    type="link"
+                    icon={<FileTextOutlined />}
+                    onClick={() => handlePrint(record)}
+                    size="small"
+                    style={{ padding: '4px 8px', color: '#1890ff' }}
+                    title="Imprimir Factura"
+                  />
+                ) : (
+                  <Button
+                    type="link"
+                    icon={<PrinterOutlined />}
+                    onClick={() => handlePrintPOSTicket(record)}
+                    size="small"
+                    style={{ padding: '4px 8px', color: '#52c41a' }}
+                    title="Imprimir Ticket POS"
+                  />
+                )}
+                
+                <Button
+                  type="link"
+                  icon={<DownloadOutlined />}
+                  onClick={() => handleDownloadPDF(record)}
+                  size="small"
+                  style={{ padding: '4px 8px', color: '#722ed1' }}
+                  title="Descargar PDF"
+                />
+              </>
             )}
-            
-            <Button
-              type="link"
-              icon={<DownloadOutlined />}
-              onClick={() => handleDownloadPDF(record)}
-              size="small"
-              style={{ padding: '4px 8px', color: '#722ed1' }}
-              title="Descargar PDF"
-            />
             
             {/* Solo mostrar botón de abono si hay saldo pendiente mayor a 1 peso */}
             {pendiente > 1 && !record.isPaid && (
@@ -510,14 +533,14 @@ const SaleList: React.FC = () => {
                 type="link"
                 icon={<DollarOutlined />}
                 onClick={() => handleOpenAbonoModal(record)}
-                size="small"
-                style={{ padding: '4px 8px', color: '#fa8c16' }}
+                size={isMobile ? "middle" : "small"}
+                style={{ padding: isMobile ? '4px' : '4px 8px', color: '#fa8c16' }}
                 title="Registrar Abono"
               />
             )}
             
             {/* Botón para saldar deudas pequeñas (menores a 1 peso) */}
-            {pendiente > 0 && pendiente <= 1 && !record.isPaid && (
+            {!isMobile && pendiente > 0 && pendiente <= 1 && !record.isPaid && (
               <Button
                 type="link"
                 icon={<CheckCircleOutlined />}
@@ -528,8 +551,8 @@ const SaleList: React.FC = () => {
               />
             )}
 
-            {/* Botón ELIMINAR - Solo visible para ADMIN y SUPER_ADMIN */}
-            {isAdminOrSuperAdmin() && (
+            {/* Botón ELIMINAR - Solo visible para ADMIN y SUPER_ADMIN y no en mobile */}
+            {!isMobile && isAdminOrSuperAdmin() && (
               <Button
                 type="link"
                 icon={<DeleteOutlined />}
@@ -561,32 +584,39 @@ const SaleList: React.FC = () => {
 
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)' }}>
-      <div style={{ padding: '0 16px' }}>
+      <div style={{ padding: isMobile ? '0 8px' : '0 16px' }}>
         {/* Header mejorado con diseño gradient */}
         <div className="mb-8">
-          <Row justify="space-between" align="middle" className="mb-6">
+          <Row justify="space-between" align="middle" className="mb-6" gutter={[16, 16]}>
             <Col xs={24} lg={12}>
               <div>
                 <Title 
                   level={1} 
                   className="mb-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"
-                  style={{ fontWeight: 700, fontSize: '2.5rem', margin: 0 }}
+                  style={{ 
+                    fontWeight: 700, 
+                    fontSize: isMobile ? '1.75rem' : '2.5rem', 
+                    margin: 0 
+                  }}
                 >
-                  💼 Administración de Ventas
+                  💼 {isMobile ? 'Ventas' : 'Administración de Ventas'}
                 </Title>
-                <Text className="text-lg text-gray-600">
-                  Gestiona y supervisa todas las ventas del sistema
-                </Text>
+                {!isMobile && (
+                  <Text className="text-lg text-gray-600">
+                    Gestiona y supervisa todas las ventas del sistema
+                  </Text>
+                )}
               </div>
             </Col>
-            <Col xs={24} lg={12} style={{ textAlign: 'right' }}>
-              <Space size="middle">
+            <Col xs={24} lg={12} style={{ textAlign: isMobile ? 'left' : 'right' }}>
+              <Space size={isMobile ? "small" : "middle"} wrap style={{ width: '100%', justifyContent: isMobile ? 'flex-start' : 'flex-end' }}>
                 <RangePicker
                   value={[
                     filters.dateFrom ? dayjs(filters.dateFrom) : null,
                     filters.dateTo ? dayjs(filters.dateTo) : null,
                   ]}
                   onChange={handleDateChange}
+                  size={isMobile ? "middle" : "large"}
                   style={{ 
                     borderRadius: '12px',
                     boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
@@ -596,59 +626,61 @@ const SaleList: React.FC = () => {
                 <Button
                   type="primary"
                   icon={<PlusOutlined />}
-                  size="large"
+                  size={isMobile ? "middle" : "large"}
                   onClick={handleGoToPOS}
                   style={{
                     background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                     border: 'none',
                     borderRadius: '12px',
-                    height: '48px',
+                    height: isMobile ? '40px' : '48px',
                     fontWeight: 600,
                     boxShadow: '0 8px 25px rgba(102, 126, 234, 0.3)',
                   }}
                 >
-                  Ir al POS
+                  {isMobile ? 'POS' : 'Ir al POS'}
                 </Button>
                 
-                <Button
-                  icon={<CheckCircleOutlined />}
-                  size="large"
-                  onClick={handleSaldarTodasDeudasPequenas}
-                  style={{
-                    background: 'linear-gradient(135deg, #52c41a 0%, #73d13d 100%)',
-                    border: 'none',
-                    borderRadius: '12px',
-                    height: '48px',
-                    fontWeight: 600,
-                    color: 'white',
-                    boxShadow: '0 8px 25px rgba(82, 196, 26, 0.3)',
-                  }}
-                  title="Saldar todas las deudas menores a $1"
-                >
-                  Saldar Centavos
-                </Button>
+                {!isMobile && (
+                  <Button
+                    icon={<CheckCircleOutlined />}
+                    size="large"
+                    onClick={handleSaldarTodasDeudasPequenas}
+                    style={{
+                      background: 'linear-gradient(135deg, #52c41a 0%, #73d13d 100%)',
+                      border: 'none',
+                      borderRadius: '12px',
+                      height: '48px',
+                      fontWeight: 600,
+                      color: 'white',
+                      boxShadow: '0 8px 25px rgba(82, 196, 26, 0.3)',
+                    }}
+                    title="Saldar todas las deudas menores a $1"
+                  >
+                    Saldar Centavos
+                  </Button>
+                )}
               </Space>
             </Col>
           </Row>
 
           {/* Tarjetas de estadísticas con diseño gradient mejorado */}
-          <Row gutter={[24, 24]} className="mb-8">
+          <Row gutter={isMobile ? [12, 12] : [24, 24]} className="mb-8">
             <Col xs={24} sm={12} lg={6}>
               <Card
                 style={{
                   background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                   border: 'none',
-                  borderRadius: '20px',
+                  borderRadius: isMobile ? '16px' : '20px',
                   boxShadow: '0 15px 35px rgba(102, 126, 234, 0.2)',
                   color: 'white',
                 }}
-                bodyStyle={{ padding: '28px' }}
+                bodyStyle={{ padding: isMobile ? '20px' : '28px' }}
               >
                 <Statistic
-                  title={<span style={{ color: 'rgba(255,255,255,0.8)', fontSize: '16px', fontWeight: 500 }}>Total Ventas</span>}
+                  title={<span style={{ color: 'rgba(255,255,255,0.8)', fontSize: isMobile ? '14px' : '16px', fontWeight: 500 }}>Total Ventas</span>}
                   value={items.length}
-                  prefix={<ShoppingCartOutlined style={{ color: 'white', fontSize: '24px' }} />}
-                  valueStyle={{ color: 'white', fontSize: '32px', fontWeight: 'bold' }}
+                  prefix={<ShoppingCartOutlined style={{ color: 'white', fontSize: isMobile ? '20px' : '24px' }} />}
+                  valueStyle={{ color: 'white', fontSize: isMobile ? '24px' : '32px', fontWeight: 'bold' }}
                 />
               </Card>
             </Col>
@@ -657,17 +689,17 @@ const SaleList: React.FC = () => {
                 style={{
                   background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
                   border: 'none',
-                  borderRadius: '20px',
+                  borderRadius: isMobile ? '16px' : '20px',
                   boxShadow: '0 15px 35px rgba(240, 147, 251, 0.2)',
                   color: 'white',
                 }}
-                bodyStyle={{ padding: '28px' }}
+                bodyStyle={{ padding: isMobile ? '20px' : '28px' }}
               >
                 <Statistic
-                  title={<span style={{ color: 'rgba(255,255,255,0.8)', fontSize: '16px', fontWeight: 500 }}>Ingresos Totales</span>}
+                  title={<span style={{ color: 'rgba(255,255,255,0.8)', fontSize: isMobile ? '14px' : '16px', fontWeight: 500 }}>Ingresos Totales</span>}
                   value={totalVentas}
-                  prefix={<DollarOutlined style={{ color: 'white', fontSize: '24px' }} />}
-                  valueStyle={{ color: 'white', fontSize: '28px', fontWeight: 'bold' }}
+                  prefix={<DollarOutlined style={{ color: 'white', fontSize: isMobile ? '20px' : '24px' }} />}
+                  valueStyle={{ color: 'white', fontSize: isMobile ? '22px' : '28px', fontWeight: 'bold' }}
                   formatter={(value) => `$${Number(value).toLocaleString()}`}
                 />
               </Card>
@@ -677,17 +709,17 @@ const SaleList: React.FC = () => {
                 style={{
                   background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
                   border: 'none',
-                  borderRadius: '20px',
+                  borderRadius: isMobile ? '16px' : '20px',
                   boxShadow: '0 15px 35px rgba(79, 172, 254, 0.2)',
                   color: 'white',
                 }}
-                bodyStyle={{ padding: '28px' }}
+                bodyStyle={{ padding: isMobile ? '20px' : '28px' }}
               >
                 <Statistic
-                  title={<span style={{ color: 'rgba(255,255,255,0.8)', fontSize: '16px', fontWeight: 500 }}>Pagado</span>}
+                  title={<span style={{ color: 'rgba(255,255,255,0.8)', fontSize: isMobile ? '14px' : '16px', fontWeight: 500 }}>Pagado</span>}
                   value={totalPagado}
-                  prefix={<RiseOutlined style={{ color: 'white', fontSize: '24px' }} />}
-                  valueStyle={{ color: 'white', fontSize: '28px', fontWeight: 'bold' }}
+                  prefix={<RiseOutlined style={{ color: 'white', fontSize: isMobile ? '20px' : '24px' }} />}
+                  valueStyle={{ color: 'white', fontSize: isMobile ? '22px' : '28px', fontWeight: 'bold' }}
                   formatter={(value) => `$${Number(value).toLocaleString()}`}
                 />
               </Card>
@@ -697,17 +729,17 @@ const SaleList: React.FC = () => {
                 style={{
                   background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
                   border: 'none',
-                  borderRadius: '20px',
+                  borderRadius: isMobile ? '16px' : '20px',
                   boxShadow: '0 15px 35px rgba(250, 112, 154, 0.2)',
                   color: 'white',
                 }}
-                bodyStyle={{ padding: '28px' }}
+                bodyStyle={{ padding: isMobile ? '20px' : '28px' }}
               >
                 <Statistic
-                  title={<span style={{ color: 'rgba(255,255,255,0.8)', fontSize: '16px', fontWeight: 500 }}>Por Cobrar</span>}
+                  title={<span style={{ color: 'rgba(255,255,255,0.8)', fontSize: isMobile ? '14px' : '16px', fontWeight: 500 }}>Por Cobrar</span>}
                   value={totalPendiente}
-                  prefix={<CalendarOutlined style={{ color: 'white', fontSize: '24px' }} />}
-                  valueStyle={{ color: 'white', fontSize: '28px', fontWeight: 'bold' }}
+                  prefix={<CalendarOutlined style={{ color: 'white', fontSize: isMobile ? '20px' : '24px' }} />}
+                  valueStyle={{ color: 'white', fontSize: isMobile ? '22px' : '28px', fontWeight: 'bold' }}
                   formatter={(value) => `$${Number(value).toLocaleString()}`}
                 />
               </Card>
@@ -718,34 +750,34 @@ const SaleList: React.FC = () => {
         {/* Filtros de estado */}
         <Card
           style={{
-            borderRadius: '16px',
+            borderRadius: isMobile ? '12px' : '16px',
             boxShadow: '0 8px 24px rgba(0,0,0,0.06)',
             border: 'none',
             marginBottom: '24px',
             background: 'rgba(255,255,255,0.9)',
           }}
-          bodyStyle={{ padding: '20px' }}
+          bodyStyle={{ padding: isMobile ? '12px' : '20px' }}
         >
-          <Row justify="space-between" align="middle">
-            <Col>
-              <Space align="center">
-                <FilterOutlined style={{ color: '#667eea', fontSize: '16px' }} />
-                <Text strong style={{ color: '#667eea' }}>Filtrar por estado:</Text>
+          <Row justify="space-between" align="middle" gutter={[8, 8]}>
+            <Col xs={24} md={18}>
+              <Space align="center" wrap>
+                <FilterOutlined style={{ color: '#667eea', fontSize: isMobile ? '14px' : '16px' }} />
+                {!isMobile && <Text strong style={{ color: '#667eea' }}>Filtrar por estado:</Text>}
                 <Radio.Group
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
                   buttonStyle="solid"
-                  size="small"
+                  size={isMobile ? "small" : "middle"}
                 >
                   <Radio.Button value="all">Todas</Radio.Button>
                   <Radio.Button value="paid">Pagadas</Radio.Button>
                   <Radio.Button value="pending">Pendientes</Radio.Button>
-                  <Radio.Button value="partial">Con Abonos</Radio.Button>
+                  <Radio.Button value="partial">{isMobile ? 'Abonos' : 'Con Abonos'}</Radio.Button>
                 </Radio.Group>
               </Space>
             </Col>
-            <Col>
-              <Text type="secondary" style={{ fontSize: '14px' }}>
+            <Col xs={24} md={6} style={{ textAlign: isMobile ? 'left' : 'right' }}>
+              <Text type="secondary" style={{ fontSize: isMobile ? '12px' : '14px' }}>
                 {getFilteredSales().length} de {items.length} ventas
               </Text>
             </Col>
@@ -755,29 +787,33 @@ const SaleList: React.FC = () => {
         {/* Tabla con diseño mejorado */}
         <Card
           style={{
-            borderRadius: '20px',
+            borderRadius: isMobile ? '12px' : '20px',
             boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
             border: 'none',
             background: 'rgba(255,255,255,0.95)',
             backdropFilter: 'blur(10px)',
           }}
-          bodyStyle={{ padding: '32px' }}
+          bodyStyle={{ padding: isMobile ? '16px' : '32px' }}
         >
           <Table
             columns={columns}
             dataSource={filteredSales}
             rowKey="id"
             loading={loading}
+            size={isMobile ? "small" : "middle"}
             pagination={{
-              pageSize: 10,
-              showSizeChanger: true,
-              showQuickJumper: true,
-              showTotal: (total) => `Total ${total} ventas`,
+              pageSize: isMobile ? 5 : 10,
+              showSizeChanger: !isMobile,
+              showQuickJumper: !isMobile,
+              showTotal: (total) => isMobile ? `${total} ventas` : `Total ${total} ventas`,
               style: { marginTop: '24px' },
             }}
-            scroll={{ x: 1000 }}
+            scroll={{ 
+              x: isMobile ? 600 : isTablet ? 900 : 1000,
+              y: isMobile ? 'calc(50vh - 100px)' : undefined
+            }}
             style={{
-              borderRadius: '16px',
+              borderRadius: isMobile ? '12px' : '16px',
               overflow: 'hidden',
             }}
           />

@@ -331,6 +331,10 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
         date: saleDate,
         clientId: selectedClient?.id || undefined,
         customerName: selectedClient?.name || customerName,
+        subtotalAmount: totals.subtotal,
+        discountType: generalDiscountType,
+        discountValue: generalDiscountValue,
+        discountAmount: discountAmount,
         totalAmount: finalTotal,
         paidAmount: finalTotal,
         isPaid: true,
@@ -430,6 +434,10 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
         date: saleDate,
         clientId: selectedClient?.id || undefined, // Solo enviar si existe y no es null
         customerName: selectedClient?.name || customerName,
+        subtotalAmount: totals.subtotal,
+        discountType: generalDiscountType,
+        discountValue: generalDiscountValue,
+        discountAmount: discountAmount,
         totalAmount: finalTotal,
         paidAmount: isCredit ? 0 : finalTotal, // Si es crédito, monto pagado = 0
         isPaid: !isCredit, // Si es crédito, no está pagada
@@ -501,24 +509,35 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
     }
   };
 
-  // Columnas de la tabla
+  // Columnas de la tabla - Responsive
+  const isMobile = window.innerWidth < 768;
+  const isTablet = window.innerWidth >= 768 && window.innerWidth < 1024;
+  
   const columns = [
     {
       title: 'Producto',
       dataIndex: 'product',
       key: 'product',
+      width: isMobile ? 140 : undefined,
       render: (product: Product) => (
           <div>
-            <Text strong>{product.name}</Text>
-            {product.category && (
+            <Text strong style={{ fontSize: isMobile ? '13px' : '14px' }}>
+              {product.name}
+            </Text>
+            {product.category && !isMobile && (
               <div style={{ marginTop: 4 }}>
-                <Tag color="blue">{product.category.name}</Tag>
+                <Tag color="blue" style={{ fontSize: '11px' }}>{product.category.name}</Tag>
                 {(product.salesType === 'INSUMO' || product.salesType === 'COMBO') && (
-                  <Tag color="orange">
+                  <Tag color="orange" style={{ fontSize: '10px' }}>
                     {product.salesType === 'INSUMO' ? '🔧 Insumo' : '📦 Combo'}
                   </Tag>
                 )}
               </div>
+            )}
+            {isMobile && (product.salesType === 'INSUMO' || product.salesType === 'COMBO') && (
+              <Tag color="orange" style={{ fontSize: '9px', marginTop: '2px' }}>
+                {product.salesType === 'INSUMO' ? '🔧' : '📦'}
+              </Tag>
             )}
           </div>
       ),
@@ -527,29 +546,30 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
       title: 'Cant.',
       dataIndex: 'quantity',
       key: 'quantity',
-      width: 80,
+      width: isMobile ? 70 : 90,
       render: (quantity: number, record: POSItem) => (
         <InputNumber
           min={1}
           value={quantity}
           onChange={(value) => updateQuantity(record.key, value || 1)}
-          style={{ width: '60px' }}
+          size={isMobile ? 'small' : 'middle'}
+          style={{ width: isMobile ? '55px' : '70px' }}
         />
       ),
     },
-    // Columna de costo (solo visible si está habilitada)
-    ...(posConfig.editCostEnabled ? [{
+    // Columna de costo (solo visible si está habilitada Y no es móvil)
+    ...(!isMobile && posConfig.editCostEnabled ? [{
       title: 'Costo',
       dataIndex: 'purchasePrice',
       key: 'purchasePrice',
-      width: 100,
+      width: isTablet ? 100 : 110,
       render: (cost: number, record: POSItem) => {
         const isInsumoOrCombo = record.product.salesType === 'INSUMO' || record.product.salesType === 'COMBO';
         
         if (isInsumoOrCombo) {
           return (
             <div style={{ textAlign: 'center' }}>
-              <Text type="secondary">N/A</Text>
+              <Text type="secondary" style={{ fontSize: '12px' }}>N/A</Text>
             </div>
           );
         }
@@ -562,11 +582,12 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
               onChange={(value) => updatePurchasePrice(record.key, value || 0)}
               formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
               parser={(value) => parseFloat(value!.replace(/\$\s?|(,*)/g, '')) || 0}
-              style={{ width: '90px' }}
+              size={isTablet ? 'small' : 'middle'}
+              style={{ width: isTablet ? '85px' : '95px' }}
               min={0}
             />
             <div>
-              <Text type="secondary" style={{ fontSize: '11px' }}>
+              <Text type="secondary" style={{ fontSize: '10px' }}>
                 Margen: {record.profitMargin.toFixed(1)}%
               </Text>
             </div>
@@ -575,10 +596,10 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
       },
     }] : []),
     {
-      title: 'Precio Unit.',
+      title: isMobile ? 'Precio' : 'Precio Unit.',
       dataIndex: 'unitPrice',
       key: 'unitPrice',
-      width: 120,
+      width: isMobile ? 100 : 130,
       render: (price: number, record: POSItem) => {
         const isInsumoOrCombo = record.product.salesType === 'INSUMO' || record.product.salesType === 'COMBO';
         
@@ -590,19 +611,20 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
               onChange={(value) => updateUnitPrice(record.key, value || 0)}
               formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
               parser={(value) => parseFloat(value!.replace(/\$\s?|(,*)/g, '')) || 0}
-              style={{ width: '100px' }}
+              size={isMobile ? 'small' : 'middle'}
+              style={{ width: isMobile ? '85px' : '110px' }}
               disabled={isInsumoOrCombo}
             />
             {isInsumoOrCombo && (
               <div>
-                <Text type="secondary" style={{ fontSize: '11px' }}>
+                <Text type="secondary" style={{ fontSize: '10px' }}>
                   Sin costo
                 </Text>
               </div>
             )}
-            {!isInsumoOrCombo && price !== record.suggestedPrice && (
+            {!isMobile && !isInsumoOrCombo && price !== record.suggestedPrice && (
               <div>
-                <Text type="secondary" style={{ fontSize: '11px' }}>
+                <Text type="secondary" style={{ fontSize: '10px' }}>
                   Sugerido: ${record.suggestedPrice.toLocaleString()}
                 </Text>
               </div>
@@ -615,28 +637,34 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
       title: 'Total',
       dataIndex: 'totalPrice',
       key: 'totalPrice',
-      width: 100,
+      width: isMobile ? 80 : 100,
       render: (price: number) => (
-        <Text strong>${price.toLocaleString()}</Text>
+        <Text strong style={{ fontSize: isMobile ? '13px' : '14px' }}>
+          ${price.toLocaleString()}
+        </Text>
       ),
     },
-    {
+    // Columna de ganancia (oculta en móvil)
+    ...(!isMobile ? [{
       title: 'Ganancia',
       dataIndex: 'profit',
       key: 'profit',
-      width: 120,
+      width: isTablet ? 100 : 120,
       render: (profit: number, record: POSItem) => (
         <div>
           <Text 
             strong 
-            style={{ color: profit > 0 ? '#52c41a' : '#ff4d4f' }}
+            style={{ 
+              color: profit > 0 ? '#52c41a' : '#ff4d4f',
+              fontSize: isTablet ? '13px' : '14px'
+            }}
           >
             ${(profit * record.quantity).toLocaleString()}
           </Text>
           <div>
             <Text 
               style={{ 
-                fontSize: '11px', 
+                fontSize: '10px', 
                 color: record.profitMargin > 50 ? '#52c41a' : 
                        record.profitMargin > 20 ? '#faad14' : '#ff4d4f' 
               }}
@@ -646,16 +674,18 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
           </div>
         </div>
       ),
-    },
+    }] : []),
     {
-      title: 'Acciones',
+      title: isMobile ? '' : 'Acciones',
       key: 'actions',
-      width: 60,
+      width: isMobile ? 50 : 70,
+      fixed: isMobile ? ('right' as const) : undefined,
       render: (_: any, record: POSItem) => (
         <Button
           type="text"
           danger
-          icon={<DeleteOutlined />}
+          size={isMobile ? 'small' : 'middle'}
+          icon={<DeleteOutlined style={{ fontSize: isMobile ? '16px' : '14px' }} />}
           onClick={() => removeItem(record.key)}
         />
       ),
@@ -663,39 +693,51 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
   ];
 
   return (
-    <div style={{ height: '100vh', padding: '16px' }}>
-      <Row gutter={16} style={{ height: '100%' }}>
+    <div style={{ 
+      height: '100vh', 
+      padding: window.innerWidth < 768 ? '8px' : '16px' 
+    }}>
+      <Row gutter={window.innerWidth < 768 ? [8, 8] : [16, 16]} style={{ height: '100%' }}>
         {/* Columna izquierda - Búsqueda y productos */}
-        <Col span={16}>
+        <Col xs={24} lg={16} style={{ 
+          marginBottom: window.innerWidth < 768 ? '8px' : '0' 
+        }}>
           <Card 
             title={
-              <Space>
-                <span>🛒 Punto de Venta</span>
+              <Space size={window.innerWidth < 768 ? 'small' : 'middle'}>
+                <span style={{ fontSize: window.innerWidth < 768 ? '14px' : '16px' }}>
+                  🛒 Punto de Venta
+                </span>
                 {items.length > 0 && (
-                  <Tag color="green" style={{ fontSize: '11px' }}>
-                    💾 {items.length} productos guardados
+                  <Tag color="green" style={{ fontSize: window.innerWidth < 768 ? '10px' : '11px' }}>
+                    💾 {items.length} productos
                   </Tag>
                 )}
               </Space>
             } 
-            style={{ height: '100%' }}
+            style={{ 
+              height: window.innerWidth < 768 ? 'auto' : '100%' 
+            }}
             extra={
-              <Space>
+              <Space size="small">
+                {process.env.NODE_ENV === 'development' && (
+                  <Button 
+                    size="small"
+                    onClick={async () => {
+                      await refetchConfig();
+                      console.log('Config refrescada:', posConfig);
+                    }}
+                  >
+                    🔄
+                  </Button>
+                )}
                 <Button 
-                  size="small"
-                  onClick={async () => {
-                    await refetchConfig();
-                    console.log('Config refrescada:', posConfig);
-                  }}
-                >
-                  🔄 Debug Config
-                </Button>
-                <Button 
+                  size={window.innerWidth < 768 ? 'small' : 'middle'}
                   icon={<ClearOutlined />} 
                   onClick={clearCart}
                   disabled={items.length === 0}
                 >
-                  Limpiar
+                  {window.innerWidth < 768 ? '' : 'Limpiar'}
                 </Button>
               </Space>
             }
@@ -704,12 +746,12 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
             <div style={{ marginBottom: 16 }}>
               <Input
                 ref={searchInputRef}
-                size="large"
-                placeholder="Buscar producto (nombre, código)..."
+                size={window.innerWidth < 768 ? 'middle' : 'large'}
+                placeholder={window.innerWidth < 768 ? 'Buscar producto...' : 'Buscar producto (nombre, código)...'}
                 prefix={<SearchOutlined />}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                autoFocus
+                autoFocus={window.innerWidth >= 768}
               />
               
               {/* Resultados de búsqueda */}
@@ -718,7 +760,7 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
                   size="small" 
                   style={{ 
                     marginTop: 8, 
-                    maxHeight: 200, 
+                    maxHeight: window.innerWidth < 768 ? 150 : 200, 
                     overflowY: 'auto',
                     border: '1px solid #d9d9d9'
                   }}
@@ -727,26 +769,30 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
                     <div 
                       key={product.id}
                       style={{ 
-                        padding: '8px 12px', 
+                        padding: window.innerWidth < 768 ? '6px 8px' : '8px 12px', 
                         cursor: 'pointer',
                         borderBottom: '1px solid #f0f0f0'
                       }}
                       onClick={() => addToCart(product)}
                     >
-                      <Row justify="space-between" align="middle">
-                        <Col>
-                          <Text strong>{product.name}</Text>
+                      <Row justify="space-between" align="middle" gutter={[8, 0]}>
+                        <Col xs={18} sm={20}>
+                          <Text strong style={{ fontSize: window.innerWidth < 768 ? '13px' : '14px' }}>
+                            {product.name}
+                          </Text>
                           <div>
-                            <Tag color="blue">
+                            <Tag color="blue" style={{ fontSize: window.innerWidth < 768 ? '10px' : '12px', marginTop: '4px' }}>
                               {product.category?.name}
                             </Tag>
-                            <Text type="secondary">
+                            <Text type="secondary" style={{ fontSize: window.innerWidth < 768 ? '11px' : '12px' }}>
                               Stock: {product.stock} {product.unit?.name}
                             </Text>
                           </div>
                         </Col>
-                        <Col>
-                          <Text strong>${product.salePrice.toLocaleString()}</Text>
+                        <Col xs={6} sm={4} style={{ textAlign: 'right' }}>
+                          <Text strong style={{ fontSize: window.innerWidth < 768 ? '13px' : '14px' }}>
+                            ${product.salePrice.toLocaleString()}
+                          </Text>
                         </Col>
                       </Row>
                     </div>
@@ -760,27 +806,39 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
               dataSource={items}
               columns={columns}
               pagination={false}
-              size="small"
-              scroll={{ y: 'calc(100vh - 300px)' }}
+              size={window.innerWidth < 768 ? 'small' : 'middle'}
+              scroll={{ 
+                x: window.innerWidth < 768 ? 600 : undefined,
+                y: window.innerWidth < 768 ? 'calc(50vh - 200px)' : 'calc(100vh - 300px)' 
+              }}
               locale={{ emptyText: 'Carrito vacío - Busque productos arriba' }}
             />
           </Card>
         </Col>
 
         {/* Columna derecha - Resumen y checkout */}
-        <Col span={8}>
-          <Card title="💰 Resumen" style={{ height: '100%' }}>
+        <Col xs={24} lg={8}>
+          <Card 
+            title={
+              <span style={{ fontSize: window.innerWidth < 768 ? '14px' : '16px' }}>
+                💰 Resumen
+              </span>
+            }
+            style={{ 
+              height: window.innerWidth < 768 ? 'auto' : '100%' 
+            }}
+          >
             {/* Cliente */}
             <div style={{ marginBottom: 16 }}>
-              <Text strong>Cliente:</Text>
+              <Text strong style={{ fontSize: window.innerWidth < 768 ? '13px' : '14px' }}>Cliente:</Text>
               <div style={{ marginTop: 4 }}>
                 <ClientSelector
                   onSelectClient={setSelectedClient}
                   value={selectedClient}
                   placeholder={
                     paymentMethod === 'Crédito' 
-                      ? 'Seleccione un cliente registrado (requerido)' 
-                      : 'Buscar cliente o dejar vacío para cliente ocasional'
+                      ? (window.innerWidth < 768 ? 'Cliente requerido' : 'Seleccione un cliente registrado (requerido)')
+                      : (window.innerWidth < 768 ? 'Buscar cliente' : 'Buscar cliente o dejar vacío para cliente ocasional')
                   }
                   allowClear={paymentMethod !== 'Crédito'}
                 />
@@ -791,7 +849,8 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
                 <Input
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
-                  placeholder="Nombre del cliente ocasional"
+                  placeholder={window.innerWidth < 768 ? 'Nombre del cliente' : 'Nombre del cliente ocasional'}
+                  size={window.innerWidth < 768 ? 'middle' : 'large'}
                   style={{ marginTop: 8 }}
                   prefix={<UserOutlined />}
                 />
@@ -895,17 +954,17 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
               </Row>
             </Space>
 
-            <Divider />
+            <Divider style={{ margin: window.innerWidth < 768 ? '12px 0' : '16px 0' }} />
 
             {/* Descuento */}
-            <div style={{ marginBottom: 16 }}>
-              <Text strong>Descuento:</Text>
+            <div style={{ marginBottom: window.innerWidth < 768 ? 12 : 16 }}>
+              <Text strong style={{ fontSize: window.innerWidth < 768 ? '13px' : '14px' }}>Descuento:</Text>
               <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
                 <Select
                   value={generalDiscountType}
                   onChange={setGeneralDiscountType}
-                  style={{ width: 120 }}
-                  size="small"
+                  style={{ width: window.innerWidth < 768 ? 80 : 120 }}
+                  size={window.innerWidth < 768 ? 'middle' : 'large'}
                 >
                   <Option value="percentage">%</Option>
                   <Option value="fixed">$</Option>
@@ -914,7 +973,7 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
                   value={generalDiscountValue}
                   onChange={(value) => setGeneralDiscountValue(value || 0)}
                   style={{ flex: 1 }}
-                  size="small"
+                  size={window.innerWidth < 768 ? 'middle' : 'large'}
                   min={0}
                   max={generalDiscountType === 'percentage' ? 100 : totals.subtotal}
                   placeholder={generalDiscountType === 'percentage' ? '0' : '0'}
@@ -924,31 +983,31 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
               </div>
               {discountAmount > 0 && (
                 <div style={{ marginTop: 4, textAlign: 'right' }}>
-                  <Text type="secondary" style={{ fontSize: '12px' }}>
+                  <Text type="secondary" style={{ fontSize: window.innerWidth < 768 ? '11px' : '12px' }}>
                     Descuento aplicado: ${discountAmount.toLocaleString()}
                   </Text>
                 </div>
               )}
             </div>
 
-            <Divider />
+            <Divider style={{ margin: window.innerWidth < 768 ? '12px 0' : '16px 0' }} />
 
             {/* Total final */}
-            <Row justify="space-between" style={{ marginBottom: 20 }}>
-              <Title level={3} style={{ margin: 0 }}>TOTAL:</Title>
-              <Title level={3} style={{ margin: 0, color: '#1890ff' }}>
+            <Row justify="space-between" style={{ marginBottom: window.innerWidth < 768 ? 16 : 20 }}>
+              <Title level={window.innerWidth < 768 ? 4 : 3} style={{ margin: 0 }}>TOTAL:</Title>
+              <Title level={window.innerWidth < 768 ? 4 : 3} style={{ margin: 0, color: '#1890ff' }}>
                 ${finalTotal.toLocaleString()}
               </Title>
             </Row>
 
             {/* Método de pago */}
-            <div style={{ marginBottom: 16 }}>
-              <Text strong>Método de Pago:</Text>
+            <div style={{ marginBottom: window.innerWidth < 768 ? 12 : 16 }}>
+              <Text strong style={{ fontSize: window.innerWidth < 768 ? '13px' : '14px' }}>Método de Pago:</Text>
               <Select
                 value={paymentMethod}
                 onChange={setPaymentMethod}
                 style={{ width: '100%', marginTop: 4 }}
-                size="large"
+                size={window.innerWidth < 768 ? 'middle' : 'large'}
               >
                 <Option value="Efectivo">💵 Efectivo</Option>
                 <Option value="Tarjeta">💳 Tarjeta</Option>
@@ -960,16 +1019,15 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
 
             {/* Monto recibido (solo para efectivo) */}
             {paymentMethod === 'Efectivo' && (
-              <div style={{ marginBottom: 16 }}>
-                <Text strong>Monto Recibido:</Text>
+              <div style={{ marginBottom: window.innerWidth < 768 ? 12 : 16 }}>
+                <Text strong style={{ fontSize: window.innerWidth < 768 ? '13px' : '14px' }}>Monto Recibido:</Text>
                 <InputNumber
                   prefix="$"
                   value={amountReceived}
                   onChange={(value) => setAmountReceived(value || 0)}
                   style={{ width: '100%', marginTop: 4 }}
-                  size="large"
-                  formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                  parser={(value) => parseFloat(value!.replace(/\$\s?|(,*)/g, '')) || 0}
+                  size={window.innerWidth < 768 ? 'middle' : 'large'}
+                  formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}                  parser={(value) => parseFloat(value!.replace(/\$\s?|(,*)/g, '')) || 0}
                 />
                 
                 {amountReceived > 0 && change >= 0 && (
@@ -984,10 +1042,18 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
 
             {/* Información de crédito */}
             {paymentMethod === 'Crédito' && (
-              <div style={{ marginBottom: 16, padding: 12, background: '#fff7e6', border: '1px solid #ffd666', borderRadius: 6 }}>
-                <Text strong style={{ color: '#d48806' }}>⚠️ Venta a Crédito</Text>
+              <div style={{ 
+                marginBottom: window.innerWidth < 768 ? 12 : 16, 
+                padding: window.innerWidth < 768 ? 8 : 12, 
+                background: '#fff7e6', 
+                border: '1px solid #ffd666', 
+                borderRadius: 6 
+              }}>
+                <Text strong style={{ color: '#d48806', fontSize: window.innerWidth < 768 ? '12px' : '14px' }}>
+                  ⚠️ Venta a Crédito
+                </Text>
                 <br />
-                <Text type="secondary" style={{ fontSize: '12px' }}>
+                <Text type="secondary" style={{ fontSize: window.innerWidth < 768 ? '11px' : '12px' }}>
                   {selectedClient?.name ? 
                     `${selectedClient.name} deberá pagar ${finalTotal.toLocaleString()}` :
                     'Debe seleccionar un cliente registrado'
@@ -995,7 +1061,7 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
                 </Text>
                 {!selectedClient?.name && (
                   <div style={{ marginTop: 8 }}>
-                    <Text type="danger" style={{ fontSize: '12px' }}>
+                    <Text type="danger" style={{ fontSize: window.innerWidth < 768 ? '11px' : '12px' }}>
                       ⚠️ Las ventas a crédito requieren un cliente registrado en el sistema
                     </Text>
                   </div>
@@ -1004,10 +1070,10 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
             )}
 
             {/* Botones de acción */}
-            <Space direction="vertical" style={{ width: '100%' }} size="large">
+            <Space direction="vertical" style={{ width: '100%' }} size={window.innerWidth < 768 ? 'middle' : 'large'}>
               <Button
                 type="primary"
-                size="large"
+                size={window.innerWidth < 768 ? 'middle' : 'large'}
                 block
                 icon={<DollarOutlined />}
                 onClick={processSale}
@@ -1017,21 +1083,28 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
                   (paymentMethod === 'Efectivo' && amountReceived < finalTotal) ||
                   (useManualDate && !manualSaleDate) // Validar fecha manual si está activada
                 }
-                style={{ height: '50px', fontSize: '16px', fontWeight: 'bold' }}
+                style={{ 
+                  height: window.innerWidth < 768 ? '44px' : '50px', 
+                  fontSize: window.innerWidth < 768 ? '14px' : '16px', 
+                  fontWeight: 'bold' 
+                }}
               >
-                {paymentMethod === 'Crédito' ? 'REGISTRAR VENTA A CRÉDITO' : 'PROCESAR VENTA'}
+                {paymentMethod === 'Crédito' ? (window.innerWidth < 768 ? 'VENTA A CRÉDITO' : 'REGISTRAR VENTA A CRÉDITO') : 'PROCESAR VENTA'}
               </Button>
 
               {/* Botón para pagos múltiples */}
               {paymentMethod !== 'Crédito' && (
                 <Button
                   type="default"
-                  size="large"
+                  size={window.innerWidth < 768 ? 'middle' : 'large'}
                   block
                   icon={<CreditCardOutlined />}
                   onClick={() => setShowMultiplePaymentModal(true)}
                   disabled={items.length === 0}
-                  style={{ height: '40px', fontSize: '14px' }}
+                  style={{ 
+                    height: window.innerWidth < 768 ? '40px' : '40px', 
+                    fontSize: window.innerWidth < 768 ? '13px' : '14px' 
+                  }}
                 >
                   💳 PAGOS MÚLTIPLES
                 </Button>
@@ -1039,6 +1112,7 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
               
               <Button 
                 block 
+                size={window.innerWidth < 768 ? 'middle' : 'large'}
                 icon={<ClearOutlined />}
                 onClick={clearCart}
                 disabled={items.length === 0}

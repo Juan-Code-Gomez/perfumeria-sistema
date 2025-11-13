@@ -35,6 +35,10 @@ export interface Sale {
   id: number;
   date: string;
   customerName?: string;
+  subtotalAmount?: number;
+  discountType?: string;
+  discountValue?: number;
+  discountAmount?: number;
   totalAmount: number;
   paidAmount: number;
   isPaid: boolean;

@@ -1,198 +1,228 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
-  Button,
   Table,
-  Modal,
-  Tag,
-  DatePicker,
+  Button,
+  Typography,
+  Card,
+  Space,
   Row,
   Col,
-  Card,
   Form,
-  InputNumber,
-  Input,
-  message,
-  Descriptions,
-  Spin,
-  Typography,
-  Space,
-  Statistic,
+  DatePicker,
   Alert,
   Tooltip,
+  Tag,
+  message,
 } from "antd";
 import {
-  DollarOutlined,
-  CalendarOutlined,
-  CloseCircleOutlined,
-  CheckCircleOutlined,
-  InfoCircleOutlined,
-  CalculatorOutlined,
   ReloadOutlined,
-} from '@ant-design/icons';
+  CalculatorOutlined,
+  FilePdfOutlined,
+  BarChartOutlined,
+} from "@ant-design/icons";
+import dayjs from "dayjs";
 import { useAppDispatch, useAppSelector } from "../../store";
 import {
   fetchCashClosings,
-  createCashClosing,
   fetchCashClosingSummary,
+  createCashClosing,
 } from "../../features/cashClosing/cashClosingSlice";
-import dayjs from "dayjs";
+import { useResponsive } from "../../hooks/useResponsive";
+import DetailedCashClosingModal from "../../components/cashClosing/DetailedCashClosingModal";
+import CashSessionManager from "../../components/cashClosing/CashSessionManager";
+import type { CashSessionManagerRef } from "../../components/cashClosing/CashSessionManager";
+import CashClosingDetailViewModal from "../../components/cashClosing/CashClosingDetailViewModal";
+import api from "../../services/api";
 
-const { RangePicker } = DatePicker;
 const { Title, Text } = Typography;
+const { RangePicker } = DatePicker;
 
-const CashClosingList: React.FC = () => {
+const CashClosingPage: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { items, loading, error, summary, loadingSummary } = useAppSelector((s) => s.cashClosing);
+  const {
+    items: cashClosings = [],
+    loading,
+    error,
+    summary,
+    loadingSummary,
+  } = useAppSelector((state) => state.cashClosing);
 
-  // Filtros de fechas
-  const [dateRange, setDateRange] = useState<[any, any]>();
+  const { isMobile, isTablet } = useResponsive();
+  const [dateRange, setDateRange] = useState<[any, any] | null>(null);
+  const [activeSession, setActiveSession] = useState<any>(null);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [selectedClosing, setSelectedClosing] = useState<any>(null);
+  
+  // Ref para controlar el componente CashSessionManager
+  const sessionManagerRef = useRef<CashSessionManagerRef>(null);
 
-  // Debug: verificar el tipo de datos
-  console.log('Cash Closing Items:', items, 'Type:', typeof items, 'Is Array:', Array.isArray(items));
+  // Filtrar datos por rango de fechas
+  const filteredData = cashClosings.filter((item) => {
+    if (!dateRange) return true;
+    const itemDate = dayjs(item.date);
+    return (
+      itemDate.isAfter(dateRange[0]?.startOf("day")) &&
+      itemDate.isBefore(dateRange[1]?.endOf("day"))
+    );
+  });
 
-  // Asegurarse de que items sea siempre un array
-  const safeItems = Array.isArray(items) ? items : [];
+  const safeItems = Array.isArray(filteredData) ? filteredData : [];
 
-  // Cargar datos iniciales
   useEffect(() => {
     dispatch(fetchCashClosings());
   }, [dispatch]);
 
-  useEffect(() => {
-    const params =
-      dateRange && dateRange[0] && dateRange[1]
-        ? {
-            dateFrom: dateRange[0].format("YYYY-MM-DD"),
-            dateTo: dateRange[1].format("YYYY-MM-DD"),
-          }
-        : undefined;
-    dispatch(fetchCashClosings(params));
-  }, [dispatch, dateRange]);
-
+  // Definir columnas de la tabla
   const columns = [
-    { 
-      title: "📅 Fecha", 
-      dataIndex: "date", 
-      key: "date", 
-      render: (v: string) => (
-        <Space>
-          <CalendarOutlined />
-          {dayjs(v).format("DD/MM/YYYY")}
-        </Space>
+    {
+      title: "📅 Fecha y Hora",
+      dataIndex: "date",
+      key: "date",
+      render: (date: string, record: any) => (
+        <div>
+          <div>{dayjs(date).format("DD/MM/YYYY")}</div>
+          <Text type="secondary" style={{ fontSize: '12px' }}>
+            {record.createdAt ? dayjs(record.createdAt).format("HH:mm:ss") : ''}
+          </Text>
+        </div>
       ),
-      sorter: (a: any, b: any) => dayjs(a.date).valueOf() - dayjs(b.date).valueOf(),
+      sorter: (a: any, b: any) => dayjs(a.createdAt || a.date).unix() - dayjs(b.createdAt || b.date).unix(),
+      defaultSortOrder: "descend" as const,
     },
-    { 
-      title: "💰 Ventas Total", 
-      dataIndex: "totalSales", 
-      key: "totalSales", 
-      render: (v: number) => (
-        <Statistic 
-          value={v} 
-          prefix="$" 
-          precision={0} 
-          valueStyle={{ fontSize: '14px', color: '#52c41a' }}
-        />
-      ),
-      sorter: (a: any, b: any) => a.totalSales - b.totalSales,
+    {
+      title: "💰 Saldo Inicial",
+      dataIndex: "openingCash",
+      key: "openingCash",
+      render: (value: number) => `$${value?.toLocaleString() || 0}`,
+      align: "right" as const,
     },
-    { 
-      title: "💸 Gastos", 
-      dataIndex: "totalExpense", 
-      key: "totalExpense", 
-      render: (v: number) => (
-        <Statistic 
-          value={v} 
-          prefix="$" 
-          precision={0} 
-          valueStyle={{ fontSize: '14px', color: '#ff4d4f' }}
-        />
-      ),
-      sorter: (a: any, b: any) => a.totalExpense - b.totalExpense,
-    },
-    { 
-      title: "🏧 Caja Real", 
-      dataIndex: "closingCash", 
-      key: "closingCash", 
-      render: (v: number) => (
-        <Statistic 
-          value={v} 
-          prefix="$" 
-          precision={0} 
-          valueStyle={{ fontSize: '14px', color: '#1890ff' }}
-        />
-      ),
-      sorter: (a: any, b: any) => a.closingCash - b.closingCash,
-    },
-    { 
-      title: "🖥️ Caja Sistema", 
-      dataIndex: "systemCash", 
-      key: "systemCash", 
-      render: (v: number) => (
-        <Statistic 
-          value={v} 
-          prefix="$" 
-          precision={0} 
-          valueStyle={{ fontSize: '14px', color: '#722ed1' }}
-        />
-      ),
-      sorter: (a: any, b: any) => a.systemCash - b.systemCash,
+    {
+      title: "💵 Saldo Final",
+      dataIndex: "closingCash",
+      key: "closingCash",
+      render: (value: number) => `$${value?.toLocaleString() || 0}`,
+      align: "right" as const,
     },
     {
       title: "⚖️ Diferencia",
       dataIndex: "difference",
       key: "difference",
-      render: (v: number) => {
-        if (v === 0) {
-          return (
-            <Tag icon={<CheckCircleOutlined />} color="success">
-              Exacto
-            </Tag>
-          );
-        } else if (v > 0) {
-          return (
-            <Tag icon={<InfoCircleOutlined />} color="warning">
-              +${v.toLocaleString()} (Sobra)
-            </Tag>
-          );
-        } else {
-          return (
-            <Tag icon={<CloseCircleOutlined />} color="error">
-              ${Math.abs(v).toLocaleString()} (Falta)
-            </Tag>
-          );
-        }
-      },
-      sorter: (a: any, b: any) => a.difference - b.difference,
+      render: (value: number) => (
+        <Tag
+          color={
+            value === 0 ? "success" : value > 0 ? "warning" : "error"
+          }
+        >
+          {value === 0
+            ? "Cuadrada"
+            : value > 0
+            ? `+$${value.toLocaleString()}`
+            : `-$${Math.abs(value).toLocaleString()}`}
+        </Tag>
+      ),
+      align: "center" as const,
     },
-    { 
-      title: "📝 Notas", 
-      dataIndex: "notes", 
-      key: "notes",
-      render: (notes: string) => notes ? (
-        <Tooltip title={notes}>
-          <Text ellipsis style={{ maxWidth: 150 }}>
-            {notes}
-          </Text>
-        </Tooltip>
-      ) : (
-        <Text type="secondary">Sin notas</Text>
+    ...(isMobile ? [] : [
+      {
+        title: "📝 Observaciones",
+        dataIndex: "notes",
+        key: "notes",
+        ellipsis: true,
+        render: (notes: string) => notes ? (
+          <Tooltip title={notes}>
+            <Text ellipsis style={{ maxWidth: 150 }}>
+              {notes}
+            </Text>
+          </Tooltip>
+        ) : (
+          <Text type="secondary">Sin notas</Text>
+        ),
+      }
+    ]),
+    {
+      title: "🔧 Acciones",
+      key: "actions",
+      align: "center" as const,
+      width: isMobile ? 80 : 120,
+      render: (_: any, record: any) => (
+        <Space size="small">
+          <Tooltip title="Ver resumen PDF">
+            <Button
+              type="primary"
+              size="small"
+              icon={<FilePdfOutlined />}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDownloadPDF(record);
+              }}
+            />
+          </Tooltip>
+        </Space>
       ),
     },
   ];
 
+  // Función para descargar el PDF de un cierre específico
+  const handleDownloadPDF = async (record: any) => {
+    try {
+      const dateStr = dayjs(record.date).format('YYYY-MM-DD');
+      
+      // Usar axios para descargar el PDF
+      const response = await api.get(`/cash-closing/report/pdf/${dateStr}`, {
+        responseType: 'blob',
+      });
+      
+      // Crear un blob desde la respuesta
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      
+      // Crear URL temporal y descargar
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `cierre-caja-${dateStr}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      
+      // Limpiar
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      message.success('PDF descargado exitosamente');
+    } catch (error: any) {
+      console.error('Error downloading PDF:', error);
+      message.error(error.response?.data?.message || 'Error al descargar el PDF');
+    }
+  };
+
   // Formulario de registro de cierre
   const [form] = Form.useForm();
   const [saving, setSaving] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(dayjs()); // Fecha actual por defecto
+  const [selectedDate] = useState(dayjs());
 
   // Maneja la carga de resumen al abrir modal
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   console.log('Current state - Summary:', summary, 'LoadingSummary:', loadingSummary, 'SelectedDate:', selectedDate.format('YYYY-MM-DD'));
 
+  // Función para manejar el clic en una fila de cierre
+  const handleRowClick = (record: any) => {
+    setSelectedClosing(record);
+    setDetailModalOpen(true);
+  };
+
   const handleOpenModal = () => {
     console.log('Opening cash closing modal...');
+    
+    // Validar que haya una sesión activa antes de permitir cierre
+    if (!activeSession) {
+      message.warning('⚠️ Debes abrir la caja primero antes de hacer el cierre');
+      return;
+    }
+    
+    // Se permite múltiples cierres por día (diferentes turnos/sesiones)
+    // La validación de cierre duplicado fue removida para permitir flexibilidad operativa
+    
     setIsModalOpen(true);
     
     // Al abrir, trae el resumen del día seleccionado
@@ -202,7 +232,7 @@ const CashClosingList: React.FC = () => {
     dispatch(fetchCashClosingSummary(fecha));
     form.setFieldsValue({
       date: selectedDate,
-      openingCash: 0,
+      openingCash: activeSession?.openingCash || 0,
       closingCash: 0,
       notes: "",
     });
@@ -213,62 +243,53 @@ const CashClosingList: React.FC = () => {
     form.resetFields();
   };
 
-  // Cuando cambia la fecha del cierre, actualiza el resumen
-  const handleChangeDate = (date: any) => {
-    console.log('Date changed to:', date);
-    setSelectedDate(date);
-    form.setFieldsValue({ date });
-    if (date) {
-      const dateString = date.format("YYYY-MM-DD");
-      console.log('Fetching summary for new date:', dateString);
-      dispatch(fetchCashClosingSummary(dateString));
-    }
-  };
-
-  // Calcula diferencia en tiempo real al cambiar el saldo contado
-  const [diff, setDiff] = useState(0);
-
-  const handleValuesChange = (_: any, values: any) => {
-    // CÁLCULO CORRECTO: Caja sistema = Saldo inicial + Ventas efectivo + Ingresos - Gastos - Pagos
-    if (summary && values.closingCash !== undefined && values.openingCash !== undefined) {
-      const systemCashComplete = 
-        (values.openingCash || 0) +           // Saldo inicial (del form)
-        (summary.cashSales || 0) +            // Ventas en efectivo del día
-        0 -                                   // Ingresos extra (opcional, por ahora 0)
-        (summary.totalExpense || 0) -         // Gastos del día
-        (summary.totalPayments || 0);        // Pagos a proveedores
-        
-      const difference = (values.closingCash || 0) - systemCashComplete;
-      
-      console.log('💰 Cálculo de diferencia:', {
-        closingCash: values.closingCash,
-        openingCash: values.openingCash,
-        cashSales: summary.cashSales,
-        totalExpense: summary.totalExpense,
-        totalPayments: summary.totalPayments,
-        systemCashComplete,
-        difference
-      });
-      
-      setDiff(difference);
-    } else {
-      setDiff(0);
-    }
+  // Callback para manejar cambios de sesión de caja
+  const handleSessionChange = (session: any) => {
+    setActiveSession(session);
+    console.log('Session changed:', session);
   };
 
   const handleSubmit = async (values: any) => {
     setSaving(true);
     try {
+      // 1. Crear el cierre de caja
       await dispatch(
         createCashClosing({
           ...values,
           date: values.date.format("YYYY-MM-DD"),
         })
       ).unwrap();
+      
+      // 2. Cerrar la sesión de caja activa
+      if (activeSession) {
+        try {
+          const response = await api.post('/cash-session/close', {
+            closingCash: values.closingCash,
+            notes: values.notes || ''
+          });
+          
+          console.log('✅ Sesión de caja cerrada exitosamente:', response.data);
+          setActiveSession(null); // Limpiar la sesión activa
+          
+          // Refrescar el CashSessionManager para que muestre el estado correcto
+          await sessionManagerRef.current?.refreshSession();
+        } catch (error: any) {
+          console.error('❌ Error cerrando sesión de caja:', error);
+          console.error('Error response:', error.response?.data);
+          
+          // Mostrar error al usuario
+          message.error(
+            `Error al cerrar sesión: ${error.response?.data?.message || error.message || 'Error desconocido'}. ` +
+            `El cierre se guardó correctamente pero la sesión sigue activa.`
+          );
+        }
+      }
+      
       message.success("Cierre registrado correctamente");
       handleCloseModal();
       dispatch(fetchCashClosings());
     } catch (err: any) {
+      console.error('Error en cierre de caja:', err);
       message.error(err.message || "Error al registrar cierre");
     } finally {
       setSaving(false);
@@ -276,45 +297,121 @@ const CashClosingList: React.FC = () => {
   };
 
   return (
-    <div className="p-6">
-      <Row justify="space-between" align="middle" className="mb-6">
-        <Col>
-          <Title level={2} style={{ margin: 0 }}>
-            💰 Cierres de Caja
+    <div className="p-6" style={{ padding: isMobile ? '12px' : '24px' }}>
+      <Row justify="space-between" align="middle" className="mb-6" gutter={[16, 16]}>
+        <Col xs={24} md={12}>
+          <Title level={2} style={{ margin: 0, fontSize: isMobile ? '1.5rem' : '1.75rem' }}>
+            💰 {isMobile ? 'Cierres' : 'Cierres de Caja'}
           </Title>
-          <Text type="secondary">
-            Control y seguimiento de cierres diarios de caja
-          </Text>
+          {!isMobile && (
+            <Text type="secondary">
+              Control y seguimiento de cierres por turno/sesión - Puedes registrar múltiples cierres al día
+            </Text>
+          )}
         </Col>
-        <Col>
-          <Space>
+        <Col xs={24} md={12} style={{ textAlign: isMobile ? 'left' : 'right' }}>
+          <Space wrap>
             <Button 
               icon={<ReloadOutlined />} 
               onClick={() => dispatch(fetchCashClosings())}
+              size={isMobile ? "middle" : undefined}
             >
-              Actualizar
+              {!isMobile && "Actualizar"}
             </Button>
             <Button 
               type="primary" 
               icon={<CalculatorOutlined />}
               onClick={handleOpenModal}
+              size={isMobile ? "middle" : undefined}
             >
-              Registrar Cierre
+              {isMobile ? "Registrar" : "Registrar Cierre"}
             </Button>
           </Space>
         </Col>
       </Row>
 
+      {/* Indicador de Estado de Caja */}
+      {activeSession ? (
+        <Alert
+          message={`🔓 Caja Abierta - Turno #${activeSession.sessionNumber}`}
+          description={`Sesión iniciada por: ${activeSession.openedBy?.name || 'Sistema'} • ${dayjs(activeSession.openedAt).format('DD/MM/YYYY HH:mm')} • Saldo inicial: $${activeSession.openingCash?.toLocaleString()}`}
+          type="success"
+          showIcon
+          style={{ marginBottom: '16px' }}
+          action={
+            <Button type="primary" size="small" onClick={handleOpenModal}>
+              Hacer Cierre
+            </Button>
+          }
+        />
+      ) : (
+        <Alert
+          message="🔒 Caja Cerrada"
+          description="Debes abrir una sesión de caja antes de poder registrar un cierre. Usa el control de abajo para abrir la caja."
+          type="warning"
+          showIcon
+          style={{ marginBottom: '16px' }}
+        />
+      )}
+
+      {/* Control de Sesiones de Caja */}
+      <div style={{ marginBottom: '24px' }}>
+        <CashSessionManager 
+          ref={sessionManagerRef}
+          onSessionChange={handleSessionChange}
+        />
+      </div>
+
+      {/* Botones de Cierre Mensual */}
+      <Card style={{ marginBottom: '24px' }}>
+        <Row justify="space-between" align="middle">
+          <Col>
+            <Title level={4} style={{ margin: 0 }}>
+              📊 Reportes Avanzados
+            </Title>
+            <Text type="secondary">Cierres mensuales y reportes detallados</Text>
+          </Col>
+          <Col>
+            <Space wrap>
+              <Button 
+                type="default"
+                icon={<BarChartOutlined />}
+                onClick={() => {
+                  const currentMonth = new Date().getMonth() + 1;
+                  const currentYear = new Date().getFullYear();
+                  window.open(`/api/cash-closing/monthly/${currentYear}/${currentMonth}`, '_blank');
+                }}
+              >
+                Ver Cierre Mensual
+              </Button>
+              <Button 
+                type="primary"
+                icon={<FilePdfOutlined />}
+                onClick={() => {
+                  const currentMonth = new Date().getMonth() + 1;
+                  const currentYear = new Date().getFullYear();
+                  window.open(`/api/cash-closing/monthly/pdf/${currentYear}/${currentMonth}`, '_blank');
+                }}
+              >
+                PDF Mensual
+              </Button>
+            </Space>
+          </Col>
+        </Row>
+      </Card>
+
       {/* Filtros */}
       <Card className="mb-6" size="small">
-        <Form layout="inline">
+        <Form layout={isMobile ? "vertical" : "inline"}>
           <Form.Item label="📅 Filtrar por fecha">
             <RangePicker
               value={dateRange}
               onChange={(dates) => setDateRange(dates as [any, any])}
               allowClear
               format="DD/MM/YYYY"
+              size={isMobile ? "middle" : undefined}
               placeholder={['Fecha inicial', 'Fecha final']}
+              style={{ width: isMobile ? '100%' : 'auto' }}
             />
           </Form.Item>
         </Form>
@@ -337,17 +434,27 @@ const CashClosingList: React.FC = () => {
             columns={columns}
             rowKey="id"
             loading={loading}
-            scroll={{ x: true }}
-            pagination={{
-              showSizeChanger: true,
-              showQuickJumper: true,
-              showTotal: (total, range) => 
-                `${range[0]}-${range[1]} de ${total} registros`,
+            size={isMobile ? "small" : "middle"}
+            scroll={{ 
+              x: isMobile ? 500 : isTablet ? 800 : true,
+              y: isMobile ? 'calc(60vh - 200px)' : undefined
             }}
-            size="middle"
+            pagination={{
+              showSizeChanger: !isMobile,
+              showQuickJumper: !isMobile,
+              pageSize: isMobile ? 5 : 10,
+              showTotal: (total, range) => 
+                isMobile 
+                  ? `${range[0]}-${range[1]}/${total}`
+                  : `${range[0]}-${range[1]} de ${total} registros`,
+            }}
             locale={{
               emptyText: loading ? 'Cargando...' : 'No hay cierres registrados'
             }}
+            onRow={(record) => ({
+              onClick: () => handleRowClick(record),
+              style: { cursor: 'pointer' }
+            })}
           />
         )}
         {error && (
@@ -361,271 +468,29 @@ const CashClosingList: React.FC = () => {
           />
         )}
       </Card>
-      <Modal
-        open={isModalOpen}
-        onCancel={handleCloseModal}
-        footer={null}
-        title={
-          <Space>
-            <CalculatorOutlined />
-            <span>Registrar Cierre de Caja</span>
-          </Space>
-        }
-        width={800}
-        destroyOnClose
-      >
-        {loadingSummary ? (
-          <div className="text-center py-8">
-            <Spin size="large" tip="Calculando resumen del día..." />
-          </div>
-        ) : summary ? (
-          <>
-            {/* Resumen del día */}
-            <Alert
-              message="📊 Resumen del Día Seleccionado"
-              description={`Datos automáticos calculados del ${dayjs(summary.fecha).format('DD/MM/YYYY')}`}
-              type="info"
-              showIcon
-              className="mb-4"
-            />
-            
-            <Row gutter={16} className="mb-6">
-              <Col span={8}>
-                <Card size="small" className="text-center">
-                  <Statistic
-                    title="💰 Total Ventas"
-                    value={summary.totalSales || 0}
-                    prefix="$"
-                    valueStyle={{ color: '#52c41a', fontSize: '18px' }}
-                  />
-                </Card>
-              </Col>
-              <Col span={8}>
-                <Card size="small" className="text-center">
-                  <Statistic
-                    title="💸 Total Gastos"
-                    value={summary.totalExpense || 0}
-                    prefix="$"
-                    valueStyle={{ color: '#ff4d4f', fontSize: '18px' }}
-                  />
-                </Card>
-              </Col>
-              <Col span={8}>
-                <Card size="small" className="text-center">
-                  <Statistic
-                    title="🖥️ Base Sistema"
-                    value={summary.systemCash || 0}
-                    prefix="$"
-                    valueStyle={{ color: '#1890ff', fontSize: '18px' }}
-                  />
-                  <Text type="secondary" style={{ fontSize: '11px' }}>
-                    (Sin saldo inicial)
-                  </Text>
-                </Card>
-              </Col>
-            </Row>
-            
-            <Descriptions
-              column={2}
-              bordered
-              size="small"
-              className="mb-6"
-              layout="horizontal"
-              title="💳 Desglose de Ventas por Método de Pago"
-            >
-              <Descriptions.Item label="💵 Efectivo">
-                <Text strong>${summary.cashSales?.toLocaleString()}</Text>
-              </Descriptions.Item>
-              <Descriptions.Item label="💳 Tarjeta">
-                <Text strong>${summary.cardSales?.toLocaleString()}</Text>
-              </Descriptions.Item>
-              <Descriptions.Item label="🏦 Transferencia">
-                <Text strong>${summary.transferSales?.toLocaleString()}</Text>
-              </Descriptions.Item>
-              <Descriptions.Item label="📋 Crédito">
-                <Text strong>${summary.creditSales?.toLocaleString()}</Text>
-              </Descriptions.Item>
-              <Descriptions.Item label="🏪 Pagos a Proveedores">
-                <Text strong>${summary.totalPayments?.toLocaleString()}</Text>
-              </Descriptions.Item>
-              <Descriptions.Item label="💰 Otros Ingresos">
-                <Text strong>${summary.totalIncome?.toLocaleString()}</Text>
-              </Descriptions.Item>
-            </Descriptions>
 
-            <Form
-              layout="vertical"
-              form={form}
-              onFinish={handleSubmit}
-              onValuesChange={handleValuesChange}
-              initialValues={{
-                date: selectedDate,
-                openingCash: 0,
-                closingCash: 0,
-                notes: "",
-              }}
-            >
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item
-                    label={
-                      <Space>
-                        <CalendarOutlined />
-                        <span>Fecha del Cierre</span>
-                      </Space>
-                    }
-                    name="date"
-                    rules={[{ required: true, message: "Selecciona la fecha" }]}
-                  >
-                    <DatePicker
-                      format="DD/MM/YYYY"
-                      style={{ width: "100%" }}
-                      value={selectedDate}
-                      onChange={handleChangeDate}
-                      allowClear={false}
-                      placeholder="Seleccionar fecha"
-                    />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item
-                    label={
-                      <Space>
-                        <DollarOutlined />
-                        <span>Saldo Inicial (Apertura)</span>
-                      </Space>
-                    }
-                    name="openingCash"
-                    rules={[{ required: true, message: "Ingresa el saldo inicial" }]}
-                    tooltip="Efectivo que había en caja al iniciar el día"
-                  >
-                    <InputNumber
-                      min={0}
-                      formatter={(v) =>
-                        `$ ${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
-                      }
-                      style={{ width: "100%" }}
-                      placeholder="0"
-                    />
-                  </Form.Item>
-                </Col>
-              </Row>
+      {/* Modal de cierre detallado */}
+      <DetailedCashClosingModal
+        visible={isModalOpen}
+        onClose={handleCloseModal}
+        onSubmit={handleSubmit}
+        summary={summary}
+        loading={saving || loadingSummary}
+        selectedDate={selectedDate.format('YYYY-MM-DD')}
+        activeSession={activeSession}
+      />
 
-              <Form.Item
-                label={
-                  <Space>
-                    <DollarOutlined />
-                    <span>Saldo Final Contado (Cierre Real)</span>
-                  </Space>
-                }
-                name="closingCash"
-                rules={[{ required: true, message: "Ingresa el saldo contado" }]}
-                tooltip="Efectivo real contado físicamente al final del día"
-              >
-                <InputNumber
-                  min={0}
-                  formatter={(v) =>
-                    `$ ${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
-                  }
-                  style={{ width: "100%" }}
-                  placeholder="0"
-                  size="large"
-                />
-              </Form.Item>
-
-              <Form.Item
-                label={
-                  <Space>
-                    <InfoCircleOutlined />
-                    <span>Observaciones</span>
-                  </Space>
-                }
-                name="notes"
-              >
-                <Input.TextArea 
-                  placeholder="Cualquier observación sobre el cierre del día (opcional)" 
-                  rows={3}
-                />
-              </Form.Item>
-
-              {/* Indicador de diferencia */}
-              <Card 
-                size="small" 
-                className={`mb-4 ${
-                  diff === 0 ? 'border-green-400' : 
-                  diff > 0 ? 'border-yellow-400' : 'border-red-400'
-                }`}
-              >
-                <Row justify="center" align="middle">
-                  <Col span={24} className="text-center">
-                    <Text strong style={{ fontSize: '16px' }}>
-                      ⚖️ Diferencia: {" "}
-                      {diff === 0 ? (
-                        <Tag icon={<CheckCircleOutlined />} color="success" style={{ fontSize: '14px' }}>
-                          Caja Cuadrada - Sin Diferencia
-                        </Tag>
-                      ) : diff > 0 ? (
-                        <Tag icon={<InfoCircleOutlined />} color="warning" style={{ fontSize: '14px' }}>
-                          Sobra ${diff.toLocaleString()} - Revisar
-                        </Tag>
-                      ) : (
-                        <Tag icon={<CloseCircleOutlined />} color="error" style={{ fontSize: '14px' }}>
-                          Falta ${Math.abs(diff).toLocaleString()} - Revisar
-                        </Tag>
-                      )}
-                    </Text>
-                  </Col>
-                </Row>
-              </Card>
-
-              <Form.Item>
-                <Button
-                  type="primary"
-                  htmlType="submit"
-                  loading={saving}
-                  block
-                  size="large"
-                  disabled={!summary || summary.totalSales === 0}
-                  icon={<CheckCircleOutlined />}
-                >
-                  {saving ? 'Guardando...' : 'Registrar Cierre de Caja'}
-                </Button>
-                {summary && summary.totalSales === 0 && (
-                  <Alert
-                    message="No hay ventas registradas para este día"
-                    type="warning"
-                    showIcon
-                    className="mt-2"
-                  />
-                )}
-              </Form.Item>
-            </Form>
-          </>
-        ) : (
-          <div className="text-center py-8">
-            <Alert
-              message="⚠️ Sin datos para mostrar"
-              description={
-                <div>
-                  <p>No hay ventas ni gastos registrados para el día seleccionado ({dayjs(selectedDate).format('DD/MM/YYYY')})</p>
-                  <p><strong>Debugging info:</strong></p>
-                  <pre style={{ fontSize: '12px', textAlign: 'left' }}>
-                    Summary: {JSON.stringify(summary, null, 2)}
-                    <br />
-                    Loading Summary: {loadingSummary ? 'true' : 'false'}
-                    <br />
-                    Selected Date: {selectedDate.format('YYYY-MM-DD')}
-                  </pre>
-                </div>
-              }
-              type="warning"
-              showIcon
-            />
-          </div>
-        )}
-      </Modal>
+      {/* Modal para ver detalles de un cierre existente */}
+      <CashClosingDetailViewModal
+        visible={detailModalOpen}
+        onClose={() => {
+          setDetailModalOpen(false);
+          setSelectedClosing(null);
+        }}
+        closing={selectedClosing}
+      />
     </div>
   );
 };
 
-export default CashClosingList;
+export default CashClosingPage;

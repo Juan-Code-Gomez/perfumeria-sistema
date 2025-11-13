@@ -96,6 +96,7 @@ export default function CreditSaleModal({ open, onClose, onSaved }: Props) {
         clientId: selectedClient.id,
         date: vals.date.format('YYYY-MM-DD'),
         totalAmount: total,
+        subtotalAmount: total, // Sin descuento en ventas a crédito
         paidAmount: 0,
         isPaid: false,
         paymentMethod: 'Crédito',

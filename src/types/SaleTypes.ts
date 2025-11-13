@@ -16,6 +16,10 @@ export interface Sale {
   date: string;
   clientId?: number;
   customerName?: string;
+  subtotalAmount: number;
+  discountType?: string;
+  discountValue?: number;
+  discountAmount: number;
   totalAmount: number;
   paidAmount: number;
   isPaid: boolean;
@@ -28,6 +32,10 @@ export interface CreateSalePayload {
   clientId?: number;
   customerName?: string;
   date: string;
+  subtotalAmount: number;
+  discountType?: string;
+  discountValue?: number;
+  discountAmount?: number;
   totalAmount: number;
   paidAmount: number;
   isPaid: boolean;

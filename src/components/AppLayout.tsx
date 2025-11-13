@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { Layout, Dropdown, Avatar, Typography } from "antd";
-import { UserOutlined } from "@ant-design/icons";
+import { Layout, Dropdown, Avatar, Typography, Drawer, Button } from "antd";
+import { UserOutlined, MenuOutlined, CloseOutlined } from "@ant-design/icons";
 import { Outlet, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../store";
 import { logoutWithPermissions } from "../features/auth/authSlice";
@@ -19,6 +19,23 @@ const AppLayout: React.FC = () => {
   const { userModules } = useAppSelector((state: any) => state.permissions);
   const { publicConfig } = useAppSelector((state: any) => state.companyConfig);
   const [logoError, setLogoError] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  // Detectar cambios de tamaño de pantalla
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      // Cerrar menú móvil si se hace la pantalla grande
+      if (!mobile) {
+        setMobileMenuOpen(false);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Efecto para cargar módulos cuando la aplicación se inicializa con un usuario ya autenticado
   useEffect(() => {
@@ -58,94 +75,157 @@ const AppLayout: React.FC = () => {
     navigate("/login");
   };
 
-  return (
-    <Layout style={{ minHeight: "100vh" }}>
-      <Sider 
-        breakpoint="lg" 
-        collapsedWidth="0"
-        style={{
-          background: 'linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
-          boxShadow: '2px 0 8px rgba(0,0,0,0.15)'
-        }}
-      >
-        {/* Logo y título mejorado */}
-        <div style={{ 
-          padding: '24px 16px',
-          textAlign: 'center',
-          background: 'rgba(255,255,255,0.05)',
-          borderBottom: '1px solid rgba(255,255,255,0.1)'
-        }}>
-          <div style={{
-            width: '48px',
-            height: '48px',
-            borderRadius: '12px',
-            background: publicConfig?.logo ? 'transparent' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 16px',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-            overflow: 'hidden'
-          }}>
-            {(publicConfig?.logo && !logoError) ? (
-              <img 
-                src={publicConfig.logo}
-                alt="Company Logo"
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                  borderRadius: '12px'
-                }}
-                onError={() => setLogoError(true)}
-              />
-            ) : (
-              <span style={{ 
-                fontSize: '24px', 
-                fontWeight: 'bold', 
-                color: '#fff',
-                textShadow: '0 2px 4px rgba(0,0,0,0.3)'
-              }}>
-                {getCompanyInitials(publicConfig?.companyName)}
-              </span>
-            )}
-          </div>
-          <h2 style={{ 
-            color: '#fff', 
-            margin: 0,
-            fontSize: '18px',
-            fontWeight: '600',
-            letterSpacing: '0.5px',
+  // Componente del logo reutilizable
+  const LogoSection = () => (
+    <div style={{ 
+      padding: isMobile ? '16px 12px' : '24px 16px',
+      textAlign: 'center',
+      background: 'rgba(255,255,255,0.05)',
+      borderBottom: '1px solid rgba(255,255,255,0.1)'
+    }}>
+      <div style={{
+        width: isMobile ? '40px' : '48px',
+        height: isMobile ? '40px' : '48px',
+        borderRadius: '12px',
+        background: publicConfig?.logo ? 'transparent' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        margin: '0 auto 12px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+        overflow: 'hidden'
+      }}>
+        {(publicConfig?.logo && !logoError) ? (
+          <img 
+            src={publicConfig.logo}
+            alt="Company Logo"
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              borderRadius: '12px'
+            }}
+            onError={() => setLogoError(true)}
+          />
+        ) : (
+          <span style={{ 
+            fontSize: isMobile ? '20px' : '24px', 
+            fontWeight: 'bold', 
+            color: '#fff',
             textShadow: '0 2px 4px rgba(0,0,0,0.3)'
           }}>
-            {publicConfig?.companyName || 'Milán Fragancias'}
-          </h2>
-          <Text style={{ 
-            color: 'rgba(255,255,255,0.7)', 
-            fontSize: '12px',
-            display: 'block',
-            marginTop: '4px'
-          }}>
-            Sistema de Gestión
-          </Text>
-        </div>
+            {getCompanyInitials(publicConfig?.companyName)}
+          </span>
+        )}
+      </div>
+      <h2 style={{ 
+        color: '#fff', 
+        margin: 0,
+        fontSize: isMobile ? '16px' : '18px',
+        fontWeight: '600',
+        letterSpacing: '0.5px',
+        textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+      }}>
+        {publicConfig?.companyName || 'Milán Fragancias'}
+      </h2>
+      <Text style={{ 
+        color: 'rgba(255,255,255,0.7)', 
+        fontSize: isMobile ? '11px' : '12px',
+        display: 'block',
+        marginTop: '4px'
+      }}>
+        Sistema de Gestión
+      </Text>
+    </div>
+  );
 
-        <DynamicSidebarMenu onLogout={handleLogout} />
-      </Sider>
+  return (
+    <Layout style={{ minHeight: "100vh" }}>
+      {/* Sidebar para desktop */}
+      {!isMobile && (
+        <Sider 
+          breakpoint="lg" 
+          collapsedWidth="0"
+          style={{
+            background: 'linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
+            boxShadow: '2px 0 8px rgba(0,0,0,0.15)'
+          }}
+        >
+          <LogoSection />
+          <DynamicSidebarMenu onLogout={handleLogout} />
+        </Sider>
+      )}
+
+      {/* Drawer para móvil */}
+      {isMobile && (
+        <Drawer
+          placement="left"
+          onClose={() => setMobileMenuOpen(false)}
+          open={mobileMenuOpen}
+          closable={false}
+          bodyStyle={{ 
+            padding: 0,
+            background: 'linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
+          }}
+          width={280}
+        >
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'flex-end', 
+            padding: '12px 16px',
+            borderBottom: '1px solid rgba(255,255,255,0.1)'
+          }}>
+            <Button
+              type="text"
+              icon={<CloseOutlined style={{ color: '#fff', fontSize: '18px' }} />}
+              onClick={() => setMobileMenuOpen(false)}
+            />
+          </div>
+          <LogoSection />
+          <DynamicSidebarMenu onLogout={() => {
+            handleLogout();
+            setMobileMenuOpen(false);
+          }} />
+        </Drawer>
+      )}
+
       <Layout>
         <Header
           style={{
             background: 'linear-gradient(90deg, #fff 0%, #f8fafc 100%)',
-            padding: 0,
-            textAlign: "right",
-            paddingRight: 24,
+            padding: isMobile ? '0 12px' : '0 24px',
             display: "flex",
-            justifyContent: "flex-end",
+            justifyContent: "space-between",
             alignItems: "center",
             borderBottom: '1px solid #e8e8e8',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+            boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+            height: isMobile ? '56px' : '64px'
           }}
         >
+          {/* Botón de menú en móvil */}
+          {isMobile && (
+            <Button
+              type="text"
+              icon={<MenuOutlined style={{ fontSize: '20px' }} />}
+              onClick={() => setMobileMenuOpen(true)}
+              style={{ padding: '4px 8px' }}
+            />
+          )}
+
+          {/* Logo compacto en header móvil */}
+          {isMobile && (
+            <div style={{ 
+              flex: 1, 
+              textAlign: 'center',
+              fontSize: '16px',
+              fontWeight: '600',
+              color: '#1a1a2e'
+            }}>
+              {publicConfig?.companyName || 'Milán Fragancias'}
+            </div>
+          )}
+
+          {/* User dropdown */}
           <Dropdown
             menu={{
               items: [
@@ -165,17 +245,25 @@ const AppLayout: React.FC = () => {
             }}
             placement="bottomRight"
           >
-            <span style={{ cursor: "pointer", display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ 
+              cursor: "pointer", 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: isMobile ? '4px' : '8px' 
+            }}>
               <Avatar
+                size={isMobile ? 32 : 40}
                 style={{ 
                   backgroundColor: "#52c41a",
                   boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
                 }}
                 icon={<UserOutlined />}
               />
-              <span style={{ color: '#595959', fontWeight: '500' }}>
-                {user?.name}
-              </span>
+              {!isMobile && (
+                <span style={{ color: '#595959', fontWeight: '500' }}>
+                  {user?.name}
+                </span>
+              )}
             </span>
           </Dropdown>
         </Header>
@@ -184,7 +272,10 @@ const AppLayout: React.FC = () => {
           minHeight: 'calc(100vh - 64px)',
           padding: '0'
         }}>
-          <div style={{ padding: '24px 32px', maxWidth: 'none' }}>
+          <div style={{ 
+            padding: isMobile ? '16px' : '24px 32px', 
+            maxWidth: 'none' 
+          }}>
             <Outlet />
           </div>
         </Content>
