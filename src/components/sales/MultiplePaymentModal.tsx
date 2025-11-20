@@ -36,6 +36,7 @@ interface MultiplePaymentModalProps {
   totalAmount: number;
   onConfirm: (payments: PaymentMethod[]) => void;
   onCancel: () => void;
+  isProcessing?: boolean; // Nuevo prop para mostrar loading
 }
 
 const PAYMENT_METHODS = [
@@ -53,6 +54,7 @@ const MultiplePaymentModal: React.FC<MultiplePaymentModalProps> = ({
   totalAmount,
   onConfirm,
   onCancel,
+  isProcessing = false, // Valor por defecto
 }) => {
   const [payments, setPayments] = useState<PaymentMethod[]>([]);
   const [form] = Form.useForm();
@@ -299,13 +301,14 @@ const MultiplePaymentModal: React.FC<MultiplePaymentModalProps> = ({
       {/* Botones de acción */}
       <div style={{ marginTop: 24, textAlign: 'right' }}>
         <Space>
-          <Button onClick={onCancel}>
+          <Button onClick={onCancel} disabled={isProcessing}>
             Cancelar
           </Button>
           <Button
             type="primary"
             onClick={handleConfirm}
-            disabled={!isComplete || payments.length === 0}
+            disabled={!isComplete || payments.length === 0 || isProcessing}
+            loading={isProcessing}
             icon={<CreditCardOutlined />}
           >
             Confirmar Pagos

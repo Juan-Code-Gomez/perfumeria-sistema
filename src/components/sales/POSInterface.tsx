@@ -96,6 +96,9 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<Product[]>([]);
 
+  // Estado de loading para prevenir múltiples clics
+  const [isProcessing, setIsProcessing] = useState(false);
+
   // Estados para pagos múltiples
   const [showMultiplePaymentModal, setShowMultiplePaymentModal] = useState(false);
 
@@ -321,6 +324,13 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
       return;
     }
 
+    // Prevenir múltiples clics
+    if (isProcessing) {
+      return;
+    }
+
+    setIsProcessing(true);
+
     try {
       // Determinar la fecha a usar
       const saleDate = (useManualDate && manualSaleDate) 
@@ -398,6 +408,9 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
     } catch (error) {
       console.error('Error procesando venta:', error);
       message.error('Error al procesar la venta');
+    } finally {
+      // Asegurar que siempre se deshabilite el loading
+      setIsProcessing(false);
     }
   };
 
@@ -420,6 +433,13 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
       message.error('El monto recibido es insuficiente');
       return;
     }
+
+    // Prevenir múltiples clics
+    if (isProcessing) {
+      return;
+    }
+
+    setIsProcessing(true);
 
     try {
       // Para ventas a crédito, el monto pagado es 0 y no está pagada
@@ -506,6 +526,9 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
       } else {
         message.error('Error al procesar la venta');
       }
+    } finally {
+      // Asegurar que siempre se deshabilite el loading
+      setIsProcessing(false);
     }
   };
 
@@ -1077,8 +1100,10 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
                 block
                 icon={<DollarOutlined />}
                 onClick={processSale}
+                loading={isProcessing}
                 disabled={
                   items.length === 0 || 
+                  isProcessing ||
                   (paymentMethod === 'Crédito' && !selectedClient?.name) || // Solo cliente registrado para crédito
                   (paymentMethod === 'Efectivo' && amountReceived < finalTotal) ||
                   (useManualDate && !manualSaleDate) // Validar fecha manual si está activada
@@ -1100,7 +1125,7 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
                   block
                   icon={<CreditCardOutlined />}
                   onClick={() => setShowMultiplePaymentModal(true)}
-                  disabled={items.length === 0}
+                  disabled={items.length === 0 || isProcessing}
                   style={{ 
                     height: window.innerWidth < 768 ? '40px' : '40px', 
                     fontSize: window.innerWidth < 768 ? '13px' : '14px' 
@@ -1115,7 +1140,7 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
                 size={window.innerWidth < 768 ? 'middle' : 'large'}
                 icon={<ClearOutlined />}
                 onClick={clearCart}
-                disabled={items.length === 0}
+                disabled={items.length === 0 || isProcessing}
                 danger
               >
                 Limpiar Carrito
@@ -1185,6 +1210,7 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
         totalAmount={finalTotal}
         onConfirm={processSaleWithMultiplePayments}
         onCancel={() => setShowMultiplePaymentModal(false)}
+        isProcessing={isProcessing}
       />
     </div>
   );
