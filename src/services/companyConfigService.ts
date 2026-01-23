@@ -32,43 +32,44 @@ export const companyConfigService = {
   // Obtener configuración actual
   async getCurrent(): Promise<CompanyConfig> {
     const response = await api.get('/');
-    return response.data;
+    // El backend envuelve la respuesta en { success: true, data: {...} }
+    return response.data.data || response.data;
   },
 
   // Actualizar configuración actual
   async updateCurrent(data: CreateCompanyConfigData): Promise<CompanyConfig> {
     const response = await api.put('/current', data);
-    return response.data;
+    return response.data.data || response.data;
   },
 
   // Obtener configuración específica para facturas
   async getInvoiceConfig(): Promise<any> {
     const response = await api.get('/invoice-config');
-    return response.data;
+    return response.data.data || response.data;
   },
 
   // Obtener configuración específica para POS
   async getPOSConfig(): Promise<any> {
     const response = await api.get('/pos-config');
-    return response.data;
+    return response.data.data || response.data;
   },
 
   // Obtener configuración del sistema
   async getSystemConfig(): Promise<any> {
     const response = await api.get('/system-config');
-    return response.data;
+    return response.data.data || response.data;
   },
 
   // Crear nueva configuración
   async create(data: CreateCompanyConfigData): Promise<CompanyConfig> {
     const response = await api.post('/', data);
-    return response.data;
+    return response.data.data || response.data;
   },
 
   // Actualizar configuración por ID
   async update(id: number, data: CreateCompanyConfigData): Promise<CompanyConfig> {
     const response = await api.put(`/${id}`, data);
-    return response.data;
+    return response.data.data || response.data;
   },
 
   // Eliminar configuración
