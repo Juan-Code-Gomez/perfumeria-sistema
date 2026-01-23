@@ -12,6 +12,16 @@ interface CompanyConfig {
   logo?: string;
   posReceiptHeader?: string;
   posReceiptFooter?: string;
+  showLogo?: boolean;
+  showNIT?: boolean;
+  showAddress?: boolean;
+  showPhone?: boolean;
+  showEmail?: boolean;
+  showWebsite?: boolean;
+  ticketWidth?: string;
+  fontSize?: string;
+  includeVendor?: boolean;
+  includeCashSession?: boolean;
 }
 
 interface POSTicketProps {
@@ -42,8 +52,6 @@ interface POSTicketProps {
 }
 
 const POSTicket = forwardRef<HTMLDivElement, POSTicketProps>(({ sale, change = 0, companyConfig }, ref) => {
-  const ticketWidth = '80mm'; // Ancho estándar de impresoras POS térmicas
-
   // Usar configuración proporcionada o valores por defecto
   const company = companyConfig || {
     companyName: 'Mi Empresa',
@@ -52,12 +60,17 @@ const POSTicket = forwardRef<HTMLDivElement, POSTicketProps>(({ sale, change = 0
     email: 'info@empresa.com',
   };
 
+  // Determinar tamaño de ticket y fuente
+  const ticketWidth = company.ticketWidth || '80mm';
+  const fontSizeBase = company.fontSize === 'small' ? '10px' : 
+                       company.fontSize === 'large' ? '14px' : '12px';
+
   const styles = {
     ticket: {
       width: ticketWidth,
       minHeight: 'auto',
       fontFamily: 'Courier New, monospace',
-      fontSize: '12px',
+      fontSize: fontSizeBase,
       lineHeight: '1.2',
       color: '#000',
       backgroundColor: '#fff',
@@ -145,19 +158,19 @@ const POSTicket = forwardRef<HTMLDivElement, POSTicketProps>(({ sale, change = 0
       {/* Header - Información de la empresa */}
       <div style={styles.header}>
         <div style={styles.companyName}>{company.companyName}</div>
-        {company.address && (
+        {company.showAddress !== false && company.address && (
           <div style={styles.companyInfo}>{company.address}</div>
         )}
-        {company.phone && (
+        {company.showPhone !== false && company.phone && (
           <div style={styles.companyInfo}>Tel: {company.phone}</div>
         )}
-        {company.email && (
+        {company.showEmail !== false && company.email && (
           <div style={styles.companyInfo}>{company.email}</div>
         )}
-        {company.website && (
+        {company.showWebsite !== false && company.website && (
           <div style={styles.companyInfo}>{company.website}</div>
         )}
-        {company.nit && (
+        {company.showNIT !== false && company.nit && (
           <div style={styles.companyInfo}>NIT: {company.nit}</div>
         )}
       </div>

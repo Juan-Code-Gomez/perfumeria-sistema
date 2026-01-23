@@ -119,6 +119,17 @@ const CompanyConfig: React.FC = () => {
         timezone: values.timezone || 'America/Bogota',
         dateFormat: values.dateFormat || 'DD/MM/YYYY',
         numberFormat: values.numberFormat || 'es-CO',
+        // Configuración de visualización de ticket POS
+        showLogo: values.showLogo ?? true,
+        showNIT: values.showNIT ?? true,
+        showAddress: values.showAddress ?? true,
+        showPhone: values.showPhone ?? true,
+        showEmail: values.showEmail ?? true,
+        showWebsite: values.showWebsite ?? true,
+        ticketWidth: values.ticketWidth || '80mm',
+        fontSize: values.fontSize || 'medium',
+        includeVendor: values.includeVendor ?? true,
+        includeCashSession: values.includeCashSession ?? false,
       };
 
       await dispatch(updateCompanyConfig(formData)).unwrap();
@@ -388,13 +399,141 @@ const CompanyConfig: React.FC = () => {
         />
       </Form.Item>
 
-      <Form.Item
-        name="printLogo"
-        valuePropName="checked"
-        label="Imprimir Logo en Recibos"
-      >
-        <Switch />
-      </Form.Item>
+      <Divider>Opciones de Visualización del Ticket</Divider>
+
+      <Row gutter={16}>
+        <Col xs={24} sm={12}>
+          <Form.Item
+            name="showLogo"
+            valuePropName="checked"
+            label="Mostrar Logo"
+            tooltip="Mostrar el logo de la empresa en el ticket"
+          >
+            <Switch defaultChecked />
+          </Form.Item>
+        </Col>
+        <Col xs={24} sm={12}>
+          <Form.Item
+            name="showNIT"
+            valuePropName="checked"
+            label="Mostrar NIT/RUT"
+            tooltip="Mostrar el número de identificación tributaria"
+          >
+            <Switch defaultChecked />
+          </Form.Item>
+        </Col>
+      </Row>
+
+      <Row gutter={16}>
+        <Col xs={24} sm={12}>
+          <Form.Item
+            name="showAddress"
+            valuePropName="checked"
+            label="Mostrar Dirección"
+            tooltip="Mostrar la dirección de la empresa"
+          >
+            <Switch defaultChecked />
+          </Form.Item>
+        </Col>
+        <Col xs={24} sm={12}>
+          <Form.Item
+            name="showPhone"
+            valuePropName="checked"
+            label="Mostrar Teléfono"
+            tooltip="Mostrar el teléfono de contacto"
+          >
+            <Switch defaultChecked />
+          </Form.Item>
+        </Col>
+      </Row>
+
+      <Row gutter={16}>
+        <Col xs={24} sm={12}>
+          <Form.Item
+            name="showEmail"
+            valuePropName="checked"
+            label="Mostrar Email"
+            tooltip="Mostrar el correo electrónico"
+          >
+            <Switch defaultChecked />
+          </Form.Item>
+        </Col>
+        <Col xs={24} sm={12}>
+          <Form.Item
+            name="showWebsite"
+            valuePropName="checked"
+            label="Mostrar Sitio Web"
+            tooltip="Mostrar la dirección web"
+          >
+            <Switch defaultChecked />
+          </Form.Item>
+        </Col>
+      </Row>
+
+      <Divider>Formato del Ticket</Divider>
+
+      <Row gutter={16}>
+        <Col xs={24} sm={8}>
+          <Form.Item
+            name="ticketWidth"
+            label="Ancho del Ticket"
+            tooltip="Ancho del papel de la impresora térmica"
+          >
+            <Select placeholder="Seleccionar ancho">
+              <Option value="58mm">58mm (Pequeño)</Option>
+              <Option value="80mm">80mm (Estándar)</Option>
+            </Select>
+          </Form.Item>
+        </Col>
+        <Col xs={24} sm={8}>
+          <Form.Item
+            name="fontSize"
+            label="Tamaño de Fuente"
+            tooltip="Tamaño del texto en el ticket"
+          >
+            <Select placeholder="Seleccionar tamaño">
+              <Option value="small">Pequeña</Option>
+              <Option value="medium">Mediana</Option>
+              <Option value="large">Grande</Option>
+            </Select>
+          </Form.Item>
+        </Col>
+        <Col xs={24} sm={8}>
+          <Form.Item
+            name="printLogo"
+            valuePropName="checked"
+            label="Imprimir Logo"
+            tooltip="Incluir logo en la impresión"
+          >
+            <Switch />
+          </Form.Item>
+        </Col>
+      </Row>
+
+      <Divider>Información Adicional</Divider>
+
+      <Row gutter={16}>
+        <Col xs={24} sm={12}>
+          <Form.Item
+            name="includeVendor"
+            valuePropName="checked"
+            label="Incluir Vendedor"
+            tooltip="Mostrar el nombre del vendedor en el ticket"
+          >
+            <Switch defaultChecked />
+          </Form.Item>
+        </Col>
+        <Col xs={24} sm={12}>
+          <Form.Item
+            name="includeCashSession"
+            valuePropName="checked"
+            label="Incluir Sesión de Caja"
+            tooltip="Mostrar el número de sesión de caja"
+          >
+            <Switch />
+          </Form.Item>
+        </Col>
+      </Row>
     </Card>
   );
 

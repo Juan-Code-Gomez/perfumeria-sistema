@@ -21,6 +21,17 @@ export interface CompanyConfig {
   timezone: string;
   dateFormat: string;
   numberFormat: string;
+  // Configuración de visualización de ticket POS
+  showLogo?: boolean;
+  showNIT?: boolean;
+  showAddress?: boolean;
+  showPhone?: boolean;
+  showEmail?: boolean;
+  showWebsite?: boolean;
+  ticketWidth?: string;
+  fontSize?: string;
+  includeVendor?: boolean;
+  includeCashSession?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -43,6 +54,17 @@ export interface CreateCompanyConfigData {
   timezone?: string;
   dateFormat?: string;
   numberFormat?: string;
+  // Configuración de visualización de ticket POS
+  showLogo?: boolean;
+  showNIT?: boolean;
+  showAddress?: boolean;
+  showPhone?: boolean;
+  showEmail?: boolean;
+  showWebsite?: boolean;
+  ticketWidth?: string;
+  fontSize?: string;
+  includeVendor?: boolean;
+  includeCashSession?: boolean;
 }
 
 interface CompanyConfigState {

@@ -10,6 +10,16 @@ interface CompanyConfig {
   email?: string;
   website?: string;
   posReceiptFooter?: string;
+  showLogo?: boolean;
+  showNIT?: boolean;
+  showAddress?: boolean;
+  showPhone?: boolean;
+  showEmail?: boolean;
+  showWebsite?: boolean;
+  ticketWidth?: string;
+  fontSize?: string;
+  includeVendor?: boolean;
+  includeCashSession?: boolean;
 }
 
 interface POSTicketSaleProps {
@@ -28,6 +38,11 @@ const POSTicketSale: React.FC<POSTicketSaleProps> = ({ sale, companyConfig }) =>
     email: 'info@empresa.com',
   };
 
+  // Determinar tamaño de ticket y fuente
+  const ticketWidth = company.ticketWidth || '80mm';
+  const fontSizeBase = company.fontSize === 'small' ? '10px' : 
+                       company.fontSize === 'large' ? '14px' : '12px';
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-CO', {
       style: 'currency',
@@ -41,12 +56,12 @@ const POSTicketSale: React.FC<POSTicketSaleProps> = ({ sale, companyConfig }) =>
     <div 
       className="ticket-container"
       style={{
-        width: '80mm',
-        maxWidth: '80mm',
+        width: ticketWidth,
+        maxWidth: ticketWidth,
         margin: '0 auto',
         padding: '8px',
         fontFamily: '"Courier New", monospace',
-        fontSize: '12px',
+        fontSize: fontSizeBase,
         lineHeight: '1.2',
         color: '#000',
         background: '#fff'
@@ -55,19 +70,19 @@ const POSTicketSale: React.FC<POSTicketSaleProps> = ({ sale, companyConfig }) =>
       {/* Header con logo y info de empresa */}
       <div style={{ textAlign: 'center', marginBottom: '8px' }}>
         <div style={{ 
-          fontSize: '16px', 
+          fontSize: company.fontSize === 'small' ? '14px' : company.fontSize === 'large' ? '18px' : '16px', 
           fontWeight: 'bold', 
           marginBottom: '4px',
           letterSpacing: '1px'
         }}>
           {company.companyName.toUpperCase()}
         </div>
-        <div style={{ fontSize: '10px', lineHeight: '1.3' }}>
-          {company.address && <>{company.address}<br /></>}
-          {company.phone && <>{company.phone}<br /></>}
-          {company.email && <>{company.email}<br /></>}
-          {company.website && <>{company.website}</>}
-          {company.nit && <><br />NIT: {company.nit}</>}
+        <div style={{ fontSize: company.fontSize === 'small' ? '9px' : company.fontSize === 'large' ? '11px' : '10px', lineHeight: '1.3' }}>
+          {company.showAddress !== false && company.address && <>{company.address}<br /></>}
+          {company.showPhone !== false && company.phone && <>{company.phone}<br /></>}
+          {company.showEmail !== false && company.email && <>{company.email}<br /></>}
+          {company.showWebsite !== false && company.website && <>{company.website}</>}
+          {company.showNIT !== false && company.nit && <><br />NIT: {company.nit}</>}
         </div>
       </div>
 
