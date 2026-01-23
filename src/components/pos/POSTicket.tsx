@@ -1,7 +1,18 @@
 // src/components/pos/POSTicket.tsx
 import { forwardRef } from 'react';
 import dayjs from 'dayjs';
-import { COMPANY_INFO } from '../../config/companyInfo';
+
+interface CompanyConfig {
+  companyName: string;
+  nit?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  website?: string;
+  logo?: string;
+  posReceiptHeader?: string;
+  posReceiptFooter?: string;
+}
 
 interface POSTicketProps {
   sale: {
@@ -27,10 +38,19 @@ interface POSTicketProps {
     }>;
   };
   change?: number;
+  companyConfig?: CompanyConfig;
 }
 
-const POSTicket = forwardRef<HTMLDivElement, POSTicketProps>(({ sale, change = 0 }, ref) => {
+const POSTicket = forwardRef<HTMLDivElement, POSTicketProps>(({ sale, change = 0, companyConfig }, ref) => {
   const ticketWidth = '80mm'; // Ancho estándar de impresoras POS térmicas
+
+  // Usar configuración proporcionada o valores por defecto
+  const company = companyConfig || {
+    companyName: 'Mi Empresa',
+    address: 'Dirección de la empresa',
+    phone: '+57 300 000 0000',
+    email: 'info@empresa.com',
+  };
 
   const styles = {
     ticket: {
@@ -124,17 +144,21 @@ const POSTicket = forwardRef<HTMLDivElement, POSTicketProps>(({ sale, change = 0
     <div ref={ref} style={styles.ticket}>
       {/* Header - Información de la empresa */}
       <div style={styles.header}>
-        <div style={styles.companyName}>{COMPANY_INFO.name}</div>
-        <div style={styles.companyInfo}>{COMPANY_INFO.address}</div>
-        <div style={styles.companyInfo}>Tel: {COMPANY_INFO.phone}</div>
-        {COMPANY_INFO.email && (
-          <div style={styles.companyInfo}>{COMPANY_INFO.email}</div>
+        <div style={styles.companyName}>{company.companyName}</div>
+        {company.address && (
+          <div style={styles.companyInfo}>{company.address}</div>
         )}
-        {COMPANY_INFO.website && (
-          <div style={styles.companyInfo}>{COMPANY_INFO.website}</div>
+        {company.phone && (
+          <div style={styles.companyInfo}>Tel: {company.phone}</div>
         )}
-        {COMPANY_INFO.nit && (
-          <div style={styles.companyInfo}>NIT: {COMPANY_INFO.nit}</div>
+        {company.email && (
+          <div style={styles.companyInfo}>{company.email}</div>
+        )}
+        {company.website && (
+          <div style={styles.companyInfo}>{company.website}</div>
+        )}
+        {company.nit && (
+          <div style={styles.companyInfo}>NIT: {company.nit}</div>
         )}
       </div>
 
@@ -242,17 +266,25 @@ const POSTicket = forwardRef<HTMLDivElement, POSTicketProps>(({ sale, change = 0
 
       {/* Footer */}
       <div style={styles.footer}>
-        <div style={{ marginBottom: '10px' }}>
-          <strong>¡GRACIAS POR SU COMPRA!</strong>
-        </div>
-        <div>
-          Conserve este ticket como
-        </div>
-        <div>
-          comprobante de su compra
-        </div>
+        {company.posReceiptFooter ? (
+          <div style={{ whiteSpace: 'pre-line', marginBottom: '10px' }}>
+            {company.posReceiptFooter}
+          </div>
+        ) : (
+          <>
+            <div style={{ marginBottom: '10px' }}>
+              <strong>¡GRACIAS POR SU COMPRA!</strong>
+            </div>
+            <div>
+              Conserve este ticket como
+            </div>
+            <div>
+              comprobante de su compra
+            </div>
+          </>
+        )}
         <div style={{ marginTop: '10px' }}>
-          Sistema POS - Milán Fragancias
+          Sistema POS - {company.companyName}
         </div>
         <div style={{ fontSize: '9px', marginTop: '5px' }}>
           {dayjs().format('DD/MM/YYYY HH:mm:ss')}

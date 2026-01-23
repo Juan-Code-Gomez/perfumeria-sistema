@@ -1,14 +1,32 @@
 // src/components/sales/POSTicketSale.tsx
 import React from 'react';
 import dayjs from 'dayjs';
-import { COMPANY_INFO } from '../../config/companyInfo';
+
+interface CompanyConfig {
+  companyName: string;
+  nit?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  website?: string;
+  posReceiptFooter?: string;
+}
 
 interface POSTicketSaleProps {
   sale: any;
+  companyConfig?: CompanyConfig;
 }
 
-const POSTicketSale: React.FC<POSTicketSaleProps> = ({ sale }) => {
+const POSTicketSale: React.FC<POSTicketSaleProps> = ({ sale, companyConfig }) => {
   if (!sale) return null;
+
+  // Usar configuración proporcionada o valores por defecto
+  const company = companyConfig || {
+    companyName: 'Mi Empresa',
+    address: 'Dirección de la empresa',
+    phone: '+57 300 000 0000',
+    email: 'info@empresa.com',
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-CO', {
@@ -42,13 +60,14 @@ const POSTicketSale: React.FC<POSTicketSaleProps> = ({ sale }) => {
           marginBottom: '4px',
           letterSpacing: '1px'
         }}>
-          MILAN FRAGANCIAS
+          {company.companyName.toUpperCase()}
         </div>
         <div style={{ fontSize: '10px', lineHeight: '1.3' }}>
-          {COMPANY_INFO.address}<br />
-          {COMPANY_INFO.phone}<br />
-          {COMPANY_INFO.email}<br />
-          {COMPANY_INFO.website}
+          {company.address && <>{company.address}<br /></>}
+          {company.phone && <>{company.phone}<br /></>}
+          {company.email && <>{company.email}<br /></>}
+          {company.website && <>{company.website}</>}
+          {company.nit && <><br />NIT: {company.nit}</>}
         </div>
       </div>
 
@@ -206,13 +225,21 @@ const POSTicketSale: React.FC<POSTicketSaleProps> = ({ sale }) => {
         fontSize: '10px',
         marginBottom: '8px'
       }}>
-        <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>
-          ¡GRACIAS POR SU COMPRA!
-        </div>
-        <div style={{ lineHeight: '1.3' }}>
-          Conserve este ticket como<br />
-          comprobante de su compra
-        </div>
+        {company.posReceiptFooter ? (
+          <div style={{ whiteSpace: 'pre-line', lineHeight: '1.3' }}>
+            {company.posReceiptFooter}
+          </div>
+        ) : (
+          <>
+            <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>
+              ¡GRACIAS POR SU COMPRA!
+            </div>
+            <div style={{ lineHeight: '1.3' }}>
+              Conserve este ticket como<br />
+              comprobante de su compra
+            </div>
+          </>
+        )}
       </div>
 
       {/* Footer con información adicional */}
@@ -222,7 +249,7 @@ const POSTicketSale: React.FC<POSTicketSaleProps> = ({ sale }) => {
         color: '#666',
         marginTop: '8px'
       }}>
-        <div>Sistema POS - Milán Fragancias</div>
+        <div>Sistema POS - {company.companyName}</div>
         <div>{dayjs().format('DD/MM/YYYY HH:mm:ss')}</div>
       </div>
     </div>

@@ -30,8 +30,9 @@ import {
   CalendarOutlined,
 } from '@ant-design/icons';
 import dayjs, { Dayjs } from 'dayjs';
-import { useAppDispatch } from '../../store';
+import { useAppDispatch, useAppSelector } from '../../store';
 import { createSale } from '../../features/sales/salesSlice';
+import { fetchCompanyConfig } from '../../features/company-config/companyConfigSlice';
 import debounce from 'lodash.debounce';
 import * as productService from '../../services/productService';
 import type { Product } from '../../features/products/types';
@@ -66,10 +67,18 @@ interface Props {
 
 const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
   const dispatch = useAppDispatch();
+  const { config: companyConfig } = useAppSelector((state) => state.companyConfig);
   const searchInputRef = useRef<any>(null);
 
   // Hook de configuración del POS
   const { config: posConfig, refetch: refetchConfig } = usePOSConfiguration();
+  
+  // Cargar configuración de empresa al montar
+  useEffect(() => {
+    if (!companyConfig) {
+      dispatch(fetchCompanyConfig());
+    }
+  }, [companyConfig, dispatch]);
   
   // Debug: mostrar la configuración actual
   useEffect(() => {
@@ -1182,6 +1191,7 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
               ref={printRef}
               sale={lastSale}
               change={paymentMethod === 'Efectivo' ? change : 0}
+              companyConfig={companyConfig || undefined}
             />
           )}
         </div>
@@ -1199,6 +1209,7 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
             <POSTicket 
               sale={lastSale}
               change={paymentMethod === 'Efectivo' ? change : 0}
+              companyConfig={companyConfig || undefined}
             />
           </div>
         )}

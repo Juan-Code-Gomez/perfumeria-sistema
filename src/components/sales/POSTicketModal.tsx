@@ -1,9 +1,11 @@
 // src/components/sales/POSTicketModal.tsx
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Modal, Button, Space } from 'antd';
 import { PrinterOutlined, CloseOutlined } from '@ant-design/icons';
 import POSTicketSale from './POSTicketSale';
 import { usePOSTicketPrint } from '../../hooks/usePOSTicketPrint';
+import { useAppDispatch, useAppSelector } from '../../store';
+import { fetchCompanyConfig } from '../../features/company-config/companyConfigSlice';
 
 interface POSTicketModalProps {
   open: boolean;
@@ -12,11 +14,21 @@ interface POSTicketModalProps {
 }
 
 const POSTicketModal: React.FC<POSTicketModalProps> = ({ open, onClose, sale }) => {
+  const dispatch = useAppDispatch();
+  const { config } = useAppSelector((state) => state.companyConfig);
+  
   const { printRef, printTicket } = usePOSTicketPrint({
     onAfterPrint: () => {
       onClose();
     }
   });
+
+  // Cargar configuración al montar el componente
+  useEffect(() => {
+    if (open && !config) {
+      dispatch(fetchCompanyConfig());
+    }
+  }, [open, config, dispatch]);
 
   if (!sale) return null;
 
@@ -58,7 +70,10 @@ const POSTicketModal: React.FC<POSTicketModalProps> = ({ open, onClose, sale }) 
       }}
     >
       <div ref={printRef}>
-        <POSTicketSale sale={sale} />
+        <POSTicketSale 
+          sale={sale} 
+          companyConfig={config || undefined}
+        />
       </div>
       
       <div className="no-print" style={{ marginTop: 16, textAlign: 'center' }}>
