@@ -17,6 +17,7 @@ import {
   Space,
   Upload,
   Image,
+  Modal,
 } from 'antd';
 import {
   SaveOutlined,
@@ -29,6 +30,7 @@ import {
   SecurityScanOutlined,
   DollarOutlined,
   ShopOutlined,
+  EyeOutlined,
 } from '@ant-design/icons';
 import { useAppDispatch, useAppSelector } from '../../store';
 import {
@@ -41,6 +43,8 @@ import {
 } from '../../features/company-config/companyConfigSlice';
 import systemParametersService from '../../services/systemParametersService';
 import type { SystemParameter } from '../../services/systemParametersService';
+import POSTicketSale from '../../components/sales/POSTicketSale';
+import dayjs from 'dayjs';
 
 
 const { Title, Text } = Typography;
@@ -54,6 +58,7 @@ const CompanyConfig: React.FC = () => {
   const [form] = Form.useForm();
   const [systemParameters, setSystemParameters] = useState<SystemParameter[]>([]);
   const [parametersLoading, setParametersLoading] = useState(false);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
   
   // Verificar si el usuario es SUPER_ADMIN
   const userRoles = user?.roles?.map(ur => ur.role.name) || [];
@@ -534,6 +539,23 @@ const CompanyConfig: React.FC = () => {
           </Form.Item>
         </Col>
       </Row>
+
+      <Divider />
+
+      <Button
+        type="dashed"
+        block
+        size="large"
+        icon={<EyeOutlined />}
+        onClick={() => setShowPreviewModal(true)}
+        style={{
+          borderColor: '#1890ff',
+          color: '#1890ff',
+          fontWeight: 'bold',
+        }}
+      >
+        👁️ Vista Previa del Ticket
+      </Button>
     </Card>
   );
 
@@ -728,8 +750,114 @@ const CompanyConfig: React.FC = () => {
           </Form.Item>
         </Form>
       </Card>
+
+      {/* Modal de Vista Previa */}
+      <Modal
+        title={
+          <Space>
+            <EyeOutlined style={{ color: '#1890ff' }} />
+            <span>Vista Previa del Ticket POS</span>
+          </Space>
+        }
+        open={showPreviewModal}
+        onCancel={() => setShowPreviewModal(false)}
+        width={450}
+        centered
+        footer={[
+          <Button key="close" onClick={() => setShowPreviewModal(false)}>
+            Cerrar
+          </Button>,
+          <Button 
+            key="refresh" 
+            type="primary"
+            icon={<ReloadOutlined />}
+            onClick={() => {
+              // Forzar re-render con valores actuales del formulario
+              setShowPreviewModal(false);
+              setTimeout(() => setShowPreviewModal(true), 100);
+            }}
+          >
+            Actualizar Vista
+          </Button>,
+        ]}
+      >
+        <div style={{ 
+          background: '#f5f5f5', 
+          padding: '16px', 
+          borderRadius: '8px',
+          maxHeight: '70vh',
+          overflowY: 'auto'
+        }}>
+          <POSTicketSale
+            sale={generateSampleSale()}
+            companyConfig={{
+              companyName: form.getFieldValue('companyName') || config?.companyName || 'Mi Empresa',
+              nit: form.getFieldValue('nit') || config?.nit,
+              address: form.getFieldValue('address') || config?.address,
+              phone: form.getFieldValue('phone') || config?.phone,
+              email: form.getFieldValue('email') || config?.email,
+              website: form.getFieldValue('website') || config?.website,
+              posReceiptFooter: form.getFieldValue('posReceiptFooter') || config?.posReceiptFooter,
+              showLogo: form.getFieldValue('showLogo') ?? config?.showLogo ?? true,
+              showNIT: form.getFieldValue('showNIT') ?? config?.showNIT ?? true,
+              showAddress: form.getFieldValue('showAddress') ?? config?.showAddress ?? true,
+              showPhone: form.getFieldValue('showPhone') ?? config?.showPhone ?? true,
+              showEmail: form.getFieldValue('showEmail') ?? config?.showEmail ?? true,
+              showWebsite: form.getFieldValue('showWebsite') ?? config?.showWebsite ?? true,
+              ticketWidth: form.getFieldValue('ticketWidth') || config?.ticketWidth || '80mm',
+              fontSize: form.getFieldValue('fontSize') || config?.fontSize || 'medium',
+              includeVendor: form.getFieldValue('includeVendor') ?? config?.includeVendor ?? true,
+              includeCashSession: form.getFieldValue('includeCashSession') ?? config?.includeCashSession ?? false,
+            }}
+          />
+        </div>
+        <div style={{ 
+          marginTop: '16px', 
+          padding: '12px', 
+          background: '#e6f7ff', 
+          borderRadius: '6px',
+          border: '1px solid #91d5ff'
+        }}>
+          <Text type="secondary" style={{ fontSize: '12px' }}>
+            💡 <strong>Tip:</strong> Cambia los valores arriba y haz clic en "Actualizar Vista" para ver los cambios en tiempo real
+          </Text>
+        </div>
+      </Modal>
     </div>
   );
+
+  // Función para generar datos de venta simulados
+  function generateSampleSale() {
+    return {
+      id: 12345,
+      date: dayjs().format(),
+      customerName: 'Cliente Ejemplo',
+      totalAmount: 168000,
+      paidAmount: 200000,
+      paymentMethod: 'Efectivo',
+      cashReceived: 200000,
+      details: [
+        {
+          product: {
+            name: 'Perfume Importado 100ml',
+            category: { name: 'Fragancias' }
+          },
+          quantity: 2,
+          unitPrice: 75000,
+          totalPrice: 150000
+        },
+        {
+          product: {
+            name: 'Loción Corporal',
+            category: { name: 'Cuidado Personal' }
+          },
+          quantity: 1,
+          unitPrice: 18000,
+          totalPrice: 18000
+        }
+      ]
+    };
+  }
 };
 
 export default CompanyConfig;
