@@ -79,7 +79,7 @@ const POSTicketSale: React.FC<POSTicketSaleProps> = ({ sale, companyConfig }) =>
         </div>
         <div style={{ fontSize: company.fontSize === 'small' ? '9px' : company.fontSize === 'large' ? '11px' : '10px', lineHeight: '1.3' }}>
           {company.showAddress !== false && company.address && <>{company.address}<br /></>}
-          {company.showPhone !== false && company.phone && <>{company.phone}<br /></>}
+          {company.showPhone !== false && company.phone && <>Tel: {company.phone}<br /></>}
           {company.showEmail !== false && company.email && <>{company.email}<br /></>}
           {company.showWebsite !== false && company.website && <>{company.website}</>}
           {company.showNIT !== false && company.nit && <><br />NIT: {company.nit}</>}
