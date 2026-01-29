@@ -22,6 +22,7 @@ import {
   DeleteOutlined,
   HistoryOutlined,
   ReloadOutlined,
+  PrinterOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { OrderStatus } from "../../types/OrderTypes";
@@ -31,12 +32,15 @@ import CreateOrderModal from "./CreateOrderModal";
 import OrderDetailModal from "./OrderDetailModal";
 import ApproveOrderModal from "./ApproveOrderModal";
 import EditOrderModal from "./EditOrderModal";
-import { useAppSelector } from "../../store/index";
+import OrderInvoiceModal from "./OrderInvoiceModal";
+import { useAppSelector, useAppDispatch } from "../../store/index";
+import { fetchCompanyConfig } from "../../features/company-config/companyConfigSlice";
 
 const { RangePicker } = DatePicker;
 const { Option } = Select;
 
 const OrdersList: React.FC = () => {
+  const dispatch = useAppDispatch();
   const [orders, setOrders] = useState<Order[]>([]);
   const [statistics, setStatistics] = useState<OrderStatistics | null>(null);
   const [loading, setLoading] = useState(false);
@@ -48,10 +52,12 @@ const OrdersList: React.FC = () => {
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [approveModalOpen, setApproveModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [invoiceModalOpen, setInvoiceModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
   // Obtener roles del usuario desde Redux
   const { user } = useAppSelector((state) => state.auth);
+  const { config: companyConfig } = useAppSelector((state) => state.companyConfig);
   const userRoles = user?.roles?.map((ur: any) => ur.role.name) ?? [];
   
   // Permisos del usuario basados en roles
@@ -67,6 +73,9 @@ const OrdersList: React.FC = () => {
   const canViewStats = isBodega || isCajero || isAdmin;
 
   useEffect(() => {
+    // Cargar configuración de la compañía
+    dispatch(fetchCompanyConfig());
+    
     loadOrders();
     if (canViewStats) {
       loadStatistics();
@@ -131,6 +140,13 @@ const OrdersList: React.FC = () => {
   const handleApprove = (order: Order) => {
     setSelectedOrder(order);
     setApproveModalOpen(true);
+  };
+
+  const handlePrintInvoice = (order: Order) => {
+    console.log('handlePrintInvoice llamado con order:', order);
+    console.log('companyConfig:', companyConfig);
+    setSelectedOrder(order);
+    setInvoiceModalOpen(true);
   };
 
   const getStatusTag = (status: OrderStatus) => {
@@ -219,6 +235,14 @@ const OrdersList: React.FC = () => {
               type="text"
               icon={<EyeOutlined />}
               onClick={() => handleViewDetail(record)}
+            />
+          </Tooltip>
+
+          <Tooltip title="Imprimir">
+            <Button
+              type="text"
+              icon={<PrinterOutlined />}
+              onClick={() => handlePrintInvoice(record)}
             />
           </Tooltip>
 
@@ -426,6 +450,18 @@ const OrdersList: React.FC = () => {
               setSelectedOrder(null);
             }}
           />
+
+          {companyConfig && (
+            <OrderInvoiceModal
+              visible={invoiceModalOpen}
+              order={selectedOrder}
+              companyConfig={companyConfig}
+              onClose={() => {
+                setInvoiceModalOpen(false);
+                setSelectedOrder(null);
+              }}
+            />
+          )}
         </>
       )}
     </div>
