@@ -12,8 +12,10 @@ import {
   Row,
   Col,
   Divider,
+  Tag,
+  Tooltip,
 } from "antd";
-import { PlusOutlined, DeleteOutlined } from "@ant-design/icons";
+import { PlusOutlined, DeleteOutlined, WarningOutlined } from "@ant-design/icons";
 import debounce from "lodash.debounce";
 import * as productService from "../../services/productService";
 import { createOrder } from "../../services/orderService";
@@ -144,15 +146,15 @@ const CreateOrderModal: React.FC<Props> = ({ open, onClose, onSuccess }) => {
         return;
       }
 
-      // Validar stock disponible
-      const availableStock = (row.stock || 0) - (row.reservedStock || 0);
-      if (availableStock < row.quantity) {
-        message.error(
-          `Stock insuficiente para "${row.productName}". ` +
-          `Disponible: ${availableStock}, Solicitado: ${row.quantity}`
-        );
-        return;
-      }
+      // NOTA: Se permite crear pedidos con stock 0 o negativo
+      // const availableStock = (row.stock || 0) - (row.reservedStock || 0);
+      // if (availableStock < row.quantity) {
+      //   message.error(
+      //     `Stock insuficiente para \"${row.productName}\". ` +
+      //     `Disponible: ${availableStock}, Solicitado: ${row.quantity}`
+      //   );
+      //   return;
+      // }
     }
 
     const details: CreateOrderDetailDto[] = rows.map((row) => ({
@@ -212,11 +214,28 @@ const CreateOrderModal: React.FC<Props> = ({ open, onClose, onSuccess }) => {
           filterOption={false}
           loading={productLoading}
         >
-          {suggestedProducts.map((p) => (
-            <Option key={p.id} value={p.id}>
-              {p.name} - Stock: {(p.stock - (p.reservedStock || 0)).toFixed(2)}
-            </Option>
-          ))}
+          {suggestedProducts.map((p) => {
+            const available = (p.stock - (p.reservedStock || 0));
+            let stockDisplay = "";
+            let stockColor = "";
+            
+            if (available <= 0) {
+              stockDisplay = "⚠️ AGOTADO";
+              stockColor = "#ff4d4f";
+            } else if (available < 10) {
+              stockDisplay = `⚠️ Stock: ${available.toFixed(2)}`;
+              stockColor = "#faad14";
+            } else {
+              stockDisplay = `Stock: ${available.toFixed(2)}`;
+              stockColor = "#52c41a";
+            }
+            
+            return (
+              <Option key={p.id} value={p.id}>
+                {p.name} - <span style={{ color: stockColor, fontWeight: "bold" }}>{stockDisplay}</span>
+              </Option>
+            );
+          })}
         </Select>
       ),
     },
@@ -226,12 +245,35 @@ const CreateOrderModal: React.FC<Props> = ({ open, onClose, onSuccess }) => {
       width: "15%",
       align: "center" as const,
       render: (_: any, record: OrderRow) => {
-        if (!record.stock) return "-";
+        if (!record.stock && record.stock !== 0) return "-";
         const available = record.stock - (record.reservedStock || 0);
+        
+        let color = "default";
+        let tooltipText = "";
+        
+        if (available <= 0) {
+          color = "error";
+          tooltipText = "⚠️ Stock agotado - El pedido generará stock negativo";
+        } else if (available < record.quantity) {
+          color = "warning";
+          tooltipText = "⚠️ Stock insuficiente - El pedido generará stock negativo";
+        } else {
+          color = "success";
+          tooltipText = "✓ Stock disponible";
+        }
+
         return (
-          <span style={{ color: available < record.quantity ? "red" : "inherit" }}>
-            {available.toFixed(2)}
-          </span>
+          <Tooltip title={tooltipText}>
+            <Space size="small">
+              <Tag color={color} style={{ margin: 0 }}>
+                {available.toFixed(2)}
+              </Tag>
+              {available <= 0 && <WarningOutlined style={{ color: "#ff4d4f" }} />}
+              {available > 0 && available < record.quantity && (
+                <WarningOutlined style={{ color: "#faad14" }} />
+              )}
+            </Space>
+          </Tooltip>
         );
       },
     },
