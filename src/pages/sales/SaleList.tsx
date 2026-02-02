@@ -46,6 +46,8 @@ import 'dayjs/locale/es';
 import { downloadInvoice, printInvoice } from '../../utils/pdfGenerator';
 import { COMPANY_INFO } from '../../config/companyInfo';
 import POSTicketModal from '../../components/sales/POSTicketModal';
+import SaleInvoiceModal from '../../components/sales/SaleInvoiceModal';
+import { fetchCompanyConfig } from '../../features/company-config/companyConfigSlice';
 
 dayjs.locale('es');
 
@@ -62,6 +64,7 @@ const SaleList: React.FC = () => {
     (state: any) => state.sales
   );
   const { user } = useAppSelector((state: any) => state.auth);
+  const { config: companyConfig } = useAppSelector((state: any) => state.companyConfig);
 
   // Responsive states
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -74,6 +77,7 @@ const SaleList: React.FC = () => {
     open: boolean;
     sale: any;
   }>({ open: false, sale: null });
+  const [invoiceModalOpen, setInvoiceModalOpen] = useState(false);
 
   const [abonoModal, setAbonoModal] = useState<{
     open: boolean;
@@ -97,6 +101,9 @@ const SaleList: React.FC = () => {
 
   // Cargar ventas al montar el componente y cuando cambien los filtros
   useEffect(() => {
+    // Cargar configuración de la compañía
+    dispatch(fetchCompanyConfig());
+    
     if (!filters.dateFrom || !filters.dateTo) {
       const today = dayjs();
       const dateFilters = {
@@ -179,6 +186,13 @@ const SaleList: React.FC = () => {
 
   const handlePrintPOSTicket = (sale: any) => {
     setPosTicketModal({ open: true, sale });
+  };
+
+  const handlePrintInvoice = (sale: any) => {
+    console.log('handlePrintInvoice llamado con sale:', sale);
+    console.log('companyConfig:', companyConfig);
+    setSelectedSale(sale);
+    setInvoiceModalOpen(true);
   };
 
   const handleDownloadPDF = async (sale: any) => {
@@ -518,10 +532,19 @@ const SaleList: React.FC = () => {
                 
                 <Button
                   type="link"
+                  icon={<FileTextOutlined />}
+                  onClick={() => handlePrintInvoice(record)}
+                  size="small"
+                  style={{ padding: '4px 8px', color: '#722ed1' }}
+                  title="Factura Tamaño Carta"
+                />
+                
+                <Button
+                  type="link"
                   icon={<DownloadOutlined />}
                   onClick={() => handleDownloadPDF(record)}
                   size="small"
-                  style={{ padding: '4px 8px', color: '#722ed1' }}
+                  style={{ padding: '4px 8px', color: '#fa8c16' }}
                   title="Descargar PDF"
                 />
               </>
@@ -958,6 +981,19 @@ const SaleList: React.FC = () => {
             />
           </div>
         </Modal>
+
+        {/* Modal de factura tamaño carta */}
+        {companyConfig && selectedSale && (
+          <SaleInvoiceModal
+            visible={invoiceModalOpen}
+            sale={selectedSale}
+            companyConfig={companyConfig}
+            onClose={() => {
+              setInvoiceModalOpen(false);
+              setSelectedSale(null);
+            }}
+          />
+        )}
       </div>
     </div>
   );
