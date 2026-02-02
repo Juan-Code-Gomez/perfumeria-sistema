@@ -123,6 +123,7 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
   const amountReceived = persistentState.amountReceived;
   const generalDiscountType = persistentState.generalDiscountType;
   const generalDiscountValue = persistentState.generalDiscountValue;
+  const notes = persistentState.notes || '';
 
   // Setters para campos específicos usando el hook de persistencia
   const setSelectedClient = (client: Client | null) => updateField('selectedClient', client);
@@ -131,6 +132,7 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
   const setAmountReceived = (amount: number) => updateField('amountReceived', amount);
   const setGeneralDiscountType = (type: 'percentage' | 'fixed') => updateField('generalDiscountType', type);
   const setGeneralDiscountValue = (value: number) => updateField('generalDiscountValue', value);
+  const setNotes = (value: string) => updateField('notes', value);
   
   // Hook de impresión
   const { printRef, printTicket } = usePOSPrint({
@@ -358,6 +360,7 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
         paidAmount: finalTotal,
         isPaid: true,
         paymentMethod: payments.map(p => p.method).join(', '), // Para compatibilidad
+        notes: notes || undefined, // Agregar observaciones
         payments: payments.map(p => ({
           amount: p.amount,
           method: p.method,
@@ -471,6 +474,7 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
         paidAmount: isCredit ? 0 : finalTotal, // Si es crédito, monto pagado = 0
         isPaid: !isCredit, // Si es crédito, no está pagada
         paymentMethod,
+        notes: notes || undefined, // Agregar observaciones
         details: items.map(item => ({
           productId: item.productId,
           quantity: item.quantity,
@@ -1031,6 +1035,21 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
                 ${finalTotal.toLocaleString()}
               </Title>
             </Row>
+
+            {/* Observaciones */}
+            <div style={{ marginBottom: window.innerWidth < 768 ? 12 : 16 }}>
+              <Text strong style={{ fontSize: window.innerWidth < 768 ? '13px' : '14px' }}>Observaciones:</Text>
+              <Input.TextArea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Agregar observaciones o notas de la venta (opcional)"
+                rows={2}
+                maxLength={500}
+                showCount
+                style={{ marginTop: 4 }}
+                size={window.innerWidth < 768 ? 'middle' : 'large'}
+              />
+            </div>
 
             {/* Método de pago */}
             <div style={{ marginBottom: window.innerWidth < 768 ? 12 : 16 }}>

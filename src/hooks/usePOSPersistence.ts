@@ -34,6 +34,8 @@ interface POSPersistentState {
   // Descuento general
   generalDiscountType: 'percentage' | 'fixed';
   generalDiscountValue: number;
+  // Observaciones
+  notes: string;
 }
 
 const POS_STORAGE_KEY = 'pos_cart_state';
@@ -67,6 +69,7 @@ const getInitialState = (): POSPersistentState => {
     lastSaved: new Date().toISOString(),
     generalDiscountType: 'percentage',
     generalDiscountValue: 0,
+    notes: '',
   };
 };
 
@@ -109,6 +112,7 @@ export const usePOSPersistence = () => {
       amountReceived: 0,
       generalDiscountType: 'percentage',
       generalDiscountValue: 0,
+      notes: '',
       lastSaved: new Date().toISOString(),
     };
     setPersistentState(clearedState);
