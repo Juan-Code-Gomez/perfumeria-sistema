@@ -102,7 +102,18 @@ const ApproveOrderModal: React.FC<Props> = ({ open, order, onClose, onSuccess })
 
     setSaving(true);
     try {
-      await approveOrder(order.id, payload);
+      const response = await approveOrder(order.id, payload);
+      
+      // Mostrar advertencias de stock si existen
+      if (response.warnings && response.warnings.length > 0) {
+        response.warnings.forEach((warning: string) => {
+          message.warning({
+            content: warning.replace('⚠️ ADVERTENCIA: ', ''),
+            duration: 8,
+          });
+        });
+      }
+      
       message.success("Pedido aprobado exitosamente y convertido en venta");
       onSuccess();
     } catch (error: any) {

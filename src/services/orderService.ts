@@ -66,6 +66,7 @@ export async function updateOrder(id: number, data: UpdateOrderDto): Promise<Ord
 export async function approveOrder(id: number, data: ApproveOrderDto): Promise<{
   order: Order;
   sale: any;
+  warnings?: string[];
 }> {
   const res = await api.post(`/orders/${id}/approve`, data);
   return res.data.data || res.data;
