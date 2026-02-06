@@ -68,3 +68,70 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+/* Estilos de impresión para evitar que se capture el sidebar y otros elementos UI */
+@media print {
+  /* Ocultar todo el contenido de la página por defecto */
+  body > * {
+    display: none !important;
+  }
+  
+  /* Ocultar componentes de Ant Design que no deben imprimirse */
+  .ant-layout,
+  .ant-layout-sider,
+  .ant-layout-header,
+  .ant-layout-footer,
+  .ant-menu,
+  .ant-modal-mask,
+  .ant-modal-wrap:not(:has([data-print-content])),
+  .ant-drawer,
+  .ant-notification,
+  .ant-message,
+  header,
+  nav,
+  aside,
+  footer {
+    display: none !important;
+  }
+  
+  /* Mostrar solo el contenido marcado para impresión */
+  [data-print-content],
+  [data-print-content] * {
+    display: block !important;
+    visibility: visible !important;
+  }
+  
+  /* Asegurar que el modal que contiene el contenido de impresión sea visible */
+  .ant-modal-wrap:has([data-print-content]) {
+    display: block !important;
+    position: relative !important;
+    inset: 0 !important;
+  }
+  
+  .ant-modal:has([data-print-content]) {
+    display: block !important;
+    position: relative !important;
+    top: 0 !important;
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+  
+  .ant-modal-content:has([data-print-content]) {
+    box-shadow: none !important;
+    border: none !important;
+  }
+  
+  /* Estilos para asegurar impresión correcta */
+  @page {
+    size: letter;
+    margin: 0;
+  }
+  
+  body {
+    margin: 0;
+    padding: 0;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+}

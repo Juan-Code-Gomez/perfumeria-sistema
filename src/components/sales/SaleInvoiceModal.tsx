@@ -22,8 +22,44 @@ const SaleInvoiceModal: React.FC<SaleInvoiceModalProps> = ({
 
   const reactToPrintFn = useReactToPrint({
     contentRef: componentRef,
-    documentTitle: `Factura-Venta-${sale?.id || 'documento'}`,
-  });
+    documentTitle: `Venta-${sale?.id || 'documento'}`,
+    pageStyle: `
+      @page {
+        size: letter;
+        margin: 0;
+      }
+      @media print {
+        body {
+          margin: 0;
+          padding: 0;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+        /* Ocultar todo excepto el contenido a imprimir */
+        body > *:not([data-print-content]) {
+          display: none !important;
+        }
+        /* Ocultar modales, sidebars, overlays */
+        .ant-modal-mask,
+        .ant-modal-wrap,
+        .ant-drawer,
+        .ant-layout-sider,
+        header,
+        nav,
+        aside,
+        footer {
+          display: none !important;
+        }
+        /* Mostrar solo el contenido de la factura */
+        [data-print-content] {
+          display: block !important;
+          position: relative !important;
+          left: 0 !important;
+          top: 0 !important;
+          margin: 0 !important;
+        }
+      }
+    `,  });
 
   const handlePrintClick = () => {
     console.log('Botón imprimir factura clickeado');
@@ -68,7 +104,9 @@ const SaleInvoiceModal: React.FC<SaleInvoiceModalProps> = ({
         padding: '20px',
         display: 'flex',
         justifyContent: 'center',
-      }}>
+      }}
+      data-print-content
+      >
         <SaleInvoice ref={componentRef} sale={sale} companyConfig={companyConfig} />
       </div>
     </Modal>

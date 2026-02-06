@@ -69,7 +69,7 @@ const POSTicketModal: React.FC<POSTicketModalProps> = ({ open, onClose, sale }) 
         }
       }}
     >
-      <div ref={printRef}>
+      <div ref={printRef} data-print-content>
         <POSTicketSale 
           sale={sale} 
           companyConfig={config || undefined}

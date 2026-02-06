@@ -1,7 +1,6 @@
 import React from 'react';
 import type { CompanyConfig } from '../../features/company-config/companyConfigSlice';
 import dayjs from 'dayjs';
-import './SaleInvoice.css';
 
 interface SaleInvoiceProps {
   sale: any;
@@ -10,6 +9,229 @@ interface SaleInvoiceProps {
 
 const SaleInvoice = React.forwardRef<HTMLDivElement, SaleInvoiceProps>(
   ({ sale, companyConfig }, ref) => {
+    const styles = {
+      page: {
+        width: '21cm',
+        minHeight: '27.9cm',
+        padding: '2cm',
+        margin: '0 auto',
+        background: '#fff',
+        boxSizing: 'border-box' as const,
+        fontFamily: 'Arial, sans-serif',
+        fontSize: '11pt',
+        color: '#000',
+      },
+      header: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: '30px',
+        paddingBottom: '20px',
+        borderBottom: '2px solid #333',
+      },
+      logoSection: {
+        flex: '0 0 200px',
+      },
+      logo: {
+        maxWidth: '180px',
+        maxHeight: '80px',
+        objectFit: 'contain' as const,
+      },
+      companyInfo: {
+        flex: '1',
+        textAlign: 'right' as const,
+        paddingLeft: '20px',
+      },
+      companyName: {
+        fontSize: '18pt',
+        fontWeight: 'bold',
+        marginBottom: '8px',
+        textTransform: 'uppercase' as const,
+      },
+      companyDetail: {
+        fontSize: '10pt',
+        marginBottom: '4px',
+        color: '#333',
+      },
+      invoiceTitle: {
+        textAlign: 'center' as const,
+        fontSize: '20pt',
+        fontWeight: 'bold',
+        marginBottom: '25px',
+        color: '#333',
+        textTransform: 'uppercase' as const,
+      },
+      infoSection: {
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap: '30px',
+        marginBottom: '30px',
+      },
+      infoBox: {
+        border: '1px solid #ddd',
+        padding: '15px',
+        borderRadius: '4px',
+        backgroundColor: '#f9f9f9',
+      },
+      infoTitle: {
+        fontSize: '11pt',
+        fontWeight: 'bold',
+        marginBottom: '10px',
+        color: '#333',
+        borderBottom: '1px solid #ccc',
+        paddingBottom: '5px',
+      },
+      infoRow: {
+        display: 'flex',
+        marginBottom: '6px',
+        fontSize: '10pt',
+      },
+      infoLabel: {
+        fontWeight: 'bold',
+        width: '120px',
+        color: '#555',
+      },
+      infoValue: {
+        flex: '1',
+        color: '#000',
+      },
+      table: {
+        width: '100%',
+        borderCollapse: 'collapse' as const,
+        marginBottom: '20px',
+      },
+      tableHeader: {
+        backgroundColor: '#333',
+        color: '#fff',
+      },
+      th: {
+        padding: '12px 8px',
+        textAlign: 'left' as const,
+        fontWeight: 'bold',
+        fontSize: '10pt',
+        borderBottom: '2px solid #333',
+      },
+      thRight: {
+        padding: '12px 8px',
+        textAlign: 'right' as const,
+        fontWeight: 'bold',
+        fontSize: '10pt',
+        borderBottom: '2px solid #333',
+      },
+      thCenter: {
+        padding: '12px 8px',
+        textAlign: 'center' as const,
+        fontWeight: 'bold',
+        fontSize: '10pt',
+        borderBottom: '2px solid #333',
+      },
+      td: {
+        padding: '10px 8px',
+        borderBottom: '1px solid #ddd',
+        fontSize: '10pt',
+      },
+      tdRight: {
+        padding: '10px 8px',
+        borderBottom: '1px solid #ddd',
+        textAlign: 'right' as const,
+        fontSize: '10pt',
+      },
+      tdCenter: {
+        padding: '10px 8px',
+        borderBottom: '1px solid #ddd',
+        textAlign: 'center' as const,
+        fontSize: '10pt',
+      },
+      totalsSection: {
+        marginTop: '30px',
+        display: 'flex',
+        justifyContent: 'flex-end',
+      },
+      totalsBox: {
+        width: '350px',
+        border: '2px solid #333',
+        padding: '15px',
+        backgroundColor: '#f9f9f9',
+      },
+      totalRow: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        padding: '8px 0',
+        fontSize: '11pt',
+      },
+      totalLabel: {
+        fontWeight: 'bold',
+        color: '#555',
+      },
+      totalValue: {
+        textAlign: 'right' as const,
+        minWidth: '120px',
+        color: '#000',
+      },
+      grandTotal: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        padding: '12px 0',
+        fontSize: '14pt',
+        fontWeight: 'bold',
+        borderTop: '2px solid #333',
+        marginTop: '10px',
+        color: '#000',
+      },
+      footer: {
+        marginTop: '50px',
+        paddingTop: '20px',
+        borderTop: '1px solid #ccc',
+        textAlign: 'center' as const,
+        fontSize: '9pt',
+        color: '#666',
+      },
+      statusBadge: {
+        display: 'inline-block',
+        padding: '6px 12px',
+        borderRadius: '4px',
+        fontSize: '10pt',
+        fontWeight: 'bold',
+        textTransform: 'uppercase' as const,
+      },
+      statusPaid: {
+        backgroundColor: '#d4edda',
+        color: '#155724',
+        border: '1px solid #c3e6cb',
+      },
+      statusPending: {
+        backgroundColor: '#fff3cd',
+        color: '#856404',
+        border: '1px solid #ffeaa7',
+      },
+      statusPartial: {
+        backgroundColor: '#d1ecf1',
+        color: '#0c5460',
+        border: '1px solid #bee5eb',
+      },
+    };
+
+    const formatCurrency = (value: number) => {
+      return `$${value.toLocaleString('es-CO', { minimumFractionDigits: 0 })}`;
+    };
+
+    const getPaymentStatusStyle = () => {
+      const isPaid = sale.isPaid || sale.paymentStatus === 'PAGADO';
+      const paidAmount = sale.paidAmount || sale.amountPaid || 0;
+      const totalAmount = sale.totalAmount || 0;
+      
+      if (isPaid || paidAmount >= totalAmount) {
+        return { ...styles.statusBadge, ...styles.statusPaid, label: 'Pagado' };
+      } else if (paidAmount > 0) {
+        return { ...styles.statusBadge, ...styles.statusPartial, label: 'Abonado' };
+      } else {
+        return { ...styles.statusBadge, ...styles.statusPending, label: 'Pendiente' };
+      }
+    };
+
+    const statusStyle = getPaymentStatusStyle();
+
+    // Calculate totals
     const calculateSubtotal = () => {
       return sale.details?.reduce((sum: number, detail: any) => 
         sum + (detail.quantity * detail.unitPrice), 0) || 0;
@@ -19,170 +241,201 @@ const SaleInvoice = React.forwardRef<HTMLDivElement, SaleInvoiceProps>(
       return sale.discountAmount || 0;
     };
 
-    const calculateTax = () => {
-      const subtotal = calculateSubtotal();
-      const discount = calculateDiscount();
-      const taxRate = companyConfig.taxRate || 0;
-      return ((subtotal - discount) * taxRate) / 100;
-    };
-
-    const getPaymentStatus = () => {
-      if (sale.paymentStatus === 'PAGADO') {
-        return { text: 'PAGADO', color: '#52c41a', bgColor: '#f6ffed' };
-      } else if (sale.paymentStatus === 'PENDIENTE') {
-        return { text: 'PENDIENTE', color: '#faad14', bgColor: '#fffbe6' };
-      } else if (sale.paymentStatus === 'PARCIAL') {
-        return { text: 'ABONADO', color: '#1890ff', bgColor: '#e6f7ff' };
-      }
-      return { text: 'DESCONOCIDO', color: '#d9d9d9', bgColor: '#fafafa' };
-    };
-
-    const status = getPaymentStatus();
+    const paidAmount = sale.paidAmount || sale.amountPaid || 0;
+    const balance = sale.totalAmount - paidAmount;
 
     return (
-      <div ref={ref} className="sale-invoice">
+      <div ref={ref} style={styles.page}>
         {/* Header */}
-        <div className="invoice-header">
-          <div className="company-info">
-            {companyConfig.logo && companyConfig.printLogo && (
-              <img src={companyConfig.logo} alt="Logo" className="company-logo" />
+        <div style={styles.header}>
+          {/* Logo */}
+          {companyConfig.showLogo !== false && companyConfig.logo && (
+            <div style={styles.logoSection}>
+              <img 
+                src={companyConfig.logo} 
+                alt={companyConfig.companyName}
+                style={styles.logo}
+              />
+            </div>
+          )}
+
+          {/* Company Info */}
+          <div style={styles.companyInfo}>
+            <div style={styles.companyName}>{companyConfig.companyName}</div>
+            {companyConfig.showNIT !== false && companyConfig.nit && (
+              <div style={styles.companyDetail}>NIT: {companyConfig.nit}</div>
             )}
-            <div className="company-details">
-              <h1>{companyConfig.companyName}</h1>
-              {companyConfig.nit && <p><strong>NIT:</strong> {companyConfig.nit}</p>}
-              {companyConfig.address && <p><strong>Dirección:</strong> {companyConfig.address}</p>}
-              {companyConfig.phone && <p><strong>Teléfono:</strong> {companyConfig.phone}</p>}
-              {companyConfig.email && <p><strong>Email:</strong> {companyConfig.email}</p>}
-            </div>
-          </div>
-          
-          <div className="invoice-info">
-            <h2>FACTURA DE VENTA</h2>
-            <div className="invoice-number">#{sale.id}</div>
-            <p><strong>Fecha:</strong> {dayjs(sale.createdAt).format('DD/MM/YYYY HH:mm')}</p>
-            <div 
-              className="payment-status-badge"
-              style={{ 
-                backgroundColor: status.bgColor, 
-                color: status.color,
-                border: `1px solid ${status.color}`
-              }}
-            >
-              {status.text}
-            </div>
+            {companyConfig.showAddress !== false && companyConfig.address && (
+              <div style={styles.companyDetail}>{companyConfig.address}</div>
+            )}
+            {companyConfig.showPhone !== false && companyConfig.phone && (
+              <div style={styles.companyDetail}>Tel: {companyConfig.phone}</div>
+            )}
+            {companyConfig.showEmail !== false && companyConfig.email && (
+              <div style={styles.companyDetail}>{companyConfig.email}</div>
+            )}
+            {companyConfig.showWebsite !== false && companyConfig.website && (
+              <div style={styles.companyDetail}>{companyConfig.website}</div>
+            )}
           </div>
         </div>
 
-        {/* Customer Info */}
-        <div className="customer-section">
-          <h3>Información del Cliente</h3>
-          <div className="customer-details">
-            <p><strong>Cliente:</strong> {sale.client?.name || 'Cliente Ocasional'}</p>
-            {sale.client?.nit && <p><strong>NIT:</strong> {sale.client.nit}</p>}
-            {sale.client?.phone && <p><strong>Teléfono:</strong> {sale.client.phone}</p>}
-            {sale.client?.address && <p><strong>Dirección:</strong> {sale.client.address}</p>}
+        {/* Invoice Title */}
+        <div style={styles.invoiceTitle}>Factura de Venta</div>
+
+        {/* Info Section */}
+        <div style={styles.infoSection}>
+          {/* Sale Info */}
+          <div style={styles.infoBox}>
+            <div style={styles.infoTitle}>Información de la Venta</div>
+            <div style={styles.infoRow}>
+              <span style={styles.infoLabel}>No. Venta:</span>
+              <span style={styles.infoValue}>#{sale.id}</span>
+            </div>
+            <div style={styles.infoRow}>
+              <span style={styles.infoLabel}>Fecha:</span>
+              <span style={styles.infoValue}>
+                {dayjs(sale.createdAt).format('DD/MM/YYYY HH:mm')}
+              </span>
+            </div>
+            <div style={styles.infoRow}>
+              <span style={styles.infoLabel}>Estado:</span>
+              <span style={styles.infoValue}>
+                <span style={statusStyle}>
+                  {statusStyle.label}
+                </span>
+              </span>
+            </div>
+            {sale.user && (
+              <div style={styles.infoRow}>
+                <span style={styles.infoLabel}>Atendido por:</span>
+                <span style={styles.infoValue}>{sale.user.name}</span>
+              </div>
+            )}
           </div>
-          {sale.user && (
-            <p><strong>Atendido por:</strong> {sale.user.name}</p>
-          )}
-          {sale.cashSession && (
-            <p><strong>Sesión de Caja:</strong> #{sale.cashSession.id}</p>
-          )}
+
+          {/* Customer Info */}
+          <div style={styles.infoBox}>
+            <div style={styles.infoTitle}>Información del Cliente</div>
+            <div style={styles.infoRow}>
+              <span style={styles.infoLabel}>Cliente:</span>
+              <span style={styles.infoValue}>
+                {sale.client?.name || 'Cliente Ocasional'}
+              </span>
+            </div>
+            {sale.client?.nit && (
+              <div style={styles.infoRow}>
+                <span style={styles.infoLabel}>NIT:</span>
+                <span style={styles.infoValue}>{sale.client.nit}</span>
+              </div>
+            )}
+            {sale.client?.phone && (
+              <div style={styles.infoRow}>
+                <span style={styles.infoLabel}>Teléfono:</span>
+                <span style={styles.infoValue}>{sale.client.phone}</span>
+              </div>
+            )}
+            {sale.client?.address && (
+              <div style={styles.infoRow}>
+                <span style={styles.infoLabel}>Dirección:</span>
+                <span style={styles.infoValue}>{sale.client.address}</span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Products Table */}
-        <div className="products-section">
-          <h3>Detalle de Productos</h3>
-          <table className="products-table">
-            <thead>
-              <tr>
-                <th style={{ width: '10%' }}>Cant.</th>
-                <th style={{ width: '45%' }}>Producto</th>
-                <th style={{ width: '15%', textAlign: 'right' }}>Precio Unit.</th>
-                <th style={{ width: '15%', textAlign: 'right' }}>Descuento</th>
-                <th style={{ width: '15%', textAlign: 'right' }}>Total</th>
+        <table style={styles.table}>
+          <thead style={styles.tableHeader}>
+            <tr>
+              <th style={{ ...styles.th, width: '50px' }}>Item</th>
+              <th style={styles.th}>Producto</th>
+              <th style={{ ...styles.thCenter, width: '80px' }}>Cantidad</th>
+              <th style={{ ...styles.thRight, width: '120px' }}>Precio Unit.</th>
+              <th style={{ ...styles.thRight, width: '120px' }}>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sale.details?.map((detail: any, index: number) => (
+              <tr key={detail.id || index}>
+                <td style={styles.tdCenter}>{index + 1}</td>
+                <td style={styles.td}>
+                  <strong>{detail.product?.name || 'Producto'}</strong>
+                  {detail.product?.sku && (
+                    <div style={{ fontSize: '9pt', color: '#666', marginTop: '2px' }}>
+                      SKU: {detail.product.sku}
+                    </div>
+                  )}
+                </td>
+                <td style={styles.tdCenter}>{detail.quantity}</td>
+                <td style={styles.tdRight}>{formatCurrency(detail.unitPrice)}</td>
+                <td style={styles.tdRight}>
+                  <strong>{formatCurrency(detail.quantity * detail.unitPrice)}</strong>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {sale.details?.map((detail: any, index: number) => (
-                <tr key={index}>
-                  <td>{detail.quantity}</td>
-                  <td>{detail.product?.name || `Producto #${detail.productId}`}</td>
-                  <td style={{ textAlign: 'right' }}>
-                    ${detail.unitPrice.toLocaleString('es-CO')}
-                  </td>
-                  <td style={{ textAlign: 'right' }}>
-                    {detail.discount > 0 ? `$${detail.discount.toLocaleString('es-CO')}` : '-'}
-                  </td>
-                  <td style={{ textAlign: 'right' }}>
-                    <strong>${((detail.quantity * detail.unitPrice) - (detail.discount || 0)).toLocaleString('es-CO')}</strong>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+            ))}
+          </tbody>
+        </table>
 
         {/* Totals */}
-        <div className="totals-section">
-          <div className="totals-row">
-            <span>Subtotal:</span>
-            <span>${calculateSubtotal().toLocaleString('es-CO')}</span>
-          </div>
-          {calculateDiscount() > 0 && (
-            <div className="totals-row">
-              <span>Descuento:</span>
-              <span>-${calculateDiscount().toLocaleString('es-CO')}</span>
+        <div style={styles.totalsSection}>
+          <div style={styles.totalsBox}>
+            <div style={styles.totalRow}>
+              <span style={styles.totalLabel}>Subtotal:</span>
+              <span style={styles.totalValue}>{formatCurrency(calculateSubtotal())}</span>
             </div>
-          )}
-          {companyConfig.taxRate && companyConfig.taxRate > 0 && (
-            <div className="totals-row">
-              <span>IVA ({companyConfig.taxRate}%):</span>
-              <span>${calculateTax().toLocaleString('es-CO')}</span>
-            </div>
-          )}
-          <div className="totals-row total">
-            <span>TOTAL:</span>
-            <span>${sale.totalAmount.toLocaleString('es-CO')}</span>
-          </div>
-
-          {/* Payment Info */}
-          {sale.paymentStatus !== 'PENDIENTE' && (
-            <>
-              <div className="totals-row">
-                <span>Pagado:</span>
-                <span>${(sale.amountPaid || 0).toLocaleString('es-CO')}</span>
+            {calculateDiscount() > 0 && (
+              <div style={styles.totalRow}>
+                <span style={styles.totalLabel}>Descuento:</span>
+                <span style={styles.totalValue}>-{formatCurrency(calculateDiscount())}</span>
               </div>
-              {sale.paymentStatus === 'PARCIAL' && (
-                <div className="totals-row pending">
-                  <span>Pendiente:</span>
-                  <span>${((sale.totalAmount || 0) - (sale.amountPaid || 0)).toLocaleString('es-CO')}</span>
-                </div>
-              )}
-            </>
-          )}
+            )}
+            <div style={styles.grandTotal}>
+              <span>TOTAL:</span>
+              <span>{formatCurrency(sale.totalAmount)}</span>
+            </div>
+            {paidAmount > 0 && (
+              <div style={{ ...styles.totalRow, marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #ccc' }}>
+                <span style={styles.totalLabel}>Pagado:</span>
+                <span style={styles.totalValue}>{formatCurrency(paidAmount)}</span>
+              </div>
+            )}
+            {balance > 0 && paidAmount > 0 && (
+              <div style={styles.totalRow}>
+                <span style={{ ...styles.totalLabel, color: '#dc3545' }}>Saldo Pendiente:</span>
+                <span style={{ ...styles.totalValue, color: '#dc3545', fontWeight: 'bold' }}>
+                  {formatCurrency(balance)}
+                </span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Payment Method */}
         {sale.paymentMethod && (
-          <div className="payment-method-section">
-            <p><strong>Método de Pago:</strong> {sale.paymentMethod}</p>
+          <div style={{ marginTop: '20px', padding: '12px', backgroundColor: '#f9f9f9', border: '1px solid #ddd', borderRadius: '4px' }}>
+            <span style={{ fontWeight: 'bold', fontSize: '10pt', color: '#555' }}>Método de Pago: </span>
+            <span style={{ fontSize: '10pt' }}>{sale.paymentMethod}</span>
           </div>
         )}
 
         {/* Notes */}
         {sale.notes && (
-          <div className="notes-section">
-            <p><strong>Observaciones:</strong></p>
-            <p>{sale.notes}</p>
+          <div style={{ marginTop: '20px', padding: '15px', backgroundColor: '#f9f9f9', border: '1px solid #ddd', borderRadius: '4px' }}>
+            <div style={{ fontWeight: 'bold', marginBottom: '8px', fontSize: '10pt' }}>Observaciones:</div>
+            <div style={{ fontSize: '10pt', color: '#333' }}>{sale.notes}</div>
           </div>
         )}
 
         {/* Footer */}
-        <div className="invoice-footer">
-          {companyConfig.invoiceFooter && <p>{companyConfig.invoiceFooter}</p>}
-          <p className="thank-you">¡Gracias por su compra!</p>
-          <p className="generated-date">
+        <div style={styles.footer}>
+          <p style={{ fontWeight: 'bold', fontSize: '10pt', marginBottom: '8px' }}>
+            {companyConfig.invoiceFooter || 'Gracias por su preferencia'}
+          </p>
+          <p style={{ fontSize: '8pt', marginTop: '5px' }}>
+            Este documento es una factura de venta
+          </p>
+          <p style={{ fontSize: '8pt', color: '#999', marginTop: '10px' }}>
             Documento generado el {dayjs().format('DD/MM/YYYY HH:mm')}
           </p>
         </div>

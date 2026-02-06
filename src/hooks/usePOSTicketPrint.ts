@@ -32,6 +32,31 @@ export const usePOSTicketPrint = (options: POSTicketPrintOptions = {}) => {
       }
       
       @media print {
+        /* Ocultar todo excepto el contenido a imprimir */
+        body > * {
+          display: none !important;
+        }
+        
+        .ant-layout,
+        .ant-layout-sider,
+        .ant-layout-header,
+        .ant-modal-mask,
+        .ant-modal-wrap,
+        .ant-drawer,
+        .ant-modal-header,
+        .ant-modal-footer {
+          display: none !important;
+        }
+        
+        /* Mostrar solo el contenido del ticket */
+        [data-print-content] {
+          display: block !important;
+          position: relative !important;
+          width: 80mm !important;
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+      
         body {
           margin: 0;
           padding: 0;
