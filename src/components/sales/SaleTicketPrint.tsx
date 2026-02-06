@@ -2,6 +2,8 @@
 import React, { useRef } from "react";
 import dayjs from "dayjs";
 import { Button } from "antd";
+import { useSelector } from "react-redux";
+import type { RootState } from "../../store";
 
 // Usamos este hook para imprimir solo el ticket
 const usePrint = (ref: React.RefObject<HTMLDivElement | null>) => {
@@ -49,8 +51,19 @@ const usePrint = (ref: React.RefObject<HTMLDivElement | null>) => {
 const SaleTicketPrint: React.FC<{ sale: any; onClose: () => void }> = ({ sale, onClose }) => {
   const ticketRef = useRef<HTMLDivElement>(null);
   const printTicket = usePrint(ticketRef);
+  const companyConfig = useSelector((state: RootState) => state.config.companyConfig);
 
   if (!sale) return null;
+
+  // Obtener logo
+  const logoUrl = companyConfig?.logoUrl 
+    ? `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${companyConfig.logoUrl}`
+    : '/logo-milan.png';
+
+  // Obtener logo
+  const logoUrl = companyConfig?.logoUrl 
+    ? `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${companyConfig.logoUrl}`
+    : '/logo-milan.png';
 
   // Ejemplo: logo, negocio, fecha, productos, totales, método pago
   return (
@@ -65,8 +78,8 @@ const SaleTicketPrint: React.FC<{ sale: any; onClose: () => void }> = ({ sale, o
       <div ref={ticketRef} className="ticket">
         <div style={{ textAlign: "center", marginBottom: "8px" }}>
           <img 
-            src="/logo-milan.png" 
-            alt="Logo Milán Fragancias" 
+            src={logoUrl}
+            alt={companyConfig?.name || "Logo"} 
             className="logo"
             style={{
               maxWidth: "45mm",
@@ -83,12 +96,11 @@ const SaleTicketPrint: React.FC<{ sale: any; onClose: () => void }> = ({ sale, o
             }}
           />
         </div>
-        <div className="titulo">Milán Fragancias</div>
+        <div className="titulo">{companyConfig?.name || "Mi Negocio"}</div>
         <div style={{ textAlign: "center", fontSize: "0.9em" }}>
-          Centro comercial el competidor<br />
-          Local 119<br />
-          Carrera 9 # 14-03, Cali<br />
-          Tel: 312 3050704
+          {companyConfig?.address && <>{companyConfig.address}<br /></>}
+          {companyConfig?.city && <>{companyConfig.city}<br /></>}
+          {companyConfig?.phone && <>Tel: {companyConfig.phone}<br /></>}
         </div>
         <div style={{ textAlign: "center", fontSize: "0.9em" }}>
           <b>Venta #{sale.id}</b> — {dayjs(sale.date).format("YYYY-MM-DD HH:mm")}
@@ -134,10 +146,26 @@ const SaleTicketPrint: React.FC<{ sale: any; onClose: () => void }> = ({ sale, o
               : <span style={{ color: "orange" }}>Pendiente</span>}
           </div>
         </div>
+        {sale.notes && (
+          <>
+            <div className="separador" />
+            <div style={{ fontSize: "0.9em" }}>
+              <b>Observaciones:</b><br />
+              {sale.notes}
+            </div>
+          </>
+        )}
         <div className="separador" />
         <div className="gracias">
-          ¡Gracias por su compra!<br />
-          <span style={{ fontSize: "0.87em" }}>Síguenos en Instagram: @milanfragancias</span>
+          ¡Gracias por su compra!
+          {companyConfig?.instagram && (
+            <>
+              <br />
+              <span style={{ fontSize: "0.87em" }}>
+                Síguenos en Instagram: @{companyConfig.instagram}
+              </span>
+            </>
+          )}
         </div>
       </div>
     </div>
