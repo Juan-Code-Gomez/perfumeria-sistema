@@ -1051,20 +1051,6 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
               />
             </div>
 
-            {/* Observaciones */}
-            <div style={{ marginBottom: window.innerWidth < 768 ? 12 : 16 }}>
-              <Text strong style={{ fontSize: window.innerWidth < 768 ? '13px' : '14px' }}>Observaciones:</Text>
-              <Input.TextArea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Notas adicionales de la venta (opcional)"
-                style={{ marginTop: 4 }}
-                rows={2}
-                maxLength={500}
-                showCount
-              />
-            </div>
-
             {/* Método de pago */}
             <div style={{ marginBottom: window.innerWidth < 768 ? 12 : 16 }}>
               <Text strong style={{ fontSize: window.innerWidth < 768 ? '13px' : '14px' }}>Método de Pago:</Text>

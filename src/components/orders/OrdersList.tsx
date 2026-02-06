@@ -30,6 +30,7 @@ import {
   MoreOutlined,
   UserOutlined,
   ShoppingOutlined,
+  FileTextOutlined,
 } from "@ant-design/icons";
 
 const { Text } = Typography;
@@ -42,6 +43,7 @@ import OrderDetailModal from "./OrderDetailModal";
 import ApproveOrderModal from "./ApproveOrderModal";
 import EditOrderModal from "./EditOrderModal";
 import OrderInvoiceModal from "./OrderInvoiceModal";
+import POSTicketOrderModal from "./POSTicketOrderModal";
 import { useAppSelector, useAppDispatch } from "../../store/index";
 import { fetchCompanyConfig } from "../../features/company-config/companyConfigSlice";
 
@@ -62,6 +64,7 @@ const OrdersList: React.FC = () => {
   const [approveModalOpen, setApproveModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [invoiceModalOpen, setInvoiceModalOpen] = useState(false);
+  const [posTicketModalOpen, setPosTicketModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
   // Responsive states
@@ -179,6 +182,12 @@ const OrdersList: React.FC = () => {
     setInvoiceModalOpen(true);
   };
 
+  const handlePrintPOSTicket = (order: Order) => {
+    console.log('handlePrintPOSTicket llamado con order:', order);
+    setSelectedOrder(order);
+    setPosTicketModalOpen(true);
+  };
+
   const getStatusTag = (status: OrderStatus) => {
     const statusConfig = {
       PENDING: { color: "orange", text: "Pendiente" },
@@ -279,11 +288,20 @@ const OrdersList: React.FC = () => {
 
           {!isTablet && (
             <>
-              <Tooltip title="Imprimir">
+              <Tooltip title="Factura Carta">
+                <Button
+                  type="text"
+                  icon={<FileTextOutlined />}
+                  onClick={() => handlePrintInvoice(record)}
+                />
+              </Tooltip>
+
+              <Tooltip title="Ticket POS">
                 <Button
                   type="text"
                   icon={<PrinterOutlined />}
-                  onClick={() => handlePrintInvoice(record)}
+                  onClick={() => handlePrintPOSTicket(record)}
+                  style={{ color: '#722ed1' }}
                 />
               </Tooltip>
 
@@ -696,15 +714,26 @@ const OrdersList: React.FC = () => {
           />
 
           {companyConfig && (
-            <OrderInvoiceModal
-              visible={invoiceModalOpen}
-              order={selectedOrder}
-              companyConfig={companyConfig}
-              onClose={() => {
-                setInvoiceModalOpen(false);
-                setSelectedOrder(null);
-              }}
-            />
+            <>
+              <OrderInvoiceModal
+                visible={invoiceModalOpen}
+                order={selectedOrder}
+                companyConfig={companyConfig}
+                onClose={() => {
+                  setInvoiceModalOpen(false);
+                  setSelectedOrder(null);
+                }}
+              />
+
+              <POSTicketOrderModal
+                open={posTicketModalOpen}
+                order={selectedOrder}
+                onClose={() => {
+                  setPosTicketModalOpen(false);
+                  setSelectedOrder(null);
+                }}
+              />
+            </>
           )}
         </>
       )}
@@ -862,7 +891,7 @@ const OrdersList: React.FC = () => {
                 <Button
                   block
                   size="large"
-                  icon={<PrinterOutlined />}
+                  icon={<FileTextOutlined />}
                   onClick={() => {
                     setActionDrawer({ open: false, order: null });
                     handlePrintInvoice(actionDrawer.order!);
@@ -880,7 +909,31 @@ const OrdersList: React.FC = () => {
                     color: '#722ed1'
                   }}
                 >
-                  Imprimir Factura del Pedido
+                  Factura Tamaño Carta
+                </Button>
+
+                <Button
+                  block
+                  size="large"
+                  icon={<PrinterOutlined />}
+                  onClick={() => {
+                    setActionDrawer({ open: false, order: null });
+                    handlePrintPOSTicket(actionDrawer.order!);
+                  }}
+                  style={{
+                    height: '48px',
+                    borderRadius: '12px',
+                    fontWeight: 500,
+                    textAlign: 'left',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'flex-start',
+                    background: '#fff1f0',
+                    borderColor: '#ffccc7',
+                    color: '#cf1322'
+                  }}
+                >
+                  Ticket POS (80mm)
                 </Button>
               </Space>
             </div>
