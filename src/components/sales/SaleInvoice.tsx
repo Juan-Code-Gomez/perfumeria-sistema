@@ -9,6 +9,10 @@ interface SaleInvoiceProps {
 
 const SaleInvoice = React.forwardRef<HTMLDivElement, SaleInvoiceProps>(
   ({ sale, companyConfig }, ref) => {
+    // Debug: verificar datos de la venta
+    console.log('SaleInvoice - sale completa:', sale);
+    console.log('SaleInvoice - sale.notes:', sale.notes);
+    
     const styles = {
       page: {
         width: '21cm',
@@ -420,9 +424,9 @@ const SaleInvoice = React.forwardRef<HTMLDivElement, SaleInvoiceProps>(
         )}
 
         {/* Notes */}
-        {sale.notes && (
-          <div style={{ marginTop: '20px', padding: '15px', backgroundColor: '#f9f9f9', border: '1px solid #ddd', borderRadius: '4px' }}>
-            <div style={{ fontWeight: 'bold', marginBottom: '8px', fontSize: '10pt' }}>Observaciones:</div>
+        {sale.notes && sale.notes.trim() !== '' && (
+          <div style={{ marginTop: '20px', padding: '15px', backgroundColor: '#fffbe6', border: '1px solid #ffe58f', borderRadius: '4px' }}>
+            <div style={{ fontWeight: 'bold', marginBottom: '8px', fontSize: '10pt', color: '#d48806' }}>📝 Observaciones:</div>
             <div style={{ fontSize: '10pt', color: '#333' }}>{sale.notes}</div>
           </div>
         )}
