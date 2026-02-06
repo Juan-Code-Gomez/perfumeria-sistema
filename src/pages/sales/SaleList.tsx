@@ -17,6 +17,8 @@ import {
   Select,
   Input,
   Radio,
+  Drawer,
+  List,
 } from 'antd';
 import {
   CalendarOutlined,
@@ -31,6 +33,9 @@ import {
   FilterOutlined,
   CheckCircleOutlined,
   DeleteOutlined,
+  MoreOutlined,
+  UserOutlined,
+  CreditCardOutlined,
 } from '@ant-design/icons';
 import { useAppDispatch, useAppSelector } from '../../store';
 import {
@@ -87,6 +92,12 @@ const SaleList: React.FC = () => {
   const [abono, setAbono] = useState<number>(0);
   const [method, setMethod] = useState<string>("Efectivo");
   const [note, setNote] = useState<string>("");
+  
+  // Drawer para acciones en móvil
+  const [actionDrawer, setActionDrawer] = useState<{
+    open: boolean;
+    sale: any;
+  }>({ open: false, sale: null });
 
   // Responsive handler
   useEffect(() => {
@@ -807,40 +818,190 @@ const SaleList: React.FC = () => {
           </Row>
         </Card>
 
-        {/* Tabla con diseño mejorado */}
-        <Card
-          style={{
-            borderRadius: isMobile ? '12px' : '20px',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
-            border: 'none',
-            background: 'rgba(255,255,255,0.95)',
-            backdropFilter: 'blur(10px)',
-          }}
-          bodyStyle={{ padding: isMobile ? '16px' : '32px' }}
-        >
-          <Table
-            columns={columns}
-            dataSource={filteredSales}
-            rowKey="id"
-            loading={loading}
-            size={isMobile ? "small" : "middle"}
-            pagination={{
-              pageSize: isMobile ? 5 : 10,
-              showSizeChanger: !isMobile,
-              showQuickJumper: !isMobile,
-              showTotal: (total) => isMobile ? `${total} ventas` : `Total ${total} ventas`,
-              style: { marginTop: '24px' },
-            }}
-            scroll={{ 
-              x: isMobile ? 600 : isTablet ? 900 : 1000,
-              y: isMobile ? 'calc(50vh - 100px)' : undefined
-            }}
+        {/* Tabla o Cards según dispositivo */}
+        {isMobile ? (
+          /* Vista de Cards para móvil */
+          <div style={{ marginBottom: '80px' }}>
+            <List
+              dataSource={filteredSales}
+              loading={loading}
+              pagination={{
+                pageSize: 10,
+                showTotal: (total) => `${total} ventas`,
+                simple: true,
+              }}
+              renderItem={(sale: any) => {
+                const totalAmount = Math.round((sale.totalAmount || 0) * 100) / 100;
+                const paidAmount = Math.round((sale.paidAmount || 0) * 100) / 100;
+                const pendiente = Math.round((totalAmount - paidAmount) * 100) / 100;
+                const isPaid = sale.isPaid || pendiente <= 1;
+                const isPartial = paidAmount > 0 && pendiente > 1;
+                
+                return (
+                  <Card
+                    key={sale.id}
+                    style={{
+                      marginBottom: '12px',
+                      borderRadius: '12px',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                      border: '1px solid #f0f0f0',
+                    }}
+                    bodyStyle={{ padding: '16px' }}
+                  >
+                    <Row justify="space-between" align="top" style={{ marginBottom: '12px' }}>
+                      <Col span={18}>
+                        <Space direction="vertical" size={4} style={{ width: '100%' }}>
+                          <Space>
+                            <Text code style={{ fontSize: '12px' }}>#{sale.id}</Text>
+                            <Text type="secondary" style={{ fontSize: '12px' }}>
+                              {dayjs(sale.date).format('DD/MM/YYYY')}
+                            </Text>
+                          </Space>
+                          <Space>
+                            <UserOutlined style={{ fontSize: '12px', color: '#1890ff' }} />
+                            <Text strong style={{ fontSize: '13px' }}>
+                              {sale.customerName || 'Cliente ocasional'}
+                            </Text>
+                          </Space>
+                        </Space>
+                      </Col>
+                      <Col span={6} style={{ textAlign: 'right' }}>
+                        <Button
+                          type="text"
+                          icon={<MoreOutlined />}
+                          onClick={() => setActionDrawer({ open: true, sale })}
+                          style={{ 
+                            padding: '4px 8px',
+                            fontSize: '20px',
+                            color: '#1890ff'
+                          }}
+                        />
+                      </Col>
+                    </Row>
+                    
+                    <Divider style={{ margin: '12px 0' }} />
+                    
+                    <Row gutter={[8, 8]}>
+                      <Col span={12}>
+                        <Space direction="vertical" size={0}>
+                          <Text type="secondary" style={{ fontSize: '11px' }}>Total</Text>
+                          <Text strong style={{ fontSize: '16px', color: '#1890ff' }}>
+                            ${totalAmount.toLocaleString()}
+                          </Text>
+                        </Space>
+                      </Col>
+                      <Col span={12} style={{ textAlign: 'right' }}>
+                        <Space direction="vertical" size={0} style={{ alignItems: 'flex-end' }}>
+                          <Text type="secondary" style={{ fontSize: '11px' }}>Estado</Text>
+                          {isPaid ? (
+                            <Tag color="success" style={{ margin: 0 }}>✓ Pagado</Tag>
+                          ) : isPartial ? (
+                            <Tag color="warning" style={{ margin: 0 }}>◐ Abonado</Tag>
+                          ) : (
+                            <Tag color="error" style={{ margin: 0 }}>✗ Pendiente</Tag>
+                          )}
+                        </Space>
+                      </Col>
+                    </Row>
+                    
+                    {isPartial && (
+                      <div style={{ 
+                        marginTop: '8px', 
+                        padding: '8px', 
+                        background: '#fff7e6', 
+                        borderRadius: '6px',
+                        border: '1px solid #ffd591'
+                      }}>
+                        <Text style={{ fontSize: '11px', color: '#fa8c16' }}>
+                          💰 Pagado: ${paidAmount.toLocaleString()} | Saldo: ${pendiente.toLocaleString()}
+                        </Text>
+                      </div>
+                    )}
+                    
+                    <Row gutter={8} style={{ marginTop: '12px' }}>
+                      <Col span={12}>
+                        <Tag 
+                          icon={<CreditCardOutlined />} 
+                          color={
+                            sale.paymentMethod === 'Efectivo' ? 'green' :
+                            sale.paymentMethod === 'Tarjeta' ? 'blue' :
+                            sale.paymentMethod === 'Transferencia' ? 'purple' :
+                            sale.paymentMethod === 'Crédito' ? 'orange' : 'default'
+                          }
+                          style={{ fontSize: '11px', margin: 0 }}
+                        >
+                          {sale.paymentMethod}
+                        </Tag>
+                      </Col>
+                      <Col span={12} style={{ textAlign: 'right' }}>
+                        <Space size={4}>
+                          <Button
+                            type="primary"
+                            size="small"
+                            icon={<EyeOutlined />}
+                            onClick={() => handleViewDetail(sale)}
+                            style={{ fontSize: '11px', borderRadius: '6px' }}
+                          >
+                            Ver
+                          </Button>
+                          {pendiente > 1 && !isPaid && (
+                            <Button
+                              size="small"
+                              icon={<DollarOutlined />}
+                              onClick={() => handleOpenAbonoModal(sale)}
+                              style={{ 
+                                fontSize: '11px', 
+                                borderRadius: '6px',
+                                color: '#fa8c16',
+                                borderColor: '#fa8c16'
+                              }}
+                            >
+                              Abono
+                            </Button>
+                          )}
+                        </Space>
+                      </Col>
+                    </Row>
+                  </Card>
+                );
+              }}
+            />
+          </div>
+        ) : (
+          /* Tabla para desktop y tablet */
+          <Card
             style={{
-              borderRadius: isMobile ? '12px' : '16px',
-              overflow: 'hidden',
+              borderRadius: isTablet ? '12px' : '20px',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
+              border: 'none',
+              background: 'rgba(255,255,255,0.95)',
+              backdropFilter: 'blur(10px)',
             }}
-          />
-        </Card>
+            bodyStyle={{ padding: isTablet ? '16px' : '32px' }}
+          >
+            <Table
+              columns={columns}
+              dataSource={filteredSales}
+              rowKey="id"
+              loading={loading}
+              size={isTablet ? "small" : "middle"}
+              pagination={{
+                pageSize: 10,
+                showSizeChanger: true,
+                showQuickJumper: true,
+                showTotal: (total) => `Total ${total} ventas`,
+                style: { marginTop: '24px' },
+              }}
+              scroll={{ 
+                x: isTablet ? 900 : 1000,
+              }}
+              style={{
+                borderRadius: isTablet ? '12px' : '16px',
+                overflow: 'hidden',
+              }}
+            />
+          </Card>
+        )}
 
         {/* Modal de detalles */}
         <SaleDetailModal
@@ -994,6 +1155,270 @@ const SaleList: React.FC = () => {
             }}
           />
         )}
+
+        {/* Drawer de acciones para móvil */}
+        <Drawer
+          title={
+            <Space>
+              <ShoppingCartOutlined />
+              <span>Venta #{actionDrawer.sale?.id}</span>
+            </Space>
+          }
+          placement="bottom"
+          height="auto"
+          open={actionDrawer.open}
+          onClose={() => setActionDrawer({ open: false, sale: null })}
+          bodyStyle={{ padding: '16px' }}
+          style={{ borderRadius: '20px 20px 0 0' }}
+        >
+          {actionDrawer.sale && (
+            <>
+              {/* Información de la venta */}
+              <Card
+                size="small"
+                style={{ 
+                  marginBottom: '16px',
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  color: 'white',
+                  border: 'none'
+                }}
+              >
+                <Row gutter={[8, 8]}>
+                  <Col span={24}>
+                    <Space direction="vertical" size={4} style={{ width: '100%' }}>
+                      <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: '12px' }}>Cliente</Text>
+                      <Text strong style={{ color: 'white', fontSize: '14px' }}>
+                        {actionDrawer.sale.customerName || 'Cliente ocasional'}
+                      </Text>
+                    </Space>
+                  </Col>
+                  <Col span={8}>
+                    <Space direction="vertical" size={0}>
+                      <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: '11px' }}>Total</Text>
+                      <Text strong style={{ color: 'white', fontSize: '16px' }}>
+                        ${actionDrawer.sale.totalAmount?.toLocaleString()}
+                      </Text>
+                    </Space>
+                  </Col>
+                  <Col span={8}>
+                    <Space direction="vertical" size={0}>
+                      <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: '11px' }}>Pagado</Text>
+                      <Text strong style={{ color: 'white', fontSize: '16px' }}>
+                        ${actionDrawer.sale.paidAmount?.toLocaleString()}
+                      </Text>
+                    </Space>
+                  </Col>
+                  <Col span={8}>
+                    <Space direction="vertical" size={0}>
+                      <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: '11px' }}>Saldo</Text>
+                      <Text strong style={{ color: 'white', fontSize: '16px' }}>
+                        ${(
+                          (actionDrawer.sale.totalAmount || 0) - 
+                          (actionDrawer.sale.paidAmount || 0)
+                        ).toLocaleString()}
+                      </Text>
+                    </Space>
+                  </Col>
+                </Row>
+              </Card>
+
+              {/* Acciones principales */}
+              <div style={{ marginBottom: '16px' }}>
+                <Text type="secondary" style={{ fontSize: '12px', marginBottom: '8px', display: 'block' }}>
+                  Acciones principales
+                </Text>
+                <Space direction="vertical" style={{ width: '100%' }} size={8}>
+                  <Button
+                    block
+                    size="large"
+                    icon={<EyeOutlined />}
+                    onClick={() => {
+                      setActionDrawer({ open: false, sale: null });
+                      handleViewDetail(actionDrawer.sale);
+                    }}
+                    style={{
+                      height: '48px',
+                      borderRadius: '12px',
+                      fontWeight: 500,
+                      textAlign: 'left',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'flex-start'
+                    }}
+                  >
+                    Ver Detalles
+                  </Button>
+                  
+                  {(() => {
+                    const totalAmount = Math.round((actionDrawer.sale.totalAmount || 0) * 100) / 100;
+                    const paidAmount = Math.round((actionDrawer.sale.paidAmount || 0) * 100) / 100;
+                    const pendiente = Math.round((totalAmount - paidAmount) * 100) / 100;
+                    
+                    return pendiente > 1 && !actionDrawer.sale.isPaid && (
+                      <Button
+                        block
+                        size="large"
+                        icon={<DollarOutlined />}
+                        onClick={() => {
+                          setActionDrawer({ open: false, sale: null });
+                          handleOpenAbonoModal(actionDrawer.sale);
+                        }}
+                        style={{
+                          height: '48px',
+                          borderRadius: '12px',
+                          fontWeight: 500,
+                          textAlign: 'left',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'flex-start',
+                          background: '#fff7e6',
+                          borderColor: '#ffa940',
+                          color: '#fa8c16'
+                        }}
+                      >
+                        Registrar Abono (${pendiente.toLocaleString()} pendiente)
+                      </Button>
+                    );
+                  })()}
+                </Space>
+              </div>
+
+              {/* Acciones de impresión/descarga */}
+              <div>
+                <Text type="secondary" style={{ fontSize: '12px', marginBottom: '8px', display: 'block' }}>
+                  Imprimir y Descargar
+                </Text>
+                <Space direction="vertical" style={{ width: '100%' }} size={8}>
+                  <Button
+                    block
+                    size="large"
+                    icon={<PrinterOutlined />}
+                    onClick={() => {
+                      setActionDrawer({ open: false, sale: null });
+                      handlePrintPOSTicket(actionDrawer.sale);
+                    }}
+                    style={{
+                      height: '48px',
+                      borderRadius: '12px',
+                      fontWeight: 500,
+                      textAlign: 'left',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'flex-start',
+                      background: '#f6ffed',
+                      borderColor: '#b7eb8f',
+                      color: '#52c41a'
+                    }}
+                  >
+                    Imprimir Ticket POS
+                  </Button>
+                  
+                  <Button
+                    block
+                    size="large"
+                    icon={<FileTextOutlined />}
+                    onClick={() => {
+                      setActionDrawer({ open: false, sale: null });
+                      handlePrintInvoice(actionDrawer.sale);
+                    }}
+                    style={{
+                      height: '48px',
+                      borderRadius: '12px',
+                      fontWeight: 500,
+                      textAlign: 'left',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'flex-start',
+                      background: '#f9f0ff',
+                      borderColor: '#d3adf7',
+                      color: '#722ed1'
+                    }}
+                  >
+                    Factura Tamaño Carta
+                  </Button>
+                  
+                  <Button
+                    block
+                    size="large"
+                    icon={<DownloadOutlined />}
+                    onClick={() => {
+                      setActionDrawer({ open: false, sale: null });
+                      handleDownloadPDF(actionDrawer.sale);
+                    }}
+                    style={{
+                      height: '48px',
+                      borderRadius: '12px',
+                      fontWeight: 500,
+                      textAlign: 'left',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'flex-start',
+                      background: '#fff7e6',
+                      borderColor: '#ffd591',
+                      color: '#fa8c16'
+                    }}
+                  >
+                    Descargar PDF
+                  </Button>
+                  
+                  <Button
+                    block
+                    size="large"
+                    icon={<FileTextOutlined />}
+                    onClick={() => {
+                      setActionDrawer({ open: false, sale: null });
+                      handlePrint(actionDrawer.sale);
+                    }}
+                    style={{
+                      height: '48px',
+                      borderRadius: '12px',
+                      fontWeight: 500,
+                      textAlign: 'left',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'flex-start',
+                      background: '#e6f7ff',
+                      borderColor: '#91d5ff',
+                      color: '#1890ff'
+                    }}
+                  >
+                    Imprimir Factura
+                  </Button>
+                </Space>
+              </div>
+
+              {/* Acciones administrativas */}
+              {isAdminOrSuperAdmin() && (
+                <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #f0f0f0' }}>
+                  <Text type="secondary" style={{ fontSize: '12px', marginBottom: '8px', display: 'block' }}>
+                    Acciones administrativas
+                  </Text>
+                  <Button
+                    block
+                    size="large"
+                    danger
+                    icon={<DeleteOutlined />}
+                    onClick={() => {
+                      setActionDrawer({ open: false, sale: null });
+                      handleDeleteSale(actionDrawer.sale);
+                    }}
+                    style={{
+                      height: '48px',
+                      borderRadius: '12px',
+                      fontWeight: 500,
+                      textAlign: 'left',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'flex-start'
+                    }}
+                  >
+                    Eliminar Venta
+                  </Button>
+                </div>
+              )}
+            </>
+          )}
+        </Drawer>
       </div>
     </div>
   );
