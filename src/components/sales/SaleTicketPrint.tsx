@@ -56,8 +56,8 @@ const SaleTicketPrint: React.FC<{ sale: any; onClose: () => void }> = ({ sale, o
   if (!sale) return null;
 
   // Obtener logo
-  const logoUrl = companyConfig?.logoUrl 
-    ? `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${companyConfig.logoUrl}`
+  const logoUrl = companyConfig?.logo 
+    ? `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${companyConfig.logo}`
     : '/logo-milan.png';
 
   // Ejemplo: logo, negocio, fecha, productos, totales, método pago
@@ -74,7 +74,7 @@ const SaleTicketPrint: React.FC<{ sale: any; onClose: () => void }> = ({ sale, o
         <div style={{ textAlign: "center", marginBottom: "8px" }}>
           <img 
             src={logoUrl}
-            alt={companyConfig?.name || "Logo"} 
+            alt={companyConfig?.companyName || "Logo"} 
             className="logo"
             style={{
               maxWidth: "45mm",
@@ -91,10 +91,10 @@ const SaleTicketPrint: React.FC<{ sale: any; onClose: () => void }> = ({ sale, o
             }}
           />
         </div>
-        <div className="titulo">{companyConfig?.name || "Mi Negocio"}</div>
+        <div className="titulo">{companyConfig?.companyName || "Mi Negocio"}</div>
         <div style={{ textAlign: "center", fontSize: "0.9em" }}>
           {companyConfig?.address && <>{companyConfig.address}<br /></>}
-          {companyConfig?.city && <>{companyConfig.city}<br /></>}
+
           {companyConfig?.phone && <>Tel: {companyConfig.phone}<br /></>}
         </div>
         <div style={{ textAlign: "center", fontSize: "0.9em" }}>
@@ -153,14 +153,6 @@ const SaleTicketPrint: React.FC<{ sale: any; onClose: () => void }> = ({ sale, o
         <div className="separador" />
         <div className="gracias">
           ¡Gracias por su compra!
-          {companyConfig?.instagram && (
-            <>
-              <br />
-              <span style={{ fontSize: "0.87em" }}>
-                Síguenos en Instagram: @{companyConfig.instagram}
-              </span>
-            </>
-          )}
         </div>
       </div>
     </div>
