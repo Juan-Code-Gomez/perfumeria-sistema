@@ -51,14 +51,9 @@ const usePrint = (ref: React.RefObject<HTMLDivElement | null>) => {
 const SaleTicketPrint: React.FC<{ sale: any; onClose: () => void }> = ({ sale, onClose }) => {
   const ticketRef = useRef<HTMLDivElement>(null);
   const printTicket = usePrint(ticketRef);
-  const companyConfig = useSelector((state: RootState) => state.config.companyConfig);
+  const { config: companyConfig } = useSelector((state: RootState) => state.companyConfig);
 
   if (!sale) return null;
-
-  // Obtener logo
-  const logoUrl = companyConfig?.logoUrl 
-    ? `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${companyConfig.logoUrl}`
-    : '/logo-milan.png';
 
   // Obtener logo
   const logoUrl = companyConfig?.logoUrl 
