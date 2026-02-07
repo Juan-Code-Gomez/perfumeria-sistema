@@ -186,6 +186,14 @@ const SaleList: React.FC = () => {
   };
 
   const handlePrint = async (sale: any) => {
+    // En móvil y tablet, usar el modal en lugar de jsPDF
+    if (isMobile || isTablet) {
+      setSelectedSale(sale);
+      setInvoiceModalOpen(true);
+      message.info('Usa el botón "Imprimir" en el modal. Para guardar como PDF, elige "Guardar como PDF" en las opciones de impresión.');
+      return;
+    }
+    // En desktop, usar la función antigua
     try {
       await printInvoice(sale, COMPANY_INFO);
       message.success('Factura enviada a impresión');
@@ -207,6 +215,14 @@ const SaleList: React.FC = () => {
   };
 
   const handleDownloadPDF = async (sale: any) => {
+    // En móvil y tablet, abrir el modal (desde ahí puede imprimir o guardar como PDF)
+    if (isMobile || isTablet) {
+      setSelectedSale(sale);
+      setInvoiceModalOpen(true);
+      message.info('Para descargar como PDF: presiona "Imprimir" y selecciona "Guardar como PDF" en las opciones.');
+      return;
+    }
+    // En desktop, usar la función de descarga directa
     try {
       await downloadInvoice(sale, COMPANY_INFO);
       message.success('Factura descargada correctamente');
