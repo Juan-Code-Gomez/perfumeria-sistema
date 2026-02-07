@@ -100,74 +100,78 @@ const OrderInvoiceModal: React.FC<OrderInvoiceModalProps> = ({
     if (!componentRef.current) return;
     
     try {
-      // Obtener el HTML del componente
-      const printContent = componentRef.current.innerHTML;
+      // Guardar elementos que vamos a ocultar
+      const modalMask = document.querySelector('.ant-modal-mask') as HTMLElement;
+      const modalWrap = document.querySelector('.ant-modal-wrap') as HTMLElement;
+      const layout = document.querySelector('.ant-layout') as HTMLElement;
+      const body = document.body;
       
-      // Crear una nueva ventana con el contenido
-      const printWindow = window.open('', '', 'width=800,height=600');
+      // Guardar scroll actual
+      const scrollY = window.scrollY;
       
-      if (!printWindow) {
-        message.error('Por favor permite las ventanas emergentes para imprimir');
-        return;
-      }
-
-      // Escribir el HTML completo con estilos
-      printWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Pedido ${order?.orderNumber || ''}</title>
-            <style>
-              * {
-                margin: 0;
-                padding: 0;
-                box-sizing: border-box;
-              }
-              body {
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-                padding: 0;
-                margin: 0;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-              }
-              @media print {
-                @page {
-                  size: letter;
-                  margin: 0;
-                }
-                body {
-                  -webkit-print-color-adjust: exact;
-                  print-color-adjust: exact;
-                }
-              }
-              @media screen {
-                body {
-                  background-color: #f0f0f0;
-                  padding: 20px;
-                }
-              }
-            </style>
-          </head>
-          <body>
-            ${printContent}
-          </body>
-        </html>
-      `);
+      // Preparar para impresión: ocultar todo excepto la factura
+      const originalBodyStyle = body.style.cssText;
+      body.style.cssText = 'margin: 0; padding: 0;';
       
-      printWindow.document.close();
+      if (modalMask) modalMask.style.display = 'none';
+      if (modalWrap) modalWrap.style.display = 'none';
+      if (layout) layout.style.display = 'none';
       
-      // Mensaje de ayuda para iOS
-      if (isIOS) {
-        message.success('✅ Pedido abierto. Usa el botón de compartir de Safari para imprimir o guardar como PDF', 4);
-      } else {
-        message.success('✅ Pedido abierto. Usa el menú del navegador para imprimir o guardar', 3);
-      }
+      // Crear un contenedor temporal para la factura
+      const printContainer = document.createElement('div');
+      printContainer.id = 'mobile-print-container';
+      printContainer.innerHTML = componentRef.current.innerHTML;
+      printContainer.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: white;
+        z-index: 999999;
+        overflow: auto;
+        padding: 20px;
+      `;
+      
+      body.appendChild(printContainer);
+      
+      // Función de limpieza
+      let cleanedUp = false;
+      const cleanup = () => {
+        if (cleanedUp) return;
+        cleanedUp = true;
+        
+        if (printContainer && printContainer.parentNode) {
+          printContainer.parentNode.removeChild(printContainer);
+        }
+        if (modalMask) modalMask.style.display = '';
+        if (modalWrap) modalWrap.style.display = '';
+        if (layout) layout.style.display = '';
+        body.style.cssText = originalBodyStyle;
+        window.scrollTo(0, scrollY);
+      };
+      
+      // Esperar un momento para que se renderice
+      setTimeout(() => {
+        // Invocar la impresión del navegador
+        window.print();
+        
+        // En Safari iOS, el evento afterprint no siempre funciona
+        // Usar múltiples estrategias de limpieza
+        window.addEventListener('afterprint', cleanup, { once: true });
+        
+        // Limpieza automática después de 2 segundos (tiempo para que el diálogo de impresión aparezca)
+        setTimeout(cleanup, 2000);
+        
+        // Mensaje de ayuda
+        if (isIOS) {
+          message.info('📄 Selecciona tu impresora o "Guardar como PDF"', 3);
+        }
+      }, 300);
       
     } catch (error) {
-      console.error('Error al abrir pedido:', error);
-      message.error('Error al abrir el pedido para imprimir');
+      console.error('Error al preparar impresión:', error);
+      message.error('Error al preparar la impresión');
     }
   };
 

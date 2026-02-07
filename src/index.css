@@ -134,4 +134,15 @@ button:focus-visible {
     print-color-adjust: exact !important;
     color-adjust: exact !important;
   }
+  
+  /* Contenedor temporal para impresión móvil */
+  #mobile-print-container {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+  }
 }
