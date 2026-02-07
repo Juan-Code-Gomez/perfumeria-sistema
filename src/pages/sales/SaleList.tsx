@@ -186,11 +186,10 @@ const SaleList: React.FC = () => {
   };
 
   const handlePrint = async (sale: any) => {
-    // En móvil y tablet, usar el modal en lugar de jsPDF
+    // En móvil y tablet, usar página dedicada
     if (isMobile || isTablet) {
-      setSelectedSale(sale);
-      setInvoiceModalOpen(true);
-      message.info('Usa el botón "Imprimir" en el modal. Para guardar como PDF, elige "Guardar como PDF" en las opciones de impresión.');
+      window.open(`/print/sale/${sale.id}`, '_blank');
+      message.info('Factura abierta en nueva pestaña', 2);
       return;
     }
     // En desktop, usar la función antigua
@@ -210,19 +209,27 @@ const SaleList: React.FC = () => {
   const handlePrintInvoice = (sale: any) => {
     console.log('handlePrintInvoice llamado con sale:', sale);
     console.log('companyConfig:', companyConfig);
+    
+    // En móvil y tablet, abrir página dedicada de impresión en nueva pestaña
+    if (isMobile || isTablet) {
+      window.open(`/print/sale/${sale.id}`, '_blank');
+      message.info('Factura abierta en nueva pestaña', 2);
+      return;
+    }
+    
+    // En desktop, usar modal
     setSelectedSale(sale);
     setInvoiceModalOpen(true);
   };
 
   const handleDownloadPDF = async (sale: any) => {
-    // En móvil y tablet, abrir el modal (desde ahí puede imprimir o guardar como PDF)
+    // En móvil y tablet, abrir página dedicada de impresión (desde ahí puede guardar PDF)
     if (isMobile || isTablet) {
-      setSelectedSale(sale);
-      setInvoiceModalOpen(true);
-      message.info('Para descargar como PDF: presiona "Imprimir" y selecciona "Guardar como PDF" en las opciones.');
+      window.open(`/print/sale/${sale.id}`, '_blank');
+      message.info('Para guardar como PDF: presiona "Imprimir" y selecciona "Guardar como PDF"', 4);
       return;
     }
-    // En desktop, usar la función de descarga directa
+    // En desktop, usar descarga directa jsPDF  
     try {
       await downloadInvoice(sale, COMPANY_INFO);
       message.success('Factura descargada correctamente');

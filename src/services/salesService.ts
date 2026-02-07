@@ -9,6 +9,12 @@ export async function getSales(params?: {
   return res.data.data || res.data; // Extrae la data del wrapper si existe
 }
 
+// Obtener una venta por ID
+export async function getSaleById(saleId: number) {
+  const res = await api.get(`/sales/${saleId}`);
+  return res.data.data || res.data; // Extrae la data del wrapper si existe
+}
+
 export const createSale = async (data: CreateSalePayload) => {
   const res = await api.post("/sales", data);
   return res.data.data || res.data; // Extrae la data del wrapper si existe

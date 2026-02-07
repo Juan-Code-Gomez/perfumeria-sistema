@@ -26,6 +26,8 @@ import InvoiceManagementFIFO from "../pages/invoices/InvoiceManagement_FIFO";
 import CompanyConfig from "../pages/company-config/CompanyConfig";
 import OrdersPage from "../pages/orders/OrdersPage";
 import DiscountReportPage from "../pages/reports/DiscountReportPage";
+import SalePrintPage from "../pages/print/SalePrintPage";
+import OrderPrintPage from "../pages/print/OrderPrintPage";
 
 export const router = createBrowserRouter([
   {
@@ -94,4 +96,12 @@ export const router = createBrowserRouter([
     element: <Login />,
   },
   { path: "/unauthorized", element: <Unauthorized /> },
+  // Rutas de impresión (sin layout, para impresión limpia)
+  {
+    element: <PrivateRoute />,
+    children: [
+      { path: "/print/sale/:id", element: <SalePrintPage /> },
+      { path: "/print/order/:id", element: <OrderPrintPage /> },
+    ],
+  },
 ]);

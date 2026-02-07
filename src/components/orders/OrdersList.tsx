@@ -178,6 +178,15 @@ const OrdersList: React.FC = () => {
   const handlePrintInvoice = (order: Order) => {
     console.log('handlePrintInvoice llamado con order:', order);
     console.log('companyConfig:', companyConfig);
+    
+    // En móvil y tablet, abrir página dedicada de impresión en nueva pestaña
+    if (isMobile || isTablet) {
+      window.open(`/print/order/${order.id}`, '_blank');
+      message.info('Pedido abierto en nueva pestaña', 2);
+      return;
+    }
+    
+    // En desktop, usar modal
     setSelectedOrder(order);
     setInvoiceModalOpen(true);
   };
