@@ -69,16 +69,16 @@ button:focus-visible {
   }
 }
 
-/* Estilos de impresión optimizados para desktop y móviles */
+/* Estilos de impresión ultra-simplificados para máxima compatibilidad */
 @media print {
   /* Configuración de página */
   @page {
     size: letter portrait;
-    margin: 0;
+    margin: 0.3cm;
   }
   
-  /* Ocultar todo por defecto */
-  body > *:not(#invoice-print-container) {
+  /* Ocultar TODO excepto el contenido con clase .printing */
+  body > *:not(.printing):not(script):not(style) {
     display: none !important;
   }
   
@@ -89,7 +89,7 @@ button:focus-visible {
   .ant-layout-footer,
   .ant-menu,
   .ant-modal-mask,
-  .ant-modal-wrap,
+  .ant-modal-wrap > *:not(.printing),
   .ant-modal-header,
   .ant-modal-footer,
   .ant-modal-close,
@@ -100,13 +100,12 @@ button:focus-visible {
   header,
   nav,
   aside,
-  footer:not([data-invoice-footer]),
   .no-print {
     display: none !important;
   }
   
-  /* Mostrar solo el contenedor de impresión */
-  #invoice-print-container {
+  /* Mostrar solo el contenedor con clase printing */
+  .printing {
     display: block !important;
     position: static !important;
     width: 100% !important;
@@ -115,9 +114,11 @@ button:focus-visible {
     padding: 0 !important;
     background: white !important;
     overflow: visible !important;
+    box-shadow: none !important;
+    border: none !important;
   }
   
-  #invoice-print-container * {
+  .printing * {
     visibility: visible !important;
   }
   
@@ -135,16 +136,15 @@ button:focus-visible {
     color-adjust: exact !important;
   }
   
-  /* Asegurar que el contenido no se divida entre páginas */
+  /* Asegurar que los colores se impriman */
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
     color-adjust: exact !important;
   }
   
-  /* Evitar saltos de línea en elementos importantes */
+  /* Evitar saltos de página en elementos importantes */
   h1, h2, h3, h4, h5, h6,
-  table thead,
   .invoice-header,
   .invoice-title {
     page-break-after: avoid !important;
@@ -152,8 +152,7 @@ button:focus-visible {
   }
   
   table {
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
+    page-break-inside: auto !important;
   }
   
   tr {
@@ -161,7 +160,7 @@ button:focus-visible {
     break-inside: avoid !important;
   }
   
-  /* Ocultar barras de scroll en impresión */
+  /* Ocultar scrollbars */
   ::-webkit-scrollbar {
     display: none !important;
   }
