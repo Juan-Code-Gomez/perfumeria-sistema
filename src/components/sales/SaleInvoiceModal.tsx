@@ -41,7 +41,7 @@ const SaleInvoiceModal: React.FC<SaleInvoiceModalProps> = ({
       open={visible}
       onCancel={onClose}
       width="90%"
-      style={{ top: 20 }}
+      style={{ top: 20, maxWidth: '900px' }}
       centered
       footer={[
         <Button key="close" onClick={onClose} icon={<CloseOutlined />}>
@@ -65,29 +65,31 @@ const SaleInvoiceModal: React.FC<SaleInvoiceModalProps> = ({
           padding: '16px',
           maxHeight: '70vh',
           overflowY: 'auto',
-          backgroundColor: '#f0f0f0'
+          backgroundColor: '#f5f5f5'
         }
       }}
     >
-      <div ref={printRef} data-print-content style={{
+      <div style={{
         display: 'flex',
         justifyContent: 'center',
-        padding: '20px',
-        backgroundColor: '#f0f0f0'
+        padding: '10px',
+        backgroundColor: '#f5f5f5'
       }}>
-        <SaleInvoice sale={sale} companyConfig={companyConfig} />
+        <div ref={printRef} style={{ width: '100%', maxWidth: '21cm' }}>
+          <SaleInvoice sale={sale} companyConfig={companyConfig} />
+        </div>
       </div>
       
-      <div className="no-print" style={{ marginTop: 16, textAlign: 'center' }}>
+      <div className="no-print" style={{ marginTop: 12, textAlign: 'center' }}>
         <div style={{ 
           fontSize: '12px', 
           color: '#666',
           padding: '8px',
-          background: '#fff7e6',
+          background: '#e6f7ff',
           borderRadius: '6px',
-          border: '1px solid #ffd591'
+          border: '1px solid #91d5ff'
         }}>
-          💡 Para guardar como PDF: haz clic en "Imprimir" y luego selecciona "Guardar como PDF" en las opciones
+          💡 <strong>Guardar como PDF:</strong> Haz clic en "Imprimir" y selecciona "Guardar como PDF" en las opciones de tu navegador
         </div>
       </div>
     </Modal>

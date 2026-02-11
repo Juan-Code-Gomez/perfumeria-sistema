@@ -16,83 +16,84 @@ const SaleInvoice = React.forwardRef<HTMLDivElement, SaleInvoiceProps>(
     const styles = {
       page: {
         width: '21cm',
-        minHeight: '27.9cm',
-        padding: '2cm',
+        minHeight:'auto',
+        padding: '1cm',
         margin: '0 auto',
         background: '#fff',
         boxSizing: 'border-box' as const,
         fontFamily: 'Arial, sans-serif',
-        fontSize: '11pt',
+        fontSize: '10pt',
         color: '#000',
+        pageBreakAfter: 'avoid' as const,
       },
       header: {
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'flex-start',
-        marginBottom: '30px',
-        paddingBottom: '20px',
+        marginBottom: '15px',
+        paddingBottom: '12px',
         borderBottom: '2px solid #333',
       },
       logoSection: {
-        flex: '0 0 200px',
+        flex: '0 0 150px',
       },
       logo: {
-        maxWidth: '180px',
-        maxHeight: '80px',
+        maxWidth: '140px',
+        maxHeight: '60px',
         objectFit: 'contain' as const,
       },
       companyInfo: {
         flex: '1',
         textAlign: 'right' as const,
-        paddingLeft: '20px',
+        paddingLeft: '15px',
       },
       companyName: {
-        fontSize: '18pt',
+        fontSize: '16pt',
         fontWeight: 'bold',
-        marginBottom: '8px',
+        marginBottom: '5px',
         textTransform: 'uppercase' as const,
       },
       companyDetail: {
-        fontSize: '10pt',
-        marginBottom: '4px',
+        fontSize: '9pt',
+        marginBottom: '2px',
         color: '#333',
       },
       invoiceTitle: {
         textAlign: 'center' as const,
-        fontSize: '20pt',
+        fontSize: '18pt',
         fontWeight: 'bold',
-        marginBottom: '25px',
+        marginBottom: '15px',
         color: '#333',
         textTransform: 'uppercase' as const,
       },
       infoSection: {
         display: 'grid',
         gridTemplateColumns: '1fr 1fr',
-        gap: '30px',
-        marginBottom: '30px',
+        gap: '15px',
+        marginBottom: '15px',
       },
       infoBox: {
         border: '1px solid #ddd',
-        padding: '15px',
+        padding: '10px',
         borderRadius: '4px',
         backgroundColor: '#f9f9f9',
       },
       infoTitle: {
-        fontSize: '11pt',
+        fontSize: '10pt',
         fontWeight: 'bold',
-        marginBottom: '10px',
+        marginBottom: '6px',
         color: '#333',
         borderBottom: '1px solid #ccc',
-        paddingBottom: '5px',
+        paddingBottom: '3px',
       },
       infoRow: {
         display: 'flex',
-        marginBottom: '6px',
-        fontSize: '10pt',
+        marginBottom: '4px',
+        fontSize: '9pt',
       },
       infoLabel: {
         fontWeight: 'bold',
-        width: '120px',
+        width: '110px',
         color: '#555',
       },
       infoValue: {
@@ -102,66 +103,66 @@ const SaleInvoice = React.forwardRef<HTMLDivElement, SaleInvoiceProps>(
       table: {
         width: '100%',
         borderCollapse: 'collapse' as const,
-        marginBottom: '20px',
+        marginBottom: '12px',
       },
       tableHeader: {
         backgroundColor: '#333',
         color: '#fff',
       },
       th: {
-        padding: '12px 8px',
+        padding: '8px 6px',
         textAlign: 'left' as const,
         fontWeight: 'bold',
-        fontSize: '10pt',
+        fontSize: '9pt',
         borderBottom: '2px solid #333',
       },
       thRight: {
-        padding: '12px 8px',
+        padding: '8px 6px',
         textAlign: 'right' as const,
         fontWeight: 'bold',
-        fontSize: '10pt',
+        fontSize: '9pt',
         borderBottom: '2px solid #333',
       },
       thCenter: {
-        padding: '12px 8px',
+        padding: '8px 6px',
         textAlign: 'center' as const,
         fontWeight: 'bold',
-        fontSize: '10pt',
+        fontSize: '9pt',
         borderBottom: '2px solid #333',
       },
       td: {
-        padding: '10px 8px',
+        padding: '6px 6px',
         borderBottom: '1px solid #ddd',
-        fontSize: '10pt',
+        fontSize: '9pt',
       },
       tdRight: {
-        padding: '10px 8px',
+        padding: '6px 6px',
         borderBottom: '1px solid #ddd',
         textAlign: 'right' as const,
-        fontSize: '10pt',
+        fontSize: '9pt',
       },
       tdCenter: {
-        padding: '10px 8px',
+        padding: '6px 6px',
         borderBottom: '1px solid #ddd',
         textAlign: 'center' as const,
-        fontSize: '10pt',
+        fontSize: '9pt',
       },
       totalsSection: {
-        marginTop: '30px',
+        marginTop: '15px',
         display: 'flex',
         justifyContent: 'flex-end',
       },
       totalsBox: {
-        width: '350px',
+        width: '300px',
         border: '2px solid #333',
-        padding: '15px',
+        padding: '10px',
         backgroundColor: '#f9f9f9',
       },
       totalRow: {
         display: 'flex',
         justifyContent: 'space-between',
-        padding: '8px 0',
-        fontSize: '11pt',
+        padding: '5px 0',
+        fontSize: '10pt',
       },
       totalLabel: {
         fontWeight: 'bold',
@@ -169,32 +170,32 @@ const SaleInvoice = React.forwardRef<HTMLDivElement, SaleInvoiceProps>(
       },
       totalValue: {
         textAlign: 'right' as const,
-        minWidth: '120px',
+        minWidth: '100px',
         color: '#000',
       },
       grandTotal: {
         display: 'flex',
         justifyContent: 'space-between',
-        padding: '12px 0',
-        fontSize: '14pt',
+        padding: '8px 0',
+        fontSize: '13pt',
         fontWeight: 'bold',
         borderTop: '2px solid #333',
-        marginTop: '10px',
+        marginTop: '6px',
         color: '#000',
       },
       footer: {
-        marginTop: '50px',
-        paddingTop: '20px',
+        marginTop: '20px',
+        paddingTop: '12px',
         borderTop: '1px solid #ccc',
         textAlign: 'center' as const,
-        fontSize: '9pt',
+        fontSize: '8pt',
         color: '#666',
       },
       statusBadge: {
         display: 'inline-block',
-        padding: '6px 12px',
+        padding: '4px 10px',
         borderRadius: '4px',
-        fontSize: '10pt',
+        fontSize: '9pt',
         fontWeight: 'bold',
         textTransform: 'uppercase' as const,
       },
@@ -352,11 +353,11 @@ const SaleInvoice = React.forwardRef<HTMLDivElement, SaleInvoiceProps>(
         <table style={styles.table}>
           <thead style={styles.tableHeader}>
             <tr>
-              <th style={{ ...styles.th, width: '50px' }}>Item</th>
+              <th style={{ ...styles.th, width: '40px' }}>Item</th>
               <th style={styles.th}>Producto</th>
-              <th style={{ ...styles.thCenter, width: '80px' }}>Cantidad</th>
-              <th style={{ ...styles.thRight, width: '120px' }}>Precio Unit.</th>
-              <th style={{ ...styles.thRight, width: '120px' }}>Total</th>
+              <th style={{ ...styles.thCenter, width: '70px' }}>Cant.</th>
+              <th style={{ ...styles.thRight, width: '100px' }}>Precio Unit.</th>
+              <th style={{ ...styles.thRight, width: '100px' }}>Total</th>
             </tr>
           </thead>
           <tbody>
@@ -366,7 +367,7 @@ const SaleInvoice = React.forwardRef<HTMLDivElement, SaleInvoiceProps>(
                 <td style={styles.td}>
                   <strong>{detail.product?.name || 'Producto'}</strong>
                   {detail.product?.sku && (
-                    <div style={{ fontSize: '9pt', color: '#666', marginTop: '2px' }}>
+                    <div style={{ fontSize: '8pt', color: '#666', marginTop: '1px' }}>
                       SKU: {detail.product.sku}
                     </div>
                   )}
@@ -399,7 +400,7 @@ const SaleInvoice = React.forwardRef<HTMLDivElement, SaleInvoiceProps>(
               <span>{formatCurrency(sale.totalAmount)}</span>
             </div>
             {paidAmount > 0 && (
-              <div style={{ ...styles.totalRow, marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #ccc' }}>
+              <div style={{ ...styles.totalRow, marginTop: '6px', paddingTop: '6px', borderTop: '1px solid #ccc' }}>
                 <span style={styles.totalLabel}>Pagado:</span>
                 <span style={styles.totalValue}>{formatCurrency(paidAmount)}</span>
               </div>
@@ -417,29 +418,29 @@ const SaleInvoice = React.forwardRef<HTMLDivElement, SaleInvoiceProps>(
 
         {/* Payment Method */}
         {sale.paymentMethod && (
-          <div style={{ marginTop: '20px', padding: '12px', backgroundColor: '#f9f9f9', border: '1px solid #ddd', borderRadius: '4px' }}>
-            <span style={{ fontWeight: 'bold', fontSize: '10pt', color: '#555' }}>Método de Pago: </span>
-            <span style={{ fontSize: '10pt' }}>{sale.paymentMethod}</span>
+          <div style={{ marginTop: '12px', padding: '8px', backgroundColor: '#f9f9f9', border: '1px solid #ddd', borderRadius: '4px' }}>
+            <span style={{ fontWeight: 'bold', fontSize: '9pt', color: '#555' }}>Método de Pago: </span>
+            <span style={{ fontSize: '9pt' }}>{sale.paymentMethod}</span>
           </div>
         )}
 
         {/* Notes */}
         {sale.notes && sale.notes.trim() !== '' && (
-          <div style={{ marginTop: '20px', padding: '15px', backgroundColor: '#fffbe6', border: '1px solid #ffe58f', borderRadius: '4px' }}>
-            <div style={{ fontWeight: 'bold', marginBottom: '8px', fontSize: '10pt', color: '#d48806' }}>📝 Observaciones:</div>
-            <div style={{ fontSize: '10pt', color: '#333' }}>{sale.notes}</div>
+          <div style={{ marginTop: '12px', padding: '10px', backgroundColor: '#fffbe6', border: '1px solid #ffe58f', borderRadius: '4px' }}>
+            <div style={{ fontWeight: 'bold', marginBottom: '5px', fontSize: '9pt', color: '#d48806' }}>📝 Observaciones:</div>
+            <div style={{ fontSize: '9pt', color: '#333' }}>{sale.notes}</div>
           </div>
         )}
 
         {/* Footer */}
         <div style={styles.footer}>
-          <p style={{ fontWeight: 'bold', fontSize: '10pt', marginBottom: '8px' }}>
+          <p style={{ fontWeight: 'bold', fontSize: '9pt', marginBottom: '5px', margin: '0 0 5px 0' }}>
             {companyConfig.invoiceFooter || 'Gracias por su preferencia'}
           </p>
-          <p style={{ fontSize: '8pt', marginTop: '5px' }}>
+          <p style={{ fontSize: '7pt', marginTop: '3px', margin: '3px 0' }}>
             Este documento es una factura de venta
           </p>
-          <p style={{ fontSize: '8pt', color: '#999', marginTop: '10px' }}>
+          <p style={{ fontSize: '7pt', color: '#999', marginTop: '5px', margin: '5px 0 0 0' }}>
             Documento generado el {dayjs().format('DD/MM/YYYY HH:mm')}
           </p>
         </div>

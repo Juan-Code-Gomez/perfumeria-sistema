@@ -1,6 +1,5 @@
 // src/hooks/useInvoicePrint.ts
 import { useCallback, useRef } from 'react';
-import { useReactToPrint } from 'react-to-print';
 import { message } from 'antd';
 
 interface InvoicePrintOptions {
@@ -8,89 +7,87 @@ interface InvoicePrintOptions {
   onPrintError?: (error: Error) => void;
 }
 
+/**
+ * Hook optimizado para impresión de facturas
+ * Funciona tanto en desktop como en móviles (Android/iOS)
+ * Usa el API nativo de window.print() para mejor compatibilidad
+ */
 export const useInvoicePrint = (options: InvoicePrintOptions = {}) => {
   const printRef = useRef<HTMLDivElement>(null);
 
-  const handlePrint = useReactToPrint({
-    contentRef: printRef,
-    documentTitle: `Factura-${Date.now()}`,
-    onAfterPrint: () => {
-      message.success('Factura enviada a impresión correctamente');
-      options.onAfterPrint?.();
-    },
-    onPrintError: (errorLocation, error) => {
-      message.error('Error al imprimir la factura');
-      console.error('Error de impresión:', errorLocation, error);
-      options.onPrintError?.(new Error(`Error en ${errorLocation}: ${error.message}`));
-    },
-    pageStyle: `
-      @page {
-        size: letter;
-        margin: 0;
-        -webkit-print-color-adjust: exact;
-        color-adjust: exact;
-      }
-      
-      @media print {
-        /* Ocultar todo excepto el contenido a imprimir */
-        body > * {
-          display: none !important;
-        }
-        
-        .ant-layout,
-        .ant-layout-sider,
-        .ant-layout-header,
-        .ant-modal-mask,
-        .ant-modal-wrap,
-        .ant-drawer,
-        .ant-modal-header,
-        .ant-modal-footer {
-          display: none !important;
-        }
-        
-        /* Mostrar solo el contenido de la factura */
-        [data-print-content] {
-          display: block !important;
-          position: relative !important;
-          margin: 0 !important;
-          padding: 0 !important;
-        }
-      
-        body {
-          margin: 0;
-          padding: 0;
-          color: black;
-          background: white;
-        }
-        
-        * {
-          -webkit-print-color-adjust: exact !important;
-          color-adjust: exact !important;
-          print-color-adjust: exact !important;
-        }
-        
-        .no-print {
-          display: none !important;
-        }
-      }
-    `,
-  });
-
   const printInvoice = useCallback(() => {
-    if (!printRef.current) {
+    const contentElement = printRef.current;
+    
+    if (!contentElement) {
       message.error('Error: Factura no está lista para imprimir');
       return;
     }
     
-    // Mostrar información útil al usuario
-    message.info({
-      content: 'Preparando factura para impresión. Para guardar como PDF, selecciona "Guardar como PDF" en las opciones.',
-      duration: 4,
-    });
-    
-    // Ejecutar la impresión
-    handlePrint();
-  }, [handlePrint]);
+    try {
+      // Mostrar mensaje de preparación
+      message.info({
+        content: 'Preparando factura para impresión...',
+        duration: 2,
+      });
+
+      // Clonar el contenido de la factura
+      const printContent = contentElement.cloneNode(true) as HTMLElement;
+      printContent.style.display = 'block';
+      printContent.style.visibility = 'visible';
+      
+      // Crear contenedor temporal para impresión
+      const printContainer = document.createElement('div');
+      printContainer.id = 'invoice-print-container';
+      printContainer.style.position = 'fixed';
+      printContainer.style.top = '0';
+      printContainer.style.left = '0';
+      printContainer.style.width = '100%';
+      printContainer.style.height = '100%';
+      printContainer.style.zIndex = '9999';
+      printContainer.style.background = 'white';
+      printContainer.style.overflow = 'auto';
+      printContainer.appendChild(printContent);
+      
+      // Agregar al body
+      document.body.appendChild(printContainer);
+      
+      // Pequeño delay para asegurar que el contenido se renderice
+      setTimeout(() => {
+        try {
+          // Guardar scroll position
+          const scrollY = window.scrollY;
+          
+          // Ejecutar impresión
+          window.print();
+          
+          // Restaurar scroll
+          window.scrollTo(0, scrollY);
+          
+          // Limpiar después de imprimir
+          setTimeout(() => {
+            if (printContainer.parentNode) {
+              document.body.removeChild(printContainer);
+            }
+            message.success('Factura enviada a impresión');
+            options.onAfterPrint?.();
+          }, 100);
+          
+        } catch (error) {
+          console.error('Error durante la impresión:', error);
+          message.error('Error al imprimir la factura');
+          if (printContainer.parentNode) {
+            document.body.removeChild(printContainer);
+          }
+          options.onPrintError?.(error as Error);
+        }
+      }, 100);
+      
+    } catch (error) {
+      console.error('Error preparando impresión:', error);
+      message.error('Error al preparar la factura para impresión');
+      options.onPrintError?.(error as Error);
+    }
+  }, [options]);
 
   return {
     printRef,
