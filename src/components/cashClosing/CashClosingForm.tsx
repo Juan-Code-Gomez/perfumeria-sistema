@@ -63,12 +63,28 @@ const CashClosingForm: React.FC<CashClosingFormProps> = ({
   const [difference, setDifference] = useState(0);
   const [saving, setSaving] = useState(false);
   const [showExtraIncomeModal, setShowExtraIncomeModal] = useState(false);
+  const [isLateClosing, setIsLateClosing] = useState(false);
+  const [closingDate, setClosingDate] = useState(initialDate);
 
   useEffect(() => {
     if (initialDate) {
       form.setFieldsValue({ date: initialDate });
+      checkIfLateClosing(initialDate);
     }
   }, [initialDate, form]);
+
+  const checkIfLateClosing = (date: any) => {
+    if (!date) return;
+    const selectedDate = dayjs(date).format('YYYY-MM-DD');
+    const today = dayjs().format('YYYY-MM-DD');
+    setIsLateClosing(selectedDate !== today);
+    setClosingDate(date);
+  };
+
+  const handleDateChange = (date: any) => {
+    checkIfLateClosing(date);
+    onDateChange(date);
+  };
 
   const handleSubmit = async (values: any) => {
     setSaving(true);
@@ -130,6 +146,36 @@ const CashClosingForm: React.FC<CashClosingFormProps> = ({
 
   return (
     <div>
+      {/* Advertencia de cierre tardío */}
+      {isLateClosing && (
+        <Alert
+          message="⚠️ ADVERTENCIA: Cierre de Caja con Retraso"
+          description={
+            <div>
+              <p>
+                Estás cerrando la caja del día <strong>{dayjs(closingDate).format('DD/MM/YYYY')}</strong> pero hoy es <strong>{dayjs().format('DD/MM/YYYY')}</strong>.
+              </p>
+              <p style={{ marginBottom: 8 }}>
+                Los cierres tardíos pueden causar descuadres porque:
+              </p>
+              <ul style={{ marginBottom: 8, paddingLeft: 20 }}>
+                <li>Las ventas se registran cuando se confirman, no cuando se realizan</li>
+                <li>Transferencias confirmadas hoy aparecerán en el cierre de hoy</li>
+                <li>Puede haber confusión sobre qué transacciones pertenecen a qué día</li>
+              </ul>
+              <p style={{ marginBottom: 0 }}>
+                <strong>Recomendación:</strong> Realizar los cierres diariamente al finalizar operaciones para evitar descuadres.
+              </p>
+            </div>
+          }
+          type="warning"
+          showIcon
+          icon={<WarningOutlined />}
+          style={{ marginBottom: 24 }}
+          closable
+        />
+      )}
+
       {/* Resumen del día */}
       <Title level={4} className="mb-4">📊 Resumen del Día</Title>
       
@@ -221,7 +267,7 @@ const CashClosingForm: React.FC<CashClosingFormProps> = ({
               <DatePicker
                 format="DD/MM/YYYY"
                 style={{ width: "100%" }}
-                onChange={onDateChange}
+                onChange={handleDateChange}
                 allowClear={false}
                 placeholder="Seleccionar fecha"
                 disabledDate={(current) => current && current > dayjs().endOf('day')}

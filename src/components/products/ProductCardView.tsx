@@ -4,6 +4,7 @@ import { EditOutlined, DeleteOutlined, ShoppingCartOutlined, WarningOutlined, Ch
 import type { Product } from '../../services/productService';
 import type { Category, Unit } from '../../features/products/types';
 import FieldPermissionGuard from '../FieldPermissionGuard';
+import { usePermissions } from '../../hooks/usePermissions';
 
 interface ProductCardViewProps {
   products: Product[];
@@ -18,6 +19,8 @@ const ProductCardView: React.FC<ProductCardViewProps> = ({
   onEdit,
   onDelete,
 }) => {
+  const { isAdmin } = usePermissions();
+  const canViewStock = isAdmin();
   const getStockStatus = (stock: number, minStock?: number) => {
     if (stock <= 0) return { color: 'red', icon: <WarningOutlined />, text: 'Sin stock' };
     if (minStock && stock <= minStock) return { color: 'orange', icon: <WarningOutlined />, text: 'Stock bajo' };
@@ -120,9 +123,11 @@ const ProductCardView: React.FC<ProductCardViewProps> = ({
                       {product.name}
                     </h4>
                   </Tooltip>
-                  <Tag color={stockStatus.color} style={{ marginTop: 4, fontSize: 11 }}>
-                    {stockStatus.icon} {stockStatus.text}
-                  </Tag>
+                  {canViewStock && (
+                    <Tag color={stockStatus.color} style={{ marginTop: 4, fontSize: 11 }}>
+                      {stockStatus.icon} {stockStatus.text}
+                    </Tag>
+                  )}
                 </div>
 
                 {/* Categoría y Unidad */}
@@ -135,15 +140,17 @@ const ProductCardView: React.FC<ProductCardViewProps> = ({
                   </Tag>
                 </Space>
 
-                {/* Stock */}
-                <div style={{ marginBottom: 8 }}>
-                  <Statistic
-                    title="Stock"
-                    value={product.stock}
-                    suffix={`/ ${product.minStock || 0} mín`}
-                    valueStyle={{ fontSize: 16, color: stockStatus.color }}
-                  />
-                </div>
+                {/* Stock - Solo visible para administradores */}
+                {canViewStock && (
+                  <div style={{ marginBottom: 8 }}>
+                    <Statistic
+                      title="Stock"
+                      value={product.stock}
+                      suffix={`/ ${product.minStock || 0} mín`}
+                      valueStyle={{ fontSize: 16, color: stockStatus.color }}
+                    />
+                  </div>
+                )}
 
                 {/* Precios */}
                 <Row gutter={8} style={{ marginBottom: 8 }}>

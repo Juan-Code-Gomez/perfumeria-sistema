@@ -89,13 +89,14 @@ const ProductList: React.FC = () => {
   const [form] = Form.useForm();
 
   // Hook de permisos
-  const { hasPermission } = usePermissions();
+  const { hasPermission, isAdmin } = usePermissions();
 
   // Verificar permisos específicos
   const canEditProducts = hasPermission('productos', 'edit');
   const canDeleteProducts = hasPermission('productos', 'delete');
   const canCreateProducts = hasPermission('productos', 'create');
   const canExportProducts = hasPermission('productos', 'export');
+  const canViewStock = isAdmin(); // Solo admins pueden ver stock
 
   // Responsive handler
   useEffect(() => {
@@ -267,7 +268,8 @@ const ProductList: React.FC = () => {
       width: 120,
       render: (c: Category | undefined) => <Tag>{c?.name || 'Sin categoría'}</Tag>,
     }] : []),
-    {
+    // Stock - Solo visible para administradores
+    ...(canViewStock ? [{
       title: "Stock",
       dataIndex: "stock",
       key: "stock",
@@ -289,7 +291,7 @@ const ProductList: React.FC = () => {
           return <span>{s}</span>;
         }
       },
-    },
+    }] : []),
     // Precio de compra - Solo visible para roles administrativos y no mobile
     ...(hasPermission('productos', 'edit') && !isMobile && !isTablet ? [{
       title: "P. Compra",

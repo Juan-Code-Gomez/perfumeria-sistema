@@ -54,12 +54,19 @@ export const usePermissions = () => {
     return canAccessModule('company-config') && !canAccessModule('system-admin');
   };
 
+  // Verificar si es admin (cualquier tipo de administrador)
+  const isAdmin = (): boolean => {
+    // Es admin si es super admin o client admin
+    return isSuperAdmin() || isClientAdmin();
+  };
+
   return {
     hasPermission,
     canAccessModule,
     getAccessibleModules,
     isSuperAdmin,
     isClientAdmin,
+    isAdmin,
     userPermissions,
     userModules,
   };

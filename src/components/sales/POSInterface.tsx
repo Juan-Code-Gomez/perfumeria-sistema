@@ -44,6 +44,7 @@ import MultiplePaymentModal from './MultiplePaymentModal';
 import type { PaymentMethod } from './MultiplePaymentModal';
 import { usePOSPersistence } from '../../hooks/usePOSPersistence';
 import { usePOSConfiguration } from '../../hooks/usePOSConfiguration';
+import { usePermissions } from '../../hooks/usePermissions';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -69,6 +70,8 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
   const dispatch = useAppDispatch();
   const { config: companyConfig } = useAppSelector((state) => state.companyConfig);
   const searchInputRef = useRef<any>(null);
+  const { isAdmin } = usePermissions();
+  const canViewStock = isAdmin();
 
   // Hook de configuración del POS
   const { config: posConfig, refetch: refetchConfig } = usePOSConfiguration();
@@ -593,8 +596,8 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
         />
       ),
     },
-    // Columna de costo (solo visible si está habilitada Y no es móvil)
-    ...(!isMobile && posConfig.editCostEnabled ? [{
+    // Columna de costo (solo visible si está habilitada Y no es móvil Y es admin)
+    ...(!isMobile && posConfig.editCostEnabled && canViewStock ? [{
       title: 'Costo',
       dataIndex: 'purchasePrice',
       key: 'purchasePrice',
@@ -680,8 +683,8 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
         </Text>
       ),
     },
-    // Columna de ganancia (oculta en móvil)
-    ...(!isMobile ? [{
+    // Columna de ganancia (oculta en móvil y solo para admins)
+    ...(!isMobile && canViewStock ? [{
       title: 'Ganancia',
       dataIndex: 'profit',
       key: 'profit',
@@ -820,9 +823,11 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
                             <Tag color="blue" style={{ fontSize: window.innerWidth < 768 ? '10px' : '12px', marginTop: '4px' }}>
                               {product.category?.name}
                             </Tag>
-                            <Text type="secondary" style={{ fontSize: window.innerWidth < 768 ? '11px' : '12px' }}>
-                              Stock: {product.stock} {product.unit?.name}
-                            </Text>
+                            {canViewStock && (
+                              <Text type="secondary" style={{ fontSize: window.innerWidth < 768 ? '11px' : '12px' }}>
+                                Stock: {product.stock} {product.unit?.name}
+                              </Text>
+                            )}
                           </div>
                         </Col>
                         <Col xs={6} sm={4} style={{ textAlign: 'right' }}>
@@ -967,27 +972,32 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
                 <Text>${totals.subtotal.toLocaleString()}</Text>
               </Row>
               
-              <Row justify="space-between">
-                <Text>Costo Total:</Text>
-                <Text type="secondary">${totals.totalCost.toLocaleString()}</Text>
-              </Row>
-              
-              <Row justify="space-between">
-                <Text strong style={{ color: '#52c41a' }}>Ganancia:</Text>
-                <Text strong style={{ color: '#52c41a' }}>
-                  ${totals.totalProfit.toLocaleString()}
-                </Text>
-              </Row>
-              
-              <Row justify="space-between">
-                <Text strong>Margen:</Text>
-                <Text strong style={{ 
-                  color: overallMargin > 50 ? '#52c41a' : 
-                         overallMargin > 20 ? '#faad14' : '#ff4d4f' 
-                }}>
-                  {overallMargin.toFixed(1)}%
-                </Text>
-              </Row>
+              {/* Información de ganancia - Solo para administradores */}
+              {canViewStock && (
+                <>
+                  <Row justify="space-between">
+                    <Text>Costo Total:</Text>
+                    <Text type="secondary">${totals.totalCost.toLocaleString()}</Text>
+                  </Row>
+                  
+                  <Row justify="space-between">
+                    <Text strong style={{ color: '#52c41a' }}>Ganancia:</Text>
+                    <Text strong style={{ color: '#52c41a' }}>
+                      ${totals.totalProfit.toLocaleString()}
+                    </Text>
+                  </Row>
+                  
+                  <Row justify="space-between">
+                    <Text strong>Margen:</Text>
+                    <Text strong style={{ 
+                      color: overallMargin > 50 ? '#52c41a' : 
+                             overallMargin > 20 ? '#faad14' : '#ff4d4f' 
+                    }}>
+                      {overallMargin.toFixed(1)}%
+                    </Text>
+                  </Row>
+                </>
+              )}
             </Space>
 
             <Divider style={{ margin: window.innerWidth < 768 ? '12px 0' : '16px 0' }} />

@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, Row, Col, Statistic, Progress } from 'antd';
 import { ShoppingCartOutlined, DollarCircleOutlined, WarningOutlined, RiseOutlined } from '@ant-design/icons';
 import type { Product } from '../../services/productService';
+import { usePermissions } from '../../hooks/usePermissions';
 
 interface ProductStatsProps {
   products: Product[];
@@ -9,6 +10,13 @@ interface ProductStatsProps {
 }
 
 const ProductStats: React.FC<ProductStatsProps> = ({ products, loading }) => {
+  const { isAdmin } = usePermissions();
+  
+  // Solo administradores pueden ver las estadísticas de inventario
+  if (!isAdmin()) {
+    return null;
+  }
+
   const totalProducts = products.length;
   const lowStockProducts = products.filter(p => p.stock <= (p.minStock || 0)).length;
   const outOfStockProducts = products.filter(p => p.stock === 0).length;
