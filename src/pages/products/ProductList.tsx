@@ -1,5 +1,5 @@
 // src/pages/products/ProductList.tsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   Button,
   Input,
@@ -90,13 +90,22 @@ const ProductList: React.FC = () => {
 
   // Hook de permisos
   const { hasPermission, isAdmin } = usePermissions();
+  const user = useAppSelector((state: RootState) => state.auth.user);
 
-  // Verificar permisos específicos
-  const canEditProducts = hasPermission('productos', 'edit');
-  const canDeleteProducts = hasPermission('productos', 'delete');
-  const canCreateProducts = hasPermission('productos', 'create');
-  const canExportProducts = hasPermission('productos', 'export');
-  const canViewStock = isAdmin(); // Solo admins pueden ver stock
+  // Verificar permisos específicos (usar useMemo para reactivity)
+  const canEditProducts = useMemo(() => hasPermission('productos', 'edit'), [hasPermission]);
+  const canDeleteProducts = useMemo(() => hasPermission('productos', 'delete'), [hasPermission]);
+  const canCreateProducts = useMemo(() => hasPermission('productos', 'create'), [hasPermission]);
+  const canExportProducts = useMemo(() => hasPermission('productos', 'export'), [hasPermission]);
+  const canViewStock = useMemo(() => {
+    const adminCheck = isAdmin();
+    console.log('🔍 Verificando si puede ver stock:', {
+      isAdmin: adminCheck,
+      user: user,
+      roles: user?.roles
+    });
+    return adminCheck;
+  }, [isAdmin, user]); // Se recalcula cuando cambia isAdmin o user
 
   // Responsive handler
   useEffect(() => {

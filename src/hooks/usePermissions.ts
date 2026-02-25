@@ -6,6 +6,13 @@ import type { Module } from '../services/permissionsService';
 export const usePermissions = () => {
   const userPermissions = useAppSelector(selectUserPermissions);
   const userModules = useAppSelector(selectUserModules);
+  const user = useAppSelector((state) => state.auth.user);
+  
+  // Verificar si el usuario tiene un rol específico por nombre
+  const hasRole = (roleName: string): boolean => {
+    if (!user || !user.roles) return false;
+    return user.roles.some(userRole => userRole.role.name.toLowerCase() === roleName.toLowerCase());
+  };
   
   // Verificar si el usuario tiene un permiso específico
   const hasPermission = (moduleName: string, action: 'view' | 'create' | 'edit' | 'delete' | 'export'): boolean => {
@@ -43,25 +50,26 @@ export const usePermissions = () => {
 
   // Verificar si es super admin
   const isSuperAdmin = (): boolean => {
-    // Esto se podría implementar verificando los roles del usuario
-    // Por ahora, asumimos que si tiene acceso a 'system-admin', es super admin
-    return canAccessModule('system-admin');
+    // Verificar por rol o por acceso a módulo system-admin
+    return hasRole('superadmin') || hasRole('super-admin') || canAccessModule('system-admin');
   };
 
   // Verificar si es admin del cliente
   const isClientAdmin = (): boolean => {
-    // Admin del cliente tiene acceso a la mayoría de módulos pero no a system-admin
-    return canAccessModule('company-config') && !canAccessModule('system-admin');
+    // Verificar por rol o por acceso a company-config
+    return hasRole('admin') || (canAccessModule('company-config') && !canAccessModule('system-admin'));
   };
 
   // Verificar si es admin (cualquier tipo de administrador)
   const isAdmin = (): boolean => {
-    // Es admin si es super admin o client admin
-    return isSuperAdmin() || isClientAdmin();
+    // Es admin si tiene el rol admin/superadmin o tiene acceso a módulos administrativos
+    return hasRole('admin') || hasRole('superadmin') || hasRole('super-admin') || 
+           hasRole('administrador') || isSuperAdmin() || isClientAdmin();
   };
 
   return {
     hasPermission,
+    hasRole,
     canAccessModule,
     getAccessibleModules,
     isSuperAdmin,
