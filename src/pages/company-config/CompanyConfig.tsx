@@ -135,6 +135,7 @@ const CompanyConfig: React.FC = () => {
         fontSize: values.fontSize || 'medium',
         includeVendor: values.includeVendor ?? true,
         includeCashSession: values.includeCashSession ?? false,
+        useFifoInventory: values.useFifoInventory ?? true,
       };
 
       await dispatch(updateCompanyConfig(formData)).unwrap();
