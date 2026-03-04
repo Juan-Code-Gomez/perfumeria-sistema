@@ -620,7 +620,7 @@ const CompanyConfig: React.FC = () => {
             tooltip="Cuando está activado, se crean lotes de inventario y se usa el costo del lote más antiguo. Cuando está desactivado, se actualiza el precio de compra del producto con cada factura."
           >
             <Space direction="vertical" style={{ width: '100%' }}>
-              <Switch defaultChecked />
+              <Switch />
               <Text type="secondary" style={{ fontSize: '12px' }}>
                 <strong>FIFO Activado:</strong> Se crean lotes de inventario para control de costos por lote.
                 <br />
@@ -745,6 +745,7 @@ const CompanyConfig: React.FC = () => {
             numberFormat: 'es-CO',
             taxRate: 0,
             printLogo: false,
+            useFifoInventory: true,
           }}
         >
           <Tabs items={tabItems} />
