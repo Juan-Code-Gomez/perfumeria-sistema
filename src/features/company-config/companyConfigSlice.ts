@@ -32,6 +32,8 @@ export interface CompanyConfig {
   fontSize?: string;
   includeVendor?: boolean;
   includeCashSession?: boolean;
+  // Configuración de inventario
+  useFifoInventory?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -65,6 +67,8 @@ export interface CreateCompanyConfigData {
   fontSize?: string;
   includeVendor?: boolean;
   includeCashSession?: boolean;
+  // Configuración de inventario
+  useFifoInventory?: boolean;
 }
 
 interface CompanyConfigState {

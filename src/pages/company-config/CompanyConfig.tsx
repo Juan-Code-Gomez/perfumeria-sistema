@@ -608,6 +608,28 @@ const CompanyConfig: React.FC = () => {
         </Col>
       </Row>
 
+      <Divider>Configuración de Inventario</Divider>
+
+      <Row gutter={16}>
+        <Col xs={24}>
+          <Form.Item
+            name="useFifoInventory"
+            valuePropName="checked"
+            label="Usar Modelo FIFO (First In, First Out)"
+            tooltip="Cuando está activado, se crean lotes de inventario y se usa el costo del lote más antiguo. Cuando está desactivado, se actualiza el precio de compra del producto con cada factura."
+          >
+            <Space direction="vertical" style={{ width: '100%' }}>
+              <Switch defaultChecked />
+              <Text type="secondary" style={{ fontSize: '12px' }}>
+                <strong>FIFO Activado:</strong> Se crean lotes de inventario para control de costos por lote.
+                <br />
+                <strong>FIFO Desactivado:</strong> El precio de compra se actualiza con la última factura registrada.
+              </Text>
+            </Space>
+          </Form.Item>
+        </Col>
+      </Row>
+
       {/* Sección de Parámetros del Sistema - Solo para SUPER_ADMIN */}
       {isSuperAdmin && (
         <>
