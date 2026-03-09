@@ -1,6 +1,7 @@
 // src/components/products/ProductForm.tsx
 import React, { useEffect } from "react";
-import { Form, Input, Select, Button, message, Row, Col, Tooltip } from "antd";
+import { Form, Input, Select, Button, message, Row, Col, Tooltip, Segmented, Upload } from "antd";
+import { UploadOutlined, LinkOutlined, DeleteOutlined } from "@ant-design/icons";
 import { useAppDispatch, useAppSelector } from "../../store";
 import {
   createProduct,
@@ -33,6 +34,7 @@ const ProductForm: React.FC<Props> = ({ product, onSaved }) => {
   const [loading, setLoading] = React.useState(false);
   const [units, setUnits] = React.useState<Unit[]>([]);
   const [categories, setCategories] = React.useState<Category[]>([]);
+  const [imageMode, setImageMode] = React.useState<'url' | 'upload'>('url');
 
   useEffect(() => {
     dispatch(getUnits({})).unwrap().then(setUnits);
@@ -43,8 +45,15 @@ const ProductForm: React.FC<Props> = ({ product, onSaved }) => {
         unitId: product.unit?.id,
         categoryId: product.category?.id,
       });
+      // Si el producto tiene imagen base64, mostrar modo upload; si es URL normal, modo url
+      if (product.imageUrl?.startsWith('data:')) {
+        setImageMode('upload');
+      } else {
+        setImageMode('url');
+      }
     } else {
       form.resetFields();
+      setImageMode('url');
       // Establecer valores por defecto para productos nuevos
       form.setFieldsValue({
         salesType: 'VENTA'
@@ -54,6 +63,27 @@ const ProductForm: React.FC<Props> = ({ product, onSaved }) => {
 
   // Vista previa de imagen en tiempo real
   const imageUrl = Form.useWatch("imageUrl", form);
+
+  // Convierte archivo seleccionado a base64 y lo guarda en el campo imageUrl
+  const handleImageUpload = (file: File) => {
+    const isImage = file.type.startsWith('image/');
+    if (!isImage) {
+      message.error('Solo se permiten archivos de imagen (JPG, PNG, WEBP, GIF)');
+      return false;
+    }
+    const isLt3M = file.size / 1024 / 1024 < 3;
+    if (!isLt3M) {
+      message.error('La imagen no puede superar 3 MB');
+      return false;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const base64 = e.target?.result as string;
+      form.setFieldValue('imageUrl', base64);
+    };
+    reader.readAsDataURL(file);
+    return false; // Evitar que Ant Design suba automáticamente
+  };
   
   // Observar el tipo de producto para validaciones condicionales
   const salesType = Form.useWatch("salesType", form);
@@ -190,20 +220,69 @@ const ProductForm: React.FC<Props> = ({ product, onSaved }) => {
         </Form.Item>
 
         {/* Imagen */}
-        <Form.Item
-          label="Imagen (URL)"
-          name="imageUrl"
-          rules={[{ type: "url", message: "Debe ser una URL válida" }]}
-        >
-          <Input placeholder="https://..." />
+        <Form.Item label="Imagen del producto" style={{ marginBottom: 8 }}>
+          <Segmented
+            size="small"
+            value={imageMode}
+            onChange={(val) => {
+              setImageMode(val as 'url' | 'upload');
+              form.setFieldValue('imageUrl', undefined);
+            }}
+            options={[
+              { label: <span><LinkOutlined /> URL</span>, value: 'url' },
+              { label: <span><UploadOutlined /> Subir imagen</span>, value: 'upload' },
+            ]}
+            style={{ marginBottom: 8 }}
+          />
         </Form.Item>
-        {imageUrl && (
+
+        {imageMode === 'url' ? (
+          <Form.Item
+            name="imageUrl"
+            rules={[{ type: "url", message: "Debe ser una URL válida" }]}
+            style={{ marginTop: -8 }}
+          >
+            <Input placeholder="https://ejemplo.com/imagen.jpg" />
+          </Form.Item>
+        ) : (
+          <Form.Item name="imageUrl" style={{ marginTop: -8 }}>
+            <Input type="hidden" />
+          </Form.Item>
+        )}
+
+        {imageMode === 'upload' && (
           <div style={{ marginBottom: 16 }}>
+            <Upload
+              accept="image/*"
+              showUploadList={false}
+              beforeUpload={handleImageUpload}
+              maxCount={1}
+            >
+              <Button icon={<UploadOutlined />} size="small">
+                Seleccionar imagen
+              </Button>
+              <span style={{ marginLeft: 8, fontSize: 12, color: '#999' }}>
+                JPG, PNG, WEBP · máx. 3 MB
+              </span>
+            </Upload>
+          </div>
+        )}
+
+        {imageUrl && (
+          <div style={{ marginBottom: 16, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
             <img
               src={imageUrl}
               alt="Vista previa"
-              style={{ maxWidth: 120, maxHeight: 80, borderRadius: 6 }}
+              style={{ maxWidth: 100, maxHeight: 100, borderRadius: 6, objectFit: 'cover', border: '1px solid #d9d9d9' }}
             />
+            <Button
+              size="small"
+              danger
+              icon={<DeleteOutlined />}
+              onClick={() => form.setFieldValue('imageUrl', undefined)}
+            >
+              Quitar
+            </Button>
           </div>
         )}
 
