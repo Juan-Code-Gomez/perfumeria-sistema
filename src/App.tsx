@@ -2,6 +2,7 @@ import { useState } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
+// Importar componentes y hooks relacionados con impresión
 
 function App() {
   const [count, setCount] = useState(0)
