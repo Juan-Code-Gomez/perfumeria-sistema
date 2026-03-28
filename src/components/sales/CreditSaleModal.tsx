@@ -19,6 +19,7 @@ import * as productService from '../../services/productService';
 import type { Product } from '../../features/products/types';
 import { useAppDispatch } from '../../store';
 import { createSale } from '../../features/sales/salesSlice';
+import { usePermissions } from '../../hooks/usePermissions';
 
 const { Option } = Select;
 
@@ -45,6 +46,8 @@ export default function CreditSaleModal({ open, onClose, onSaved }: Props) {
 
   const [suggestedProducts, setSuggestedProducts] = useState<Product[]>([]);
   const [productLoading, setProductLoading] = useState(false);
+  const { isAdmin } = usePermissions();
+  const canViewStock = isAdmin();
 
   const debouncedFetch = useCallback(
     debounce(async (q: string, cb: (ps: Product[]) => void) => {
@@ -144,7 +147,7 @@ export default function CreditSaleModal({ open, onClose, onSaved }: Props) {
         >
           {suggestedProducts.map(p=>
             <Option key={p.id} value={p.id}>
-              {p.name} | {p.category?.name} | {p.unit?.name} | Stock:{p.stock}
+              {p.name} | {p.category?.name} | {p.unit?.name}{canViewStock && ` | Stock:${p.stock}`}
             </Option>
           )}
         </Select>

@@ -25,6 +25,7 @@ import {
 import type { InvoiceItem } from '../../services/invoiceService';
 import { searchProductsForInvoice } from '../../services/productService';
 import dayjs from 'dayjs';
+import { usePermissions } from '../../hooks/usePermissions';
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -58,6 +59,8 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
   const [searchText, setSearchText] = useState<string>('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searching, setSearching] = useState(false);
+  const { isAdmin } = usePermissions();
+  const canViewStock = isAdmin();
 
   // Búsqueda dinámica de productos cuando el usuario escribe
   const handleSearchProducts = async (value: string) => {
@@ -350,7 +353,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                     <span>
                       <strong>{product.name}</strong> 
                       {product.category?.name && <span style={{ color: '#999', marginLeft: 8 }}>({product.category.name})</span>}
-                      <span style={{ marginLeft: 8 }}>- Stock: {product.stock}</span>
+                      {canViewStock && <span style={{ marginLeft: 8 }}>- Stock: {product.stock}</span>}
                       <span style={{ marginLeft: 8 }}>- ${Math.round(product.purchasePrice || 0).toLocaleString('es-CO')}</span>
                     </span>
                   </Option>

@@ -20,6 +20,7 @@ import * as productService from "../../services/productService";
 import type { Product } from "../../services/productService";
 import debounce from "lodash.debounce";
 import ClientSelector from "../clients/ClientSelector";
+import { usePermissions } from "../../hooks/usePermissions";
 
 const { Option } = Select;
 
@@ -46,6 +47,8 @@ const SaleForm: React.FC<Props> = ({ open, onClose, onSaved }) => {
   // Estado para productos sugeridos en el select asíncrono
   const [suggestedProducts, setSuggestedProducts] = useState<Product[]>([]);
   const [productLoading, setProductLoading] = useState(false);
+  const { isAdmin } = usePermissions();
+  const canViewStock = isAdmin();
 
   // Guardar el último texto buscado por fila (para manejar varias búsquedas independientes)
   // @ts-ignore
@@ -270,17 +273,19 @@ const SaleForm: React.FC<Props> = ({ open, onClose, onSaved }) => {
                 >
                   {p.unit?.name}
                 </span>
-                <span
-                  style={{
-                    color: "#4CAF50",
-                    fontSize: 12,
-                    fontWeight: 400,
-                    marginLeft: 4,
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  Stock: {p.stock}
-                </span>
+                {canViewStock && (
+                  <span
+                    style={{
+                      color: "#4CAF50",
+                      fontSize: 12,
+                      fontWeight: 400,
+                      marginLeft: 4,
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    Stock: {p.stock}
+                  </span>
+                )}
               </div>
             </Option>
           ))}
@@ -303,7 +308,7 @@ const SaleForm: React.FC<Props> = ({ open, onClose, onSaved }) => {
         return (
           <InputNumber
             min={isGramo ? 0.01 : 1}
-            max={selectedProduct?.stock}
+            max={canViewStock ? selectedProduct?.stock : undefined}
             step={isGramo ? 0.01 : 1}
             value={value}
             onChange={(val) => handleRowChange(row.key, "quantity", val)}

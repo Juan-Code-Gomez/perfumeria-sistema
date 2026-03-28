@@ -25,6 +25,7 @@ import {
 } from '@ant-design/icons';
 import { getProductByBarcode, validateBarcodeFormat } from '../../services/productService';
 import type { Product } from '../../services/productService';
+import { usePermissions } from '../../hooks/usePermissions';
 
 const { Text, Title } = Typography;
 
@@ -52,6 +53,8 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({
   const [scanBuffer, setScanBuffer] = useState('');
   const inputRef = useRef<any>(null);
   const scanTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const { isAdmin } = usePermissions();
+  const canViewStock = isAdmin();
 
   // Resetear estado cuando el modal se abre/cierra
   useEffect(() => {
@@ -380,9 +383,11 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({
                   <Tag color="blue">
                     {foundProduct.category?.name || 'Sin categoría'}
                   </Tag>
-                  <Tag color="green">
-                    Stock: {foundProduct.stock} {foundProduct.unit?.name}
-                  </Tag>
+                  {canViewStock && (
+                    <Tag color="green">
+                      Stock: {foundProduct.stock} {foundProduct.unit?.name}
+                    </Tag>
+                  )}
                   <Tag color="orange">
                     ${foundProduct.salePrice?.toLocaleString()}
                   </Tag>
