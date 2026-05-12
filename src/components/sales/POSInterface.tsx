@@ -45,6 +45,7 @@ import type { PaymentMethod } from './MultiplePaymentModal';
 import { usePOSPersistence } from '../../hooks/usePOSPersistence';
 import { usePOSConfiguration } from '../../hooks/usePOSConfiguration';
 import { usePermissions } from '../../hooks/usePermissions';
+import { useFeatures } from '../../hooks/useFeatures';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -75,6 +76,10 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
 
   // Hook de configuración del POS
   const { config: posConfig, refetch: refetchConfig } = usePOSConfiguration();
+  
+  // Hook de features
+  const { hasFeature } = useFeatures();
+  const strictStockValidation = hasFeature('STRICT_STOCK_VALIDATION');
   
   // Cargar configuración de empresa al montar
   useEffect(() => {
@@ -187,6 +192,27 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
       message.info(`${product.name} agregado como ${product.salesType.toLowerCase()} - No se cobrará`);
     }
 
+    // Validación estricta de stock
+    if (strictStockValidation) {
+      const currentStock = product.stock || 0;
+      
+      // Si no hay stock, no permitir agregar
+      if (currentStock === 0) {
+        message.error(`No hay stock disponible de ${product.name}`);
+        return;
+      }
+      
+      // Si ya existe en el carrito, verificar que no exceda el stock
+      const existingItem = items.find(item => item.productId === product.id);
+      if (existingItem) {
+        const newQuantity = existingItem.quantity + 1;
+        if (newQuantity > currentStock) {
+          message.warning(`Solo hay ${currentStock} unidades disponibles de ${product.name}`);
+          return;
+        }
+      }
+    }
+
     const existingItem = items.find(item => item.productId === product.id);
     
     if (existingItem) {
@@ -241,6 +267,18 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
 
     const currentItem = items.find(item => item.key === key);
     if (currentItem) {
+      // Validación estricta de stock
+      if (strictStockValidation) {
+        const currentStock = currentItem.product.stock || 0;
+        
+        if (newQuantity > currentStock) {
+          message.warning(
+            `Solo hay ${currentStock} unidades disponibles de ${currentItem.product.name}`
+          );
+          return;
+        }
+      }
+      
       const totalPrice = newQuantity * currentItem.unitPrice;
       updatePersistentItem(key, {
         quantity: newQuantity,
@@ -330,6 +368,50 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
 
   const overallMargin = totals.totalCost > 0 ? (totals.totalProfit / totals.totalCost) * 100 : 0;
   const change = amountReceived - finalTotal;
+
+  // Verificar si hay problemas de stock
+  const hasStockIssues = () => {
+    if (!strictStockValidation) return false;
+    
+    return items.some(item => {
+      const currentStock = item.product.stock || 0;
+      return item.quantity > currentStock || currentStock === 0;
+    });
+  };
+
+  // Obtener mensaje de error de stock
+  const getStockErrorMessage = () => {
+    if (!strictStockValidation) return null;
+    
+    const problematicItems = items.filter(item => {
+      const currentStock = item.product.stock || 0;
+      return item.quantity > currentStock || currentStock === 0;
+    });
+
+    if (problematicItems.length === 0) return null;
+
+    return (
+      <Alert
+        message="No se puede procesar la venta"
+        description={
+          <div>
+            {problematicItems.map(item => (
+              <div key={item.key} style={{ marginBottom: 4 }}>
+                <strong>{item.product.name}:</strong>{' '}
+                {item.product.stock === 0 
+                  ? 'Sin stock disponible'
+                  : `Stock insuficiente (Disponible: ${item.product.stock}, Solicitado: ${item.quantity})`
+                }
+              </div>
+            ))}
+          </div>
+        }
+        type="error"
+        showIcon
+        style={{ marginBottom: 16 }}
+      />
+    );
+  };
 
   // Procesar venta con múltiples métodos de pago
   const processSaleWithMultiplePayments = async (payments: PaymentMethod[]) => {
@@ -1132,6 +1214,9 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
 
             {/* Botones de acción */}
             <Space direction="vertical" style={{ width: '100%' }} size={window.innerWidth < 768 ? 'middle' : 'large'}>
+              {/* Alerta de stock si es necesario */}
+              {getStockErrorMessage()}
+              
               <Button
                 type="primary"
                 size={window.innerWidth < 768 ? 'middle' : 'large'}
@@ -1144,7 +1229,8 @@ const POSInterface: React.FC<Props> = ({ onSaleCompleted }) => {
                   isProcessing ||
                   (paymentMethod === 'Crédito' && !selectedClient?.name) || // Solo cliente registrado para crédito
                   (paymentMethod === 'Efectivo' && amountReceived < finalTotal) ||
-                  (useManualDate && !manualSaleDate) // Validar fecha manual si está activada
+                  (useManualDate && !manualSaleDate) || // Validar fecha manual si está activada
+                  hasStockIssues() // Validar stock si está activada la validación estricta
                 }
                 style={{ 
                   height: window.innerWidth < 768 ? '44px' : '50px', 
