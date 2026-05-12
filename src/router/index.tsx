@@ -29,6 +29,11 @@ import DiscountReportPage from "../pages/reports/DiscountReportPage";
 import SalePrintPage from "../pages/print/SalePrintPage";
 import OrderPrintPage from "../pages/print/OrderPrintPage";
 
+// Páginas de Joyería (protegidas por features)
+import JewelryRepairs from "../pages/jewelry/JewelryRepairs";
+import JewelryAppraisals from "../pages/jewelry/JewelryAppraisals";
+import JewelryCertificates from "../pages/jewelry/JewelryCertificates";
+
 export const router = createBrowserRouter([
   {
     element: <AppLayout />,
@@ -71,6 +76,11 @@ export const router = createBrowserRouter([
           { path: "/invoices", element: <InvoiceManagementFIFO /> },
           { path: "/company-config", element: <CompanyConfig /> },
           { path: "/orders", element: <OrdersPage /> }, // Nuevo módulo de pedidos
+          
+          // Rutas de Joyería (protegidas por FeatureGuard en cada componente)
+          { path: "/jewelry/repairs", element: <JewelryRepairs /> },
+          { path: "/jewelry/appraisals", element: <JewelryAppraisals /> },
+          { path: "/jewelry/certificates", element: <JewelryCertificates /> },
         ],
       },
 

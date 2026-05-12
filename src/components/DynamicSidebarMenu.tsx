@@ -24,9 +24,12 @@ import {
   DollarOutlined,
   FileDoneOutlined,
   GiftOutlined,
+  ToolOutlined,
+  SafetyOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { usePermissions } from '../hooks/usePermissions';
+import { useFeatures } from '../hooks/useFeatures';
 
 const iconMap: Record<string, React.ReactNode> = {
   DashboardOutlined: <DashboardOutlined />,
@@ -50,6 +53,8 @@ const iconMap: Record<string, React.ReactNode> = {
   ControlOutlined: <ControlOutlined />,
   UsergroupAddOutlined: <UsergroupAddOutlined />,
   SafetyCertificateOutlined: <SafetyCertificateOutlined />,
+  ToolOutlined: <ToolOutlined />,
+  SafetyOutlined: <SafetyOutlined />,
 };
 
 interface DynamicSidebarMenuProps {
@@ -59,6 +64,7 @@ interface DynamicSidebarMenuProps {
 const DynamicSidebarMenu: React.FC<DynamicSidebarMenuProps> = ({ onLogout }) => {
   const navigate = useNavigate();
   const { getAccessibleModules, isSuperAdmin, userModules } = usePermissions();
+  const { hasFeature } = useFeatures();
 
   // Ya no cargamos módulos aquí, se hace en AppLayout
   // useEffect(() => {
@@ -161,7 +167,57 @@ const DynamicSidebarMenu: React.FC<DynamicSidebarMenuProps> = ({ onLogout }) => 
       });
     }
 
-    // 4. ADMINISTRACIÓN
+    // 4. JOYERÍA (solo si tiene el feature JEWELRY_MODULE)
+    if (hasFeature('JEWELRY_MODULE')) {
+      const jewelryItems = [
+        {
+          key: "/jewelry/repairs",
+          icon: <ToolOutlined style={{ fontSize: '16px' }} />,
+          label: (
+            <span style={{ fontWeight: '500', fontSize: '14px' }}>
+              Reparaciones
+            </span>
+          ),
+          onClick: () => navigate('/jewelry/repairs'),
+        },
+      ];
+
+      // Agregar items condicionales según features
+      if (hasFeature('JEWELRY_APPRAISAL')) {
+        jewelryItems.push({
+          key: "/jewelry/appraisals",
+          icon: <SafetyOutlined style={{ fontSize: '16px' }} />,
+          label: (
+            <span style={{ fontWeight: '500', fontSize: '14px' }}>
+              Valuaciones
+            </span>
+          ),
+          onClick: () => navigate('/jewelry/appraisals'),
+        });
+      }
+
+      if (hasFeature('CERTIFICATE_MANAGEMENT')) {
+        jewelryItems.push({
+          key: "/jewelry/certificates",
+          icon: <SafetyCertificateOutlined style={{ fontSize: '16px' }} />,
+          label: (
+            <span style={{ fontWeight: '500', fontSize: '14px' }}>
+              Certificados
+            </span>
+          ),
+          onClick: () => navigate('/jewelry/certificates'),
+        });
+      }
+
+      sections.push({
+        key: "jewelry-section",
+        type: 'group' as const,
+        label: createGroupLabel('💎 Joyería'),
+        children: jewelryItems
+      });
+    }
+
+    // 5. ADMINISTRACIÓN
     const adminModules = accessibleModules.filter(m => 
       ['usuarios', 'categorias', 'unidades', 'reportes', 'configuracion', 'roles'].includes(m.name)
     );
@@ -175,7 +231,7 @@ const DynamicSidebarMenu: React.FC<DynamicSidebarMenuProps> = ({ onLogout }) => 
       });
     }
 
-    // 5. SISTEMA (siempre mostrar logout)
+    // 6. SISTEMA (siempre mostrar logout)
     sections.push({
       key: "system-section",
       type: 'group' as const,

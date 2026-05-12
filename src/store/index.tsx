@@ -19,6 +19,7 @@ import capitalReducer from '../features/capital/capitalSlice'
 import invoiceReducer from '../features/invoices/invoiceSlice'
 import companyConfigReducer from '../features/company-config/companyConfigSlice'
 import permissionsReducer from '../features/permissions/permissionsSlice'
+import tenantFeaturesReducer from './slices/tenantFeaturesSlice'
 
 export const store = configureStore({
   reducer: {
@@ -39,7 +40,8 @@ export const store = configureStore({
     capital: capitalReducer,
     invoices: invoiceReducer,
     companyConfig: companyConfigReducer,
-    permissions: permissionsReducer
+    permissions: permissionsReducer,
+    tenantFeatures: tenantFeaturesReducer
   },
 })
 

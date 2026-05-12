@@ -12,6 +12,7 @@ import type { Category } from "../../features/products/types";
 import type { Product } from "../../services/productService";
 import { getUnits } from "../../features/units/unitsSlice";
 import { getCategories } from "../../features/categories/categoriesSlice";
+import { DynamicFields } from "../common/DynamicFields";
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -491,6 +492,9 @@ const ProductForm: React.FC<Props> = ({ product, onSaved }) => {
             </Form.Item>
           </Col>
         </Row>
+
+        {/* Campos Personalizados de Joyería (solo si el tenant tiene features) */}
+        <DynamicFields module="PRODUCTS" />
 
         {/* Descripción */}
         <Form.Item label="Descripción (opcional)" name="description">

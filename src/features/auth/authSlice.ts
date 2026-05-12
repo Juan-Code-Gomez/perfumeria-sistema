@@ -15,6 +15,7 @@ export interface User {
   name: string;
   user_login: string;
   roles: UserRole[];
+  tenantId?: number;
 }
 
 export interface AuthState {
