@@ -7,9 +7,10 @@ import { usePermissions } from '../../hooks/usePermissions';
 interface ProductStatsProps {
   products: Product[];
   loading: boolean;
+  totalCount?: number; // Total real de productos en el sistema
 }
 
-const ProductStats: React.FC<ProductStatsProps> = ({ products, loading }) => {
+const ProductStats: React.FC<ProductStatsProps> = ({ products, loading, totalCount }) => {
   const { isAdmin } = usePermissions();
   
   // Solo administradores pueden ver las estadísticas de inventario
@@ -17,7 +18,8 @@ const ProductStats: React.FC<ProductStatsProps> = ({ products, loading }) => {
     return null;
   }
 
-  const totalProducts = products.length;
+  // Usar totalCount si está disponible, sino usar products.length (para mantener retrocompatibilidad)
+  const totalProducts = totalCount !== undefined ? totalCount : products.length;
   const lowStockProducts = products.filter(p => p.stock <= (p.minStock || 0)).length;
   const outOfStockProducts = products.filter(p => p.stock === 0).length;
   

@@ -519,7 +519,7 @@ const ProductList: React.FC = () => {
       </Row>
 
       {/* Estadísticas rápidas */}
-      <ProductStats products={items} loading={loading} />
+      <ProductStats products={items} loading={loading} totalCount={total} />
 
       {/* Formulario de filtros mejorado - Mobile: Drawer, Desktop: Card */}
       {isMobile ? (
