@@ -201,16 +201,6 @@ const ProductList: React.FC = () => {
     }
   };
 
-  // Handlers para códigos de barras
-  const handleProductFoundByBarcode = (product: Product) => {
-    console.log('Producto encontrado por código de barras:', product);
-    message.success(`Producto encontrado: ${product.name}`);
-    
-    // Aquí podrías abrir el modal de edición, agregar a carrito, etc.
-    setEditingProduct(product);
-    setIsModalOpen(true);
-  };
-
   const handleBarcodeGenerated = (product: Product) => {
     console.log('Código generado para producto:', product);
     message.success(`Código generado: ${product.barcode}`);
