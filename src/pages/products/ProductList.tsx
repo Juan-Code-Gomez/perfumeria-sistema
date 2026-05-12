@@ -24,7 +24,6 @@ import {
   UploadOutlined,
   DownloadOutlined,
   FileExcelOutlined,
-  ScanOutlined,
   BarcodeOutlined,
   BarChartOutlined,
   FilterOutlined,
@@ -48,9 +47,7 @@ import { getCategories } from "../../features/categories/categoriesSlice";
 import { getUnits } from "../../features/units/unitsSlice";
 import BulkUploadProducts from "../../components/products/BulkUploadProducts";
 import InventoryExportModal from "../../components/products/InventoryExportModal";
-import BarcodeScanner from "../../components/products/BarcodeScanner";
 import BarcodeGenerator from "../../components/products/BarcodeGenerator";
-import QuickBarcodeScanner from "../../components/products/QuickBarcodeScanner";
 import LabelPrintManager from "../../components/products/LabelPrintManager";
 import ProductBatchesModal from "../../components/products/ProductBatchesModal";
 import { usePermissions } from "../../hooks/usePermissions";
@@ -77,7 +74,6 @@ const ProductList: React.FC = () => {
   );
   const [openBulkModal, setOpenBulkModal] = useState(false);
   const [openInventoryExportModal, setOpenInventoryExportModal] = useState(false);
-  const [openBarcodeScanner, setOpenBarcodeScanner] = useState(false);
   const [openBarcodeGenerator, setOpenBarcodeGenerator] = useState(false);
   const [openLabelManager, setOpenLabelManager] = useState(false);
   const [selectedProductForBarcode, setSelectedProductForBarcode] = useState<Product | null>(null);
@@ -486,16 +482,6 @@ const ProductList: React.FC = () => {
               </Button>
             )}
 
-            <Button
-              onClick={() => setOpenBarcodeScanner(true)}
-              icon={<ScanOutlined />}
-              type="default"
-              size={isMobile ? "middle" : "small"}
-              style={{ backgroundColor: '#722ed1', borderColor: '#722ed1', color: 'white' }}
-            >
-              {!isMobile && "Buscar por Código"}
-            </Button>
-
             {!isMobile && canEditProducts && (
               <Button
                 onClick={() => setOpenBarcodeGenerator(true)}
@@ -853,15 +839,6 @@ const ProductList: React.FC = () => {
         onCancel={() => setOpenInventoryExportModal(false)}
       />
 
-      {/* Modal de Escáner de Códigos de Barras */}
-      <BarcodeScanner
-        visible={openBarcodeScanner}
-        onCancel={() => setOpenBarcodeScanner(false)}
-        onProductFound={handleProductFoundByBarcode}
-        title="Buscar Producto por Código"
-        mode="general"
-      />
-
       {/* Modal de Generador de Códigos de Barras */}
       <BarcodeGenerator
         visible={openBarcodeGenerator}
@@ -880,24 +857,6 @@ const ProductList: React.FC = () => {
         products={items}
         selectedProducts={selectedProducts}
       />
-
-      {/* Escáner Rápido - Componente de demostración - Solo desktop */}
-      {!isMobile && !isTablet && (
-        <div style={{ position: 'fixed', top: 20, right: 20, width: 300, zIndex: 1000 }}>
-          <Card size="small" title="🚀 Demo: Escáner Rápido">
-            <QuickBarcodeScanner
-              onProductFound={(product) => {
-                message.success(`¡Producto encontrado! ${product.name}`);
-                console.log('Producto:', product);
-              }}
-              placeholder="Escanear aquí..."
-              size="small"
-              showHistory
-              autoFocus={false}
-            />
-          </Card>
-        </div>
-      )}
 
       {/* Modal de Lotes FIFO */}
       {selectedProductForBatches && (
