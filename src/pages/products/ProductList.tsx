@@ -817,7 +817,7 @@ const ProductList: React.FC = () => {
             product={editingProduct}
             onSaved={() => {
               handleCloseModal();
-              // dispatch(fetchProducts(filters));
+              dispatch(fetchProducts(filters));
             }}
           />
         </Modal>
