@@ -72,14 +72,26 @@ const tenantFeaturesSlice = createSlice({
       })
       .addCase(fetchTenantFeatures.fulfilled, (state, action) => {
         state.loading = false;
+        
+        // Log para debugging
+        console.log('[TenantFeatures] Features cargados:', action.payload);
+        
         state.features = action.payload.features || [];
         state.customFieldsByModule = action.payload.customFields || {};
         state.initialized = true;
+        
+        // Log de custom fields por módulo
+        if (Object.keys(state.customFieldsByModule).length > 0) {
+          console.log('[TenantFeatures] Custom fields por módulo:', state.customFieldsByModule);
+        }
       })
       .addCase(fetchTenantFeatures.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || 'Error al cargar features';
         state.initialized = true; // Marcar como inicializado incluso en error
+        
+        // Log para debugging
+        console.error('[TenantFeatures] Error al cargar features:', action.error);
       })
       // checkFeature
       .addCase(checkFeature.fulfilled, () => {

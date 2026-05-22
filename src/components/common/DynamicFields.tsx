@@ -29,15 +29,29 @@ interface DynamicFieldsProps {
  */
 export const DynamicFields = ({ module, readOnly = false }: DynamicFieldsProps) => {
   const { getCustomFields } = useFeatures();
-  const customFields = getCustomFields(module);
+  
+  // Manejo defensivo de errores
+  let customFields: any[] = [];
+  try {
+    customFields = getCustomFields(module) || [];
+  } catch (error) {
+    console.error('[DynamicFields] Error al obtener custom fields:', error);
+    return null;
+  }
 
-  if (customFields.length === 0) {
+  if (!customFields || customFields.length === 0) {
     return null;
   }
 
   return (
     <>
       {customFields.map((field) => {
+        // Validación defensiva de cada campo
+        if (!field || !field.name || !field.label) {
+          console.warn('[DynamicFields] Campo inválido:', field);
+          return null;
+        }
+
         const fieldProps = {
           disabled: readOnly,
           placeholder: field.label,
