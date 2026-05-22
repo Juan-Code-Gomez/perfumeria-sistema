@@ -36,6 +36,7 @@ export interface Product {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  customData?: Record<string, any>; // Campos personalizados del tenant
   category?: { id: number; name: string };
   unit?: { id: number; name: string };
   supplier?: { id: number; name: string };

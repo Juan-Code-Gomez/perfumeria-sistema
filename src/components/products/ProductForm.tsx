@@ -41,11 +41,20 @@ const ProductForm: React.FC<Props> = ({ product, onSaved }) => {
     dispatch(getUnits({})).unwrap().then(setUnits);
     dispatch(getCategories({})).unwrap().then(setCategories);
     if (product) {
-      form.setFieldsValue({
+      // Transformar customData a customFields para el formulario
+      const formValues: any = {
         ...product,
         unitId: product.unit?.id,
         categoryId: product.category?.id,
-      });
+      };
+      
+      // Si el producto tiene customData, convertirlo a customFields para el formulario
+      if (product.customData && typeof product.customData === 'object') {
+        formValues.customFields = product.customData;
+      }
+      
+      form.setFieldsValue(formValues);
+      
       // Si el producto tiene imagen base64, mostrar modo upload; si es URL normal, modo url
       if (product.imageUrl?.startsWith('data:')) {
         setImageMode('upload');
@@ -101,7 +110,7 @@ const ProductForm: React.FC<Props> = ({ product, onSaved }) => {
     setLoading(true);
     try {
       // Procesar valores para convertir strings a números
-      const processedValues = {
+      const processedValues: any = {
         ...values,
         purchasePrice: parseFloat(values.purchasePrice) || 0,
         // Si es insumo o combo, forzar precio de venta a 0
@@ -111,6 +120,12 @@ const ProductForm: React.FC<Props> = ({ product, onSaved }) => {
         stock: parseInt(values.stock) || 0,
         minStock: values.minStock ? parseInt(values.minStock) : 0, // Si está vacío, enviar 0
       };
+
+      // Transformar customFields a customData para el backend
+      if (values.customFields) {
+        processedValues.customData = values.customFields;
+        delete processedValues.customFields; // Remover customFields del objeto
+      }
 
       if (product) {
         const result = await dispatch(
