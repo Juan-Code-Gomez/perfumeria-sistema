@@ -74,15 +74,22 @@ const tenantFeaturesSlice = createSlice({
         state.loading = false;
         
         // Log para debugging
-        console.log('[TenantFeatures] Features cargados:', action.payload);
+        console.log('[TenantFeatures] Respuesta completa:', action.payload);
         
-        state.features = action.payload.features || [];
-        state.customFieldsByModule = action.payload.customFields || {};
+        // La respuesta viene envuelta en { success, data }
+        const data = action.payload.data || action.payload;
+        
+        state.features = data.features || [];
+        // Usar customFieldsByModule como prioridad, fallback a customFields
+        state.customFieldsByModule = data.customFieldsByModule || data.customFields || {};
         state.initialized = true;
         
         // Log de custom fields por módulo
+        console.log('[TenantFeatures] Custom fields por módulo cargados:', state.customFieldsByModule);
         if (Object.keys(state.customFieldsByModule).length > 0) {
-          console.log('[TenantFeatures] Custom fields por módulo:', state.customFieldsByModule);
+          console.log('[TenantFeatures] ✅ Módulos con custom fields:', Object.keys(state.customFieldsByModule));
+        } else {
+          console.warn('[TenantFeatures] ⚠️ NO se encontraron custom fields');
         }
       })
       .addCase(fetchTenantFeatures.rejected, (state, action) => {
