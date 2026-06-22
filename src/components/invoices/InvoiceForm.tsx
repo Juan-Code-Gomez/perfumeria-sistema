@@ -289,7 +289,6 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                 style={{ width: '100%' }}
                 format="YYYY-MM-DD"
                 placeholder="Fecha de vencimiento (opcional)"
-                disabledDate={(current) => current && current < dayjs().startOf('day')}
               />
             </Form.Item>
           </Col>
